@@ -1,0 +1,45 @@
+{
+  "$schema_id": "pecvd-twin.visual-scenario/1",
+  "id": "ccp-illustrative-cycle-v1",
+  "title": "Illustrative plasma cycle",
+  "render_source": "illustrative",
+  "note": "Scripted presentation sequence. Phase order and transition times are presentation choices, not computed ignition or transient physics. Stable-phase modulation is a slow visual pulse and does not represent MHz RF oscillation.",
+  "durationSec": 18,
+  "phases": [
+    {
+      "id": "off",
+      "label": "Off",
+      "labelKo": "소등",
+      "start": 0,
+      "end": 1.5
+    },
+    {
+      "id": "ignition",
+      "label": "Ignition illustration",
+      "labelKo": "점화 연출",
+      "start": 1.5,
+      "end": 4.0
+    },
+    {
+      "id": "stable",
+      "label": "Stable plasma",
+      "labelKo": "안정 상태",
+      "start": 4.0,
+      "end": 14.0
+    },
+    {
+      "id": "extinction",
+      "label": "Extinction illustration",
+      "labelKo": "소멸 연출",
+      "start": 14.0,
+      "end": 16.5
+    },
+    {
+      "id": "off_end",
+      "label": "Off",
+      "labelKo": "소등",
+      "start": 16.5,
+      "end": 18.0
+    }
+  ]
+}

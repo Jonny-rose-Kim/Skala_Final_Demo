@@ -1,0 +1,50 @@
+# Dependencies (restored with `npm ci` from package-lock.json)
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+.vite/
+.vitest/
+coverage/
+
+# Generated QA / test artifacts (re-create with `npm run test:e2e`, `node qa/*.mjs`)
+qa/out/
+qa/test-results/
+qa/playwright-report/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Generated geometry exports (re-create with `node --import tsx scripts/export-geometry-obj.ts`)
+assets/exports/
+
+# Environment / secrets / local overrides
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor / OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,10 @@
+# Normalize line endings so scripts and configs behave the same on Linux, macOS and Windows
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.glb binary
+*.hdr binary
+*.ico binary

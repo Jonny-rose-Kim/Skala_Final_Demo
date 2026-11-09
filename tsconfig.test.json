@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "types": ["vitest/globals", "node", "@playwright/test"],
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "resolveJsonModule": true
+  },
+  "include": ["tests/**/*.ts", "scripts/**/*.ts", "src/**/*.ts"]
+}

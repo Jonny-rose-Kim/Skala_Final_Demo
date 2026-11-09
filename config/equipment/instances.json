@@ -1,0 +1,46 @@
+{
+  "$schema_id": "pecvd-twin.equipment-instances/1",
+  "config_revision": "instances-v1",
+  "default": [
+    {
+      "instanceId": "PECVD-01.CH-A",
+      "templateId": "ccp_pecvd_single_wafer_300",
+      "displayName": "PECVD-01 / Process Chamber A",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotationYDeg": 0,
+      "detailLevel": "detailed"
+    }
+  ],
+  "fixtures": {
+    "two-chambers": [
+      {
+        "instanceId": "PECVD-01.CH-A",
+        "templateId": "ccp_pecvd_single_wafer_300",
+        "displayName": "PECVD-01 / Process Chamber A",
+        "position": [
+          -0.9,
+          0,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed"
+      },
+      {
+        "instanceId": "PECVD-01.CH-B",
+        "templateId": "ccp_pecvd_single_wafer_300",
+        "displayName": "PECVD-01 / Process Chamber B",
+        "position": [
+          0.9,
+          0,
+          0
+        ],
+        "rotationYDeg": 180,
+        "detailLevel": "detailed"
+      }
+    ]
+  }
+}
