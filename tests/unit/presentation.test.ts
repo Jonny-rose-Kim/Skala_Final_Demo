@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TAU } from "../../src/config/geometry";
 import { CHAMBER_LAYOUT } from "../../src/config/geometry";
 import { isAzimuthRemoved, resolveCutaway, snapBoundary } from "../../src/presentation/cutaway";
-import { DEFAULT_SCENARIO, evaluateScenario, phaseAt } from "../../src/presentation/scenario";
+import { DEFAULT_SCENARIO, evaluateScenario, holdPointSec, phaseAt, releasePointSec } from "../../src/presentation/scenario";
 import { VisualClock } from "../../src/presentation/visualClock";
 
 describe("cutaway resolver", () => {
@@ -56,21 +56,70 @@ describe("visual clock", () => {
     c.tick(7000);
     expect(c.playheadSec).toBeCloseTo(0.6, 9);
   });
-  it("scrubs backwards and loops", () => {
+  it("scrubs backwards and stops at the end instead of looping", () => {
     const c = new VisualClock(18);
     c.scrub(17.95);
     c.play();
     c.tick(0);
     c.tick(100);
-    expect(c.playheadSec).toBeCloseTo(0.05, 6);
-    c.scrub(3);
-    expect(c.playheadSec).toBe(3);
-    c.setLoop(false);
-    c.scrub(17.99);
-    c.tick(200);
-    c.tick(300);
     expect(c.playheadSec).toBe(18);
     expect(c.playing).toBe(false);
+    c.scrub(3);
+    expect(c.playheadSec).toBe(3);
+    c.scrub(18);
+    c.play(); // play at the end starts over
+    expect(c.playheadSec).toBe(0);
+    expect(c.playing).toBe(true);
+  });
+  it("holds at the hold point while effect time keeps running", () => {
+    const c = new VisualClock(18, 13.999);
+    c.scrub(13.9);
+    c.play();
+    c.tick(0);
+    for (let i = 1; i <= 20; i++) c.tick(i * 50); // 1 s of frames
+    expect(c.holding).toBe(true);
+    expect(c.playing).toBe(true);
+    expect(c.playheadSec).toBe(13.999);
+    expect(c.effectTimeSec).toBeCloseTo(14.9, 9);
+    c.pause();
+    c.tick(2000);
+    expect(c.effectTimeSec).toBeCloseTo(14.9, 9);
+  });
+  it("release continues past the hold with continuous effect time and ends stopped", () => {
+    const c = new VisualClock(18, 13.999);
+    c.scrub(13.9);
+    c.play();
+    c.tick(0);
+    for (let i = 1; i <= 20; i++) c.tick(i * 50);
+    const effectBefore = c.effectTimeSec;
+    c.release(14);
+    expect(c.holding).toBe(false);
+    expect(c.playheadSec).toBe(14);
+    expect(c.effectTimeSec).toBeCloseTo(effectBefore, 9);
+    c.tick(5000);
+    c.tick(5050);
+    expect(c.playheadSec).toBeCloseTo(14.05, 9);
+    expect(c.effectTimeSec).toBeCloseTo(effectBefore + 0.05, 9);
+    c.speed = 4;
+    for (let i = 1; i <= 100; i++) c.tick(5050 + i * 50);
+    expect(c.playheadSec).toBe(18);
+    expect(c.playing).toBe(false);
+    expect(c.holding).toBe(false);
+  });
+  it("scrubbing resets the hold so a position always maps to the same effect time", () => {
+    const c = new VisualClock(18, 13.999);
+    c.scrub(13.9);
+    c.play();
+    c.tick(0);
+    for (let i = 1; i <= 20; i++) c.tick(i * 50);
+    expect(c.holding).toBe(true);
+    c.scrub(8);
+    expect(c.holding).toBe(false);
+    expect(c.effectTimeSec).toBe(8);
+    c.scrub(15); // past the hold point: playing on does not hold again
+    c.tick(1050); // last tick was at 1000 ms
+    expect(c.holding).toBe(false);
+    expect(c.playheadSec).toBeCloseTo(15.05, 9);
   });
   it("restart returns to zero and plays", () => {
     const c = new VisualClock(18);
@@ -102,5 +151,17 @@ describe("scenario", () => {
     expect(evaluateScenario(DEFAULT_SCENARIO, 0.5, 1).intensity).toBe(0);
     expect(evaluateScenario(DEFAULT_SCENARIO, 8, 1).intensity).toBeGreaterThan(0.9);
     expect(evaluateScenario(DEFAULT_SCENARIO, 17.5, 1).intensity).toBe(0);
+  });
+  it("holds inside the stable phase and releases into extinction", () => {
+    const hold = holdPointSec(DEFAULT_SCENARIO)!;
+    const release = releasePointSec(DEFAULT_SCENARIO)!;
+    expect(phaseAt(DEFAULT_SCENARIO, hold).id).toBe("stable");
+    expect(phaseAt(DEFAULT_SCENARIO, release).id).toBe("extinction");
+    expect(release - hold).toBeLessThan(0.01);
+    // stable modulation follows effect time, so it keeps moving while the playhead is parked
+    const a = evaluateScenario(DEFAULT_SCENARIO, hold, 7, hold + 1);
+    const b = evaluateScenario(DEFAULT_SCENARIO, hold, 7, hold + 2);
+    expect(a.phase).toBe("stable");
+    expect(a.intensity).not.toBe(b.intensity);
   });
 });

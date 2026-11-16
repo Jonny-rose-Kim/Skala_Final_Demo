@@ -1,66 +1,77 @@
-# Geometry assumptions — representative single-wafer CCP PECVD chamber
+# 형상 가정
 
-Source kind: **assumed**. All values are consistent representative choices for a 300 mm direct parallel-plate PECVD
-chamber. They are not measurements of any vendor's equipment. Config: `config/geometry/ccp-pecvd-300-v1.json`
-(`geometry_revision: ccp-pecvd-300-v1.1.0`). Derived placements: `src/config/geometry.ts` (`deriveChamberLayout`).
+대표적인 300mm 단일 웨이퍼 CCP PECVD 챔버의 구조와 치수를 정리한 문서다.
 
-## Coordinate system
+모든 값은 가정값(source kind: assumed)이다. 300mm 평행판 직접 방전형 PECVD 챔버에서 서로 모순 없이 맞아떨어지는 대표값을 고른 것이고, 특정 제조사 장비를 측정한 값이 아니다. 설정 파일은 `config/geometry/ccp-pecvd-300-v1.json`(`geometry_revision: ccp-pecvd-300-v1.1.0`)이고, 배치 계산은 `src/config/geometry.ts`의 `deriveChamberLayout`에서 한다.
 
-- Internal unit **meter**; UI shows mm (`mmText`).
-- **+Y up**, **left-handed** (Babylon default, `scene.useRightHandedSystem = false`).
-- Origin: chamber axis at the inner floor top surface (y = 0).
-- Azimuth φ (deg) from +X toward +Z: position = (r cos φ, y, r sin φ). `ArcRotateCamera.alpha` uses the same convention.
-- glTF/GLB (right-handed) is converted by Babylon's loader; procedural geometry is authored directly in the scene frame. A GLB replacement must keep each component under the same `assetId`/`nodeKey` (see `assets/manifests/ccp-pecvd-300.manifest.json`).
+## 좌표계
 
-## Structure (design decisions)
+- 내부 단위는 미터이고, 화면에는 mm로 표시한다(`mmText`).
+- +Y가 위쪽이고 왼손 좌표계를 쓴다(Babylon 기본값, `scene.useRightHandedSystem = false`).
+- 원점은 챔버 중심축과 바닥 안쪽 윗면이 만나는 점(y = 0)이다.
+- 방위각 φ(도)는 +X에서 +Z 방향으로 잰다. 위치는 (r cos φ, y, r sin φ)이고, `ArcRotateCamera.alpha`도 같은 기준을 쓴다.
+- glTF/GLB(오른손 좌표계)는 Babylon 로더가 변환한다. 절차적 형상은 처음부터 씬 좌표계로 만든다. GLB로 교체할 때도 각 부품은 같은 `assetId`/`nodeKey`를 유지해야 한다(`assets/manifests/ccp-pecvd-300.manifest.json` 참고).
 
-- Upper electrode = RF-powered perforated showerhead faceplate; gas plenum between faceplate and backing plate with a central blocker plate.
-- Lower electrode = heated pedestal/susceptor, grounded (no separate lower RF bias in this template).
-- Showerhead assembly suspended from the lid through a ceramic isolator ring; RF stem passes through a ceramic feedthrough bushing in the lid bore; a ceramic edge insulator surrounds the electrode perimeter. The powered electrode never touches the grounded enclosure directly.
-- Gas: panel → 1/2" line → feed tube (with ceramic isolator section) inside the RF stem → plenum → blocker → faceplate holes → wafer region → outward past the pedestal edge → slotted pumping baffle → exhaust plenum → side exhaust port → throttle valve → elbow → isolation (gate) valve → foreline → dry pump.
-- Access: side slit valve at wafer transfer height (pedestal lowered), viewport at the electrode-gap height, pressure tap with a capacitance manometer, pedestal thermocouple through the shaft.
-- ICP coils/domes, remote plasma sources or lower-bias configurations are intentionally not mixed in; they belong to separate future templates.
+## 구조 (설계 결정)
 
-## Key dimensions (assumed)
+- 상부 전극은 RF 전력이 걸리는 다공 샤워헤드 페이스플레이트다. 페이스플레이트와 백킹 플레이트 사이에 가스 플리넘이 있고, 그 가운데에 블로커 플레이트가 있다.
+- 하부 전극은 가열되는 페데스탈(서셉터)이고 접지되어 있다. 이 템플릿에는 하부 RF 바이어스를 따로 두지 않았다.
+- 샤워헤드 조립체는 세라믹 아이솔레이터 링을 사이에 두고 리드에 매달려 있다. RF 스템은 리드 중앙 구멍에 끼운 세라믹 피드스루 부싱을 지나가고, 전극 둘레는 세라믹 에지 인슐레이터가 감싼다. 전력이 걸리는 전극이 접지된 외함에 직접 닿는 곳은 없다.
+- 가스는 가스 패널에서 1/2인치 배관, RF 스템 안의 공급관(세라믹 절연 구간 포함), 플리넘, 블로커, 페이스플레이트 구멍을 차례로 지나 웨이퍼 위로 들어온다. 그다음 페데스탈 가장자리 바깥으로 흘러 슬롯이 뚫린 펌핑 배플, 배기 플리넘, 측면 배기 포트, 스로틀 밸브, 엘보, 격리(게이트) 밸브, 포어라인을 거쳐 드라이 펌프로 빠져나간다.
+- 접근부로는 웨이퍼 반송 높이(페데스탈을 내린 상태)의 측면 슬릿 밸브, 전극 간격 높이의 뷰포트, 정전용량 압력계가 달린 압력 탭, 샤프트를 통과하는 페데스탈 열전대가 있다.
+- ICP 코일이나 돔, 원격 플라즈마 소스, 하부 바이어스 구성은 일부러 섞지 않았다. 이런 구성은 나중에 별도 템플릿으로 만든다.
 
-| Item | Value |
+## 주요 치수 (가정값)
+
+| 항목 | 값 |
 | --- | --- |
-| Wafer | Ø300 mm × 0.775 mm (SEMI 300 mm standard thickness) |
-| Electrode gap (faceplate bottom ↔ wafer top) | 20 mm (common production range 10–25 mm; chosen for readability) |
-| Showerhead faceplate | Ø340 × 12 mm, holes Ø1.2 mm, pitch 5.5 mm (polar array), pattern Ø310 mm |
-| Plenum | 12 mm high, Ø316 mm; backing plate 22 mm; blocker plate Ø140 × 3 mm |
-| Isolator ring (ceramic) | Ø280/Ø344, 23.2 mm high (backing plate top → lid underside) |
-| Edge insulator (ceramic) | 12 mm thick around the showerhead perimeter |
-| RF stem | Ø56/Ø40 through lid bore Ø80 filled by the ceramic bushing |
-| Chamber body | inner Ø520, wall 35 mm, inner height 240 mm, floor 40 mm, top flange Ø660 × 40 mm |
-| Lid | Ø670 × 50 mm, 24 bolts on Ø630, o-ring groove Ø600 |
-| Liner | 4 mm anodized Al, 6 mm clearance, y 82–232 mm |
-| Pedestal | Ø340 × 45 mm, process top y = 150 mm, transfer top y = 100 mm, shaft Ø70, heater cavity Ø70–300 × 16 mm (7 ring elements), 3 lift pins on Ø210 (12 mm stroke) |
-| Edge ring (ceramic) | Ø302/Ø340 × 3 mm |
-| Pumping baffle | Ø350/Ø498, 4 mm thick at y = 75 mm, 36 slots (42% open) |
-| Slit | 360 × 50 mm, center y = 112 mm, azimuth 180° (transfer wafer plane y = 112.8 mm passes through it) |
-| Viewport | bore Ø60, window Ø80 × 8 mm quartz, azimuth 45°, center y = 161 mm |
-| Pressure tap | bore Ø16, azimuth 120°, y = 125 mm |
-| Exhaust port | bore Ø64, azimuth 320°, y = 40 mm (below the baffle) |
+| 웨이퍼 | Ø300 mm × 0.775 mm (SEMI 300mm 표준 두께) |
+| 전극 간격 (페이스플레이트 아랫면과 웨이퍼 윗면 사이) | 20 mm (양산 장비는 보통 10–25 mm. 화면에서 잘 보이도록 20 mm로 정함) |
+| 샤워헤드 페이스플레이트 | Ø340 × 12 mm, 구멍 Ø1.2 mm, 피치 5.5 mm(동심원 배열), 구멍 영역 Ø310 mm |
+| 플리넘 | 높이 12 mm, Ø316 mm. 백킹 플레이트 22 mm, 블로커 플레이트 Ø140 × 3 mm |
+| 아이솔레이터 링(세라믹) | Ø280/Ø344, 높이 23.2 mm (백킹 플레이트 윗면부터 리드 아랫면까지) |
+| 에지 인슐레이터(세라믹) | 샤워헤드 둘레, 두께 12 mm |
+| RF 스템 | Ø56/Ø40. 리드의 Ø80 구멍을 지나고 그 틈은 세라믹 부싱이 채움 |
+| 챔버 몸체 | 내경 Ø520, 벽 두께 35 mm, 내부 높이 240 mm, 바닥 두께 40 mm, 상부 플랜지 Ø660 × 40 mm |
+| 리드 | Ø670 × 50 mm, Ø630 원주에 볼트 24개, O링 홈 Ø600 |
+| 라이너 | 아노다이징 알루미늄 4 mm, 벽과 간격 6 mm, y 82–232 mm |
+| 페데스탈 | Ø340 × 45 mm, 공정 위치 윗면 y = 150 mm, 반송 위치 윗면 y = 100 mm, 샤프트 Ø70, 히터 공간 Ø70–300 × 16 mm(링형 발열체 7개), 리프트 핀 3개(Ø210 원주, 행정 12 mm) |
+| 에지 링(세라믹) | Ø302/Ø340 × 3 mm |
+| 펌핑 배플 | Ø350/Ø498, 두께 4 mm, y = 75 mm, 슬롯 36개(개구율 42%) |
+| 슬릿 | 360 × 50 mm, 중심 y = 112 mm, 방위각 180° (반송 중인 웨이퍼 높이 y = 112.8 mm가 슬릿 안을 지남) |
+| 뷰포트 | 구멍 Ø60, 석영 창 Ø80 × 8 mm, 방위각 45°, 중심 y = 161 mm |
+| 압력 탭 | 구멍 Ø16, 방위각 120°, y = 125 mm |
+| 배기 포트 | 구멍 Ø64, 방위각 320°, y = 40 mm (배플 아래) |
+| 가스 패널 MFC 블록 | 45 × 90 × 20 mm, 3개, 간격 55 mm (패널 앞면). 첫 번째 블록이 MFC-01(`mfc_01`, 유량 센서 장착), 나머지는 아직 정의하지 않은 슬롯 |
 
-## Validation rules (enforced)
+## 검증 규칙
 
-`validateGeometryConfig` fails on: wafer not supported by the pedestal, non-positive gap, showerhead touching the liner,
-hole pattern outside the faceplate, isolator height < 8 mm, stem not fitting the bushing, gas tube not fitting the stem,
-pedestal not passing through the baffle, baffle intersecting the liner, slit outside the liner span or below the baffle,
-transfer plane outside the slit opening, exhaust above the baffle, bolt circle off the flange, o-ring groove off the lid face.
-Warnings cover unusual gaps and overlapping port keep-outs. Results surface in the dev overlay, `npm test`, `npm run validate:config`.
+`validateGeometryConfig`는 다음 경우를 오류로 처리한다.
 
-## Cutaway sector
+- 웨이퍼가 페데스탈 위에 제대로 놓이지 않음
+- 전극 간격이 0 이하
+- 샤워헤드가 라이너에 닿음
+- 구멍 영역이 페이스플레이트를 벗어남
+- 아이솔레이터 높이가 8 mm 미만
+- 스템이 부싱에 들어가지 않거나, 가스관이 스템에 들어가지 않음
+- 페데스탈이 배플 안쪽을 통과하지 못하거나, 배플이 라이너와 겹침
+- 슬릿이 라이너 범위를 벗어나거나 배플보다 낮음
+- 반송 높이가 슬릿 개구부를 벗어남
+- 배기 포트가 배플보다 높음
+- 볼트 원주가 플랜지를 벗어나거나, O링 홈이 리드 면을 벗어남
 
-The cutaway is real geometry, not a clip plane: revolved parts are regenerated over the kept angular range with planar
-section caps (dark matte "section" material) so wall thickness reads correctly; azimuth-attached parts are hidden when
-their azimuth is inside the removed sector. Sector boundaries are snapped out of port keep-out intervals
-(`src/presentation/cutaway.ts`) so a port is either fully removed or fully kept; the UI shows the effective angles.
-The plasma shader receives the same resolved sector and clips analytically.
+전극 간격이 흔치 않은 값이거나 포트 주변 금지 구간끼리 겹치면 경고를 낸다. 결과는 개발 모드 경고 화면, `npm test`, `npm run validate:config`에서 볼 수 있다.
 
-## Reproducibility
+## 단면 구간
 
-`node --import tsx scripts/export-geometry-obj.ts` writes every part (assembled state) as OBJ with a manifest, for
-inspection or Blender refinement. Blender is not installed in the verification environment, so no Blender-authored asset
-is claimed; the procedural path is the shipped asset.
+단면 보기는 클리핑 평면이 아니라 형상을 실제로 잘라서 만든다. 회전체 부품은 남길 각도 구간만 다시 생성하고, 잘린 면에 평면 캡(어두운 무광 단면 재질)을 붙여서 벽 두께가 제대로 보이게 했다. 특정 방위각에 붙어 있는 부품은 그 방위각이 제거 구간 안에 들어가면 숨긴다.
+
+구간 경계가 포트 주변 금지 구간에 걸리면 경계를 밖으로 옮긴다(`src/presentation/cutaway.ts`). 그래서 포트가 반쯤 잘리는 일 없이 통째로 빠지거나 통째로 남는다. 실제로 적용된 각도는 화면에 따로 표시한다. 플라즈마 셰이더도 같은 구간 값을 받아 계산으로 잘라낸다.
+
+## 재현성
+
+`node --import tsx scripts/export-geometry-obj.ts`를 실행하면 조립 상태의 모든 부품을 OBJ 파일과 매니페스트로 내보낸다. 형상을 확인하거나 Blender에서 다듬을 때 쓸 수 있다. 검증 환경에 Blender가 없어서 Blender로 만든 에셋은 없고, 앱에서 쓰는 형상은 모두 코드로 생성한 것이다.
+
+## 2026-11-12 추가: station 블록 (geometry revision v1.2.0)
+
+Chamber 자체 치수는 바꾸지 않았다. `station` 블록이 slit valve 바깥의 tool shell을 정의한다: slit valve와의 간격 20 mm, load lock 길이 200 mm, EFEM 길이 460 mm, enclosure 폭 900 mm와 높이(y 0.40 m), load port deck 깊이 440 mm, 폭 520 mm, 높이 900 mm(바닥 기준), FOUP seat는 EFEM 전면에서 220 mm. `deriveStationLayout`이 slit 방위를 따라 radial 거리로 배치하고 validation이 slit valve와의 간섭, deck 위 seat 위치를 검사한다. 내부 로봇과 load lock 내부는 모델링하지 않았다(simplified internal transfer).

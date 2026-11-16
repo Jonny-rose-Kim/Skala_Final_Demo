@@ -1,20 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
 
-declare global {
-  interface Window {
-    __pecvdTwin?: {
-      isReady(): boolean;
-      backend(): "webgpu" | "webgl2" | null;
-      setCamera(a: number, b: number, r: number, t: [number, number, number]): void;
-      freezeTime(t: number | null): void;
-      stats(): Record<string, unknown> | null;
-      logs(): string[];
-      store: { getState(): Record<string, any> };
-      host: any;
-    };
-  }
-}
-
 const isWebGPUProject = (name: string) => name.includes("webgpu");
 
 async function openApp(page: Page, projectName: string, suffix = "") {
@@ -158,6 +143,46 @@ test.describe("Visual Inspection V1", () => {
     expect(await page.evaluate(() => window.__pecvdTwin!.host.clock.playheadSec as number)).toBeLessThan(0.8);
   });
 
+  test("timeline: plasma holds in the stable phase until Extinguish is pressed, then plays out and stops", async ({ page }, info) => {
+    const errors = await openApp(page, info.project.name);
+    const clockState = () =>
+      page.evaluate(() => {
+        const c = window.__pecvdTwin!.host.clock;
+        return { holding: c.holding as boolean, playing: c.playing as boolean, playhead: c.playheadSec as number, effect: c.effectTimeSec as number };
+      });
+    await expect(page.getByTestId("timeline-loop")).toHaveCount(0);
+    await page.evaluate(() => {
+      const tw = window.__pecvdTwin!;
+      tw.freezeTime(null);
+      tw.host.clock.setSpeed(4);
+      tw.host.clock.scrub(13.0);
+      tw.host.clock.play();
+    });
+    await page.waitForTimeout(1200);
+    const held = await clockState();
+    expect(held.holding).toBe(true);
+    expect(held.playing).toBe(true);
+    expect(held.playhead).toBeCloseTo(13.999, 6);
+    await expect(page.getByTestId("timeline-phase")).toHaveText("안정 상태 유지 중");
+    await expect(page.getByTestId("timeline-extinguish")).toBeEnabled();
+    await page.waitForTimeout(600);
+    const stillHeld = await clockState();
+    expect(stillHeld.playhead).toBeCloseTo(13.999, 6);
+    expect(stillHeld.effect).toBeGreaterThan(held.effect + 1); // plasma animation keeps running during the hold
+    await page.getByTestId("timeline-extinguish").click();
+    const released = await clockState();
+    expect(released.holding).toBe(false);
+    expect(released.playhead).toBeGreaterThanOrEqual(14);
+    expect(released.effect).toBeGreaterThanOrEqual(stillHeld.effect); // no jump back in effect time
+    await expect.poll(async () => (await clockState()).playing, { timeout: 5000 }).toBe(false);
+    const ended = await clockState();
+    expect(ended.playhead).toBe(18);
+    await expect(page.getByTestId("timeline-extinguish")).toBeDisabled();
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().timeline.intensity as number)).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
   test("visual settings never create sensor data or backend calls", async ({ page }, info) => {
     const requests: string[] = [];
     page.on("request", (r) => {
@@ -173,7 +198,7 @@ test.describe("Visual Inspection V1", () => {
     });
     await page.waitForTimeout(600);
     await page.getByTestId("tree-item-pressure_sensor").locator("button").first().click();
-    await expect(page.getByTestId("inspector")).toContainText("Unbound / 연결된 데이터 없음");
+    await expect(page.getByTestId("inspector")).toContainText("Data unbound");
     expect(requests).toEqual([]);
     const state = await page.evaluate(() => window.__pecvdTwin!.store.getState());
     expect(state.appMode).toBe("visual-inspection");

@@ -15,8 +15,8 @@ import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
 import { Constants } from "@babylonjs/core/Engines/constants";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
-import type { ChamberLayout } from "../config/geometry";
-import { plasmaProxyMesh } from "../geometry/chamberParts";
+import type { Vec3Tuple } from "../config/geometry";
+import { rectProfile, revolveProfile } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
 import type { ResolvedCutaway } from "../presentation/cutaway";
 import { PLASMA_FRAGMENT_GLSL, PLASMA_VERTEX_GLSL } from "./shaders/plasma.glsl";
@@ -42,6 +42,27 @@ export interface PlasmaFrameParams {
 }
 
 export const PLASMA_RENDER_SOURCE = "illustrative" as const;
+
+/** Bounded glow cylinder (instance frame, +Y axis). Any template can describe its own discharge region. */
+export interface PlasmaBounds {
+  center: Vec3Tuple;
+  radius: number;
+  bottomY: number;
+  topY: number;
+}
+
+/** Plasma proxy cylinder (slightly larger than the volume for the soft halo). */
+export function plasmaProxyMeshFor(b: PlasmaBounds, haloMargin: number) {
+  const r = b.radius + haloMargin + 0.002;
+  const md = revolveProfile(rectProfile(0, r, b.bottomY, b.topY), { segments: 96 });
+  if (b.center[0] !== 0 || b.center[2] !== 0) {
+    for (let i = 0; i < md.positions.length; i += 3) {
+      md.positions[i] += b.center[0];
+      md.positions[i + 2] += b.center[2];
+    }
+  }
+  return md;
+}
 
 let shadersRegistered = false;
 function registerShaders(): void {
@@ -96,20 +117,21 @@ export class PlasmaVolume {
 
   constructor(
     private readonly scene: Scene,
-    private readonly layout: ChamberLayout,
+    private readonly bounds: PlasmaBounds,
     root: TransformNode,
     instanceId: string,
     isWebGPU: boolean,
     haloMargin: number,
+    meshKey = "plasma_volume",
   ) {
     registerShaders();
     this.haloMargin = haloMargin;
-    const c = layout.plasma.center;
+    const c = bounds.center;
     this.localCenter = new Vector3(c[0], c[1], c[2]);
-    this.radius = layout.plasma.radius;
-    this.halfHeight = (layout.plasma.topY - layout.plasma.bottomY) / 2;
+    this.radius = bounds.radius;
+    this.halfHeight = (bounds.topY - bounds.bottomY) / 2;
 
-    const md = plasmaProxyMesh(layout, haloMargin);
+    const md = plasmaProxyMeshFor(bounds, haloMargin);
     // Flip winding so the inside faces are the front faces: with back-face culling on, only the far
     // side of the proxy rasterizes, which keeps the shader running when the camera is inside the volume.
     for (let i = 0; i < md.indices.length; i += 3) {
@@ -117,17 +139,17 @@ export class PlasmaVolume {
       md.indices[i + 1] = md.indices[i + 2];
       md.indices[i + 2] = t;
     }
-    this.mesh = new Mesh(`${instanceId}::plasma_volume`, scene);
+    this.mesh = new Mesh(`${instanceId}::${meshKey}`, scene);
     applyMeshData(this.mesh, md);
     this.mesh.parent = root;
     this.mesh.isPickable = false;
     this.mesh.receiveShadows = false;
     this.mesh.alphaIndex = -10; // render before other transparent meshes (glass, x-ray shell)
-    this.mesh.metadata = { instanceId, assetId: "plasma_volume", decorative: true, isPlasma: true };
+    this.mesh.metadata = { instanceId, assetId: meshKey, decorative: true, isPlasma: true };
     this.mesh.alwaysSelectAsActiveMesh = true;
 
     this.material = new ShaderMaterial(
-      `${instanceId}::plasma_mat`,
+      `${instanceId}::${meshKey}_mat`,
       scene,
       { vertex: "pecvdPlasma", fragment: "pecvdPlasma" },
       {
@@ -198,7 +220,7 @@ export class PlasmaVolume {
   setHaloMargin(margin: number): void {
     if (Math.abs(margin - this.haloMargin) < 1e-6) return;
     this.haloMargin = margin;
-    const md = plasmaProxyMesh(this.layout, margin);
+    const md = plasmaProxyMeshFor(this.bounds, margin);
     for (let i = 0; i < md.indices.length; i += 3) {
       const t = md.indices[i + 1];
       md.indices[i + 1] = md.indices[i + 2];

@@ -1,9 +1,10 @@
 /**
  * PresentationState (Zustand): selection, observation settings and display state.
  * Nothing in here is a simulation state, a sensor value or a backend command. Per-frame values
- * (playhead, fps) are published at low frequency from the renderer.
+ * (playhead, fps, preview snapshot) are published at low frequency from the renderer.
  */
 import { create } from "zustand";
+import type { PreviewState } from "./preview";
 
 export type ViewMode = "assembled" | "cutaway" | "xray" | "exploded";
 export type QualityPreset = "auto" | "high" | "balanced";
@@ -40,6 +41,8 @@ export interface VisualSettings {
   sheathFraction: number; // 0.05..0.4
   haloMargin: number; // meters beyond electrode radius
   plasmaLightEnabled: boolean;
+  /** Remote source: weak afterglow in the transport section (illustrative, separate from the main glow). */
+  afterglowIntensity: number; // 0..1
 }
 
 export const DEFAULT_VISUAL: VisualSettings = {
@@ -54,6 +57,7 @@ export const DEFAULT_VISUAL: VisualSettings = {
   sheathFraction: 0.2,
   haloMargin: 0.012,
   plasmaLightEnabled: true,
+  afterglowIntensity: 0.25,
 };
 
 export interface CutawaySettings {
@@ -86,19 +90,69 @@ export interface PerfSample {
 export interface TimelineSnapshot {
   playheadSec: number;
   playing: boolean;
-  loop: boolean;
+  /** Parked at the end of the held phase, waiting for the viewer to release (e.g. Extinguish). */
+  holding: boolean;
   speed: number;
   durationSec: number;
   phase: string;
   phaseLabelKo: string;
   intensity: number;
+  scenarioId: string;
+  /** Equipment the current phase is about (linked demonstrations). */
+  phaseEquipment: string | null;
+  phaseFocusInstanceId: string | null;
+}
+
+export interface OverlaySettings {
+  gasPath: boolean;
+  labels: boolean;
+  sheath: boolean;
+  /** Remote: downstream transport trace (schematic). */
+  transport: boolean;
+  /** Remote: precursor injection trace (schematic). */
+  precursor: boolean;
+  /** Remote: weak afterglow in the transport section. */
+  afterglow: boolean;
+  /** CMP: slurry supply / film overlay. */
+  slurry: boolean;
+  /** CMP: optical endpoint path and footprint. */
+  opticalPath: boolean;
+  /** Process inset panel (STI cross-section / deposition before-after). */
+  filmInset: boolean;
+  /** Measurement markers (instrument body / mount / point / path). */
+  markers: boolean;
+  /** OHT: rail / hoist reference frames and station regions. */
+  railFrames: boolean;
+}
+
+export type OverlayKey = keyof OverlaySettings;
+
+export interface SelectedMeasurement {
+  kind: "instrument" | "point" | "channel";
+  id: string;
+}
+
+export interface LoadedInstanceInfo {
+  instanceId: string;
+  templateId: string;
+  displayName: string;
+  familyLabel: string;
+  mobile: boolean;
 }
 
 export interface PresentationState {
   appMode: AppMode;
   activeInstanceId: string;
+  /** Instances loaded by the scene host (reported once the world is built). */
+  instances: LoadedInstanceInfo[];
+  /** FAB overview: whole bay framed, no cutaway / x-ray / explode applied. */
+  overview: boolean;
+  scenarioId: string;
+  /** Linked demonstrations: active instance and camera follow the phase focus. */
+  followPhase: boolean;
   selectedAssetId: string | null;
   hoveredAssetId: string | null;
+  selectedMeasurement: SelectedMeasurement | null;
   viewMode: ViewMode;
   cutaway: CutawaySettings;
   xrayOpacity: number;
@@ -106,7 +160,7 @@ export interface PresentationState {
   hiddenAssets: string[];
   isolatedAssetId: string | null;
   visual: VisualSettings;
-  overlays: { gasPath: boolean; labels: boolean; sheath: boolean };
+  overlays: OverlaySettings;
   qualityPreset: QualityPreset;
   effectiveQuality: EffectiveQuality;
   lightingPreset: LightingPreset;
@@ -114,13 +168,16 @@ export interface PresentationState {
   renderer: RendererInfo;
   perf: PerfSample | null;
   timeline: TimelineSnapshot;
+  /** Low-rate snapshot of the scripted preview (poses, holders, film state) for the inspector. */
+  preview: PreviewState | null;
   devWarnings: string[];
   panels: { tree: boolean; inspector: boolean; timeline: boolean };
   /** Monotonic counters consumed by the scene host (one-shot requests). */
-  requests: { resetCamera: number; focusSelected: number; cameraPreset: number };
+  requests: { resetCamera: number; focusSelected: number; cameraPreset: number; focusInstance: number };
 
   select(assetId: string | null): void;
   hover(assetId: string | null): void;
+  selectMeasurement(sel: SelectedMeasurement | null): void;
   setViewMode(mode: ViewMode): void;
   setCutaway(partial: Partial<Pick<CutawaySettings, "azimuthDeg" | "sweepDeg">>): void;
   reportCutaway(effectiveAzimuthDeg: number, effectiveSweepDeg: number, snapped: boolean): void;
@@ -132,7 +189,7 @@ export interface PresentationState {
   isolate(assetId: string | null): void;
   setVisual(partial: Partial<VisualSettings>): void;
   resetVisual(): void;
-  setOverlay(key: "gasPath" | "labels" | "sheath", v: boolean): void;
+  setOverlay(key: OverlayKey, v: boolean): void;
   setQualityPreset(p: QualityPreset): void;
   reportEffectiveQuality(q: EffectiveQuality): void;
   setLightingPreset(p: LightingPreset): void;
@@ -140,20 +197,47 @@ export interface PresentationState {
   setRenderer(partial: Partial<RendererInfo>): void;
   reportPerf(p: PerfSample): void;
   reportTimeline(t: TimelineSnapshot): void;
+  reportPreview(p: PreviewState): void;
+  reportInstances(list: LoadedInstanceInfo[]): void;
   setDevWarnings(w: string[]): void;
   togglePanel(p: "tree" | "inspector" | "timeline"): void;
   requestResetCamera(): void;
   requestFocusSelected(): void;
+  requestFocusInstance(): void;
   setActiveInstance(id: string): void;
+  setOverview(v: boolean): void;
+  setScenario(id: string): void;
+  setFollowPhase(v: boolean): void;
 }
 
 const DEFAULT_CUTAWAY: CutawaySettings = { azimuthDeg: 265, sweepDeg: 95, effectiveAzimuthDeg: 265, effectiveSweepDeg: 95, snapped: false };
 
+export const DEFAULT_OVERLAYS: OverlaySettings = {
+  gasPath: false,
+  labels: false,
+  sheath: false,
+  transport: true,
+  precursor: true,
+  afterglow: true,
+  slurry: true,
+  opticalPath: true,
+  filmInset: true,
+  markers: false,
+  railFrames: false,
+};
+
+export const DEFAULT_SCENARIO_ID = "ccp-illustrative-cycle-v1";
+
 export const usePresentationStore = create<PresentationState>((set) => ({
   appMode: "visual-inspection",
   activeInstanceId: "PECVD-01.CH-A",
+  instances: [],
+  overview: false,
+  scenarioId: DEFAULT_SCENARIO_ID,
+  followPhase: true,
   selectedAssetId: null,
   hoveredAssetId: null,
+  selectedMeasurement: null,
   viewMode: "assembled",
   cutaway: DEFAULT_CUTAWAY,
   xrayOpacity: 0.18,
@@ -161,21 +245,23 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   hiddenAssets: [],
   isolatedAssetId: null,
   visual: DEFAULT_VISUAL,
-  overlays: { gasPath: false, labels: false, sheath: false },
+  overlays: DEFAULT_OVERLAYS,
   qualityPreset: "auto",
   effectiveQuality: "high",
   lightingPreset: "exterior",
   cameraPresetId: "overview",
   renderer: { backend: null, status: "idle", message: null, gpu: null, fallbackReason: null, forceWebGL2: false },
   perf: null,
-  timeline: { playheadSec: 0, playing: true, loop: true, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0 },
+  timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "ccp", phaseFocusInstanceId: null },
+  preview: null,
   devWarnings: [],
   panels: { tree: true, inspector: true, timeline: true },
-  requests: { resetCamera: 0, focusSelected: 0, cameraPreset: 0 },
+  requests: { resetCamera: 0, focusSelected: 0, cameraPreset: 0, focusInstance: 0 },
 
-  select: (assetId) => set({ selectedAssetId: assetId }),
+  select: (assetId) => set({ selectedAssetId: assetId, selectedMeasurement: null }),
   hover: (assetId) => set((s) => (s.hoveredAssetId === assetId ? s : { hoveredAssetId: assetId })),
-  setViewMode: (mode) => set({ viewMode: mode }),
+  selectMeasurement: (sel) => set({ selectedMeasurement: sel }),
+  setViewMode: (mode) => set({ viewMode: mode, overview: false }),
   setCutaway: (partial) => set((s) => ({ cutaway: { ...s.cutaway, ...partial } })),
   reportCutaway: (effectiveAzimuthDeg, effectiveSweepDeg, snapped) =>
     set((s) =>
@@ -195,15 +281,21 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   setQualityPreset: (p) => set({ qualityPreset: p }),
   reportEffectiveQuality: (q) => set((s) => (s.effectiveQuality === q ? s : { effectiveQuality: q })),
   setLightingPreset: (p) => set({ lightingPreset: p }),
-  setCameraPreset: (id) => set((s) => ({ cameraPresetId: id, requests: { ...s.requests, cameraPreset: s.requests.cameraPreset + 1 } })),
+  setCameraPreset: (id) => set((s) => ({ cameraPresetId: id, overview: id === "bay-overview" ? true : s.overview && id === null, requests: { ...s.requests, cameraPreset: s.requests.cameraPreset + 1 } })),
   setRenderer: (partial) => set((s) => ({ renderer: { ...s.renderer, ...partial } })),
   reportPerf: (p) => set({ perf: p }),
   reportTimeline: (t) => set({ timeline: t }),
+  reportPreview: (p) => set({ preview: p }),
+  reportInstances: (list) => set({ instances: list }),
   setDevWarnings: (w) => set({ devWarnings: w }),
   togglePanel: (p) => set((s) => ({ panels: { ...s.panels, [p]: !s.panels[p] } })),
   requestResetCamera: () => set((s) => ({ requests: { ...s.requests, resetCamera: s.requests.resetCamera + 1 } })),
   requestFocusSelected: () => set((s) => ({ requests: { ...s.requests, focusSelected: s.requests.focusSelected + 1 } })),
-  setActiveInstance: (id) => set({ activeInstanceId: id, selectedAssetId: null }),
+  requestFocusInstance: () => set((s) => ({ requests: { ...s.requests, focusInstance: s.requests.focusInstance + 1 } })),
+  setActiveInstance: (id) => set((s) => (s.activeInstanceId === id ? s : { activeInstanceId: id, selectedAssetId: null, selectedMeasurement: null, hiddenAssets: [], isolatedAssetId: null })),
+  setOverview: (v) => set((s) => ({ overview: v, cameraPresetId: v ? "bay-overview" : s.cameraPresetId, requests: v ? { ...s.requests, cameraPreset: s.requests.cameraPreset + 1 } : s.requests })),
+  setScenario: (id) => set({ scenarioId: id }),
+  setFollowPhase: (v) => set({ followPhase: v }),
 }));
 
 export function colorPresetById(id: string): PlasmaColorPreset {

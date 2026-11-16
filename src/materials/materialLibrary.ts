@@ -34,6 +34,13 @@ export const MATERIAL_PRESETS: Record<Exclude<MaterialRef, "none" | "quartz">, M
   copper: { albedo: [0.93, 0.62, 0.45], metallic: 1, roughness: 0.34, normal: "brushedNormal", normalStrength: 0.3, uvScale: 12 },
   nichrome: { albedo: [0.55, 0.52, 0.48], metallic: 1, roughness: 0.55, normal: "machinedNormal", normalStrength: 0.3, uvScale: 20 },
   dark_steel: { albedo: [0.32, 0.33, 0.35], metallic: 1, roughness: 0.5, normal: "machinedNormal", normalStrength: 0.4, uvScale: 6 },
+  painted_dark: { albedo: [0.2, 0.21, 0.23], metallic: 0, roughness: 0.55, normal: "machinedNormal", normalStrength: 0.1, uvScale: 3 },
+  polymer_pad: { albedo: [0.74, 0.7, 0.6], metallic: 0, roughness: 0.88, normal: "ceramicNormal", normalStrength: 0.55, roughnessNoise: true, uvScale: 12 },
+  polymer_white: { albedo: [0.9, 0.9, 0.87], metallic: 0, roughness: 0.6, normal: "ceramicNormal", normalStrength: 0.15, uvScale: 8 },
+  rubber_membrane: { albedo: [0.3, 0.29, 0.27], metallic: 0, roughness: 0.92, normal: "ceramicNormal", normalStrength: 0.25, uvScale: 10 },
+  foup_polymer: { albedo: [0.42, 0.47, 0.53], metallic: 0, roughness: 0.42, normal: "machinedNormal", normalStrength: 0.08, uvScale: 4, environmentIntensity: 0.9 },
+  safety_marking: { albedo: [0.95, 0.74, 0.12], metallic: 0, roughness: 0.6, uvScale: 4 },
+  belt_fabric: { albedo: [0.18, 0.18, 0.2], metallic: 0, roughness: 0.95, normal: "ceramicNormal", normalStrength: 0.3, uvScale: 30 },
 };
 
 export type SharedMaterialKey = Exclude<MaterialRef, "none"> | `${Exclude<MaterialRef, "none" | "quartz">}_cap`;

@@ -2,6 +2,10 @@
  * SceneHost: owns the Babylon engine/scene lifecycle for the Visual Inspection mode and applies the
  * PresentationState to the scene imperatively. React never recreates the scene; per-frame values stay
  * in the renderer and are published to the store at a low rate.
+ *
+ * One scene holds every equipment instance of the bay (CCP, Remote ICP PECVD, STI CMP, OHT, FOUP). One
+ * presentation clock drives one selected scenario whose PreviewState (joint poses, holders, film state,
+ * effects) is applied to all instances each frame. Heavy effects stay on the active instance.
  */
 import "@babylonjs/core/Rendering/depthRendererSceneComponent";
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
@@ -21,9 +25,10 @@ import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
 import type { DepthRenderer } from "@babylonjs/core/Rendering/depthRenderer";
 import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
-import { CHAMBER_LAYOUT, validateGeometryConfig, GEOMETRY_CONFIG, type ChamberLayout } from "../config/geometry";
-import { CCP_CHAMBER_TEMPLATE, getComponent, validateTemplate } from "../domain/ccpChamberTemplate";
-import { DEFAULT_INSTANCES, TWO_CHAMBER_FIXTURE } from "../domain/instances";
+import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
+import "../equipment/index";
+import { getBundle, listBundles, measurementIndex, validateAllBundles, type EquipmentBundle } from "../domain/registry";
+import { DEFAULT_INSTANCES, instanceFixture } from "../domain/instances";
 import type { EquipmentInstanceDef } from "../domain/types";
 import { revolveProfile, rectProfile, type Vec2 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
@@ -31,20 +36,23 @@ import { createCleanroomEnvironment } from "../materials/environment";
 import { MaterialLibrary } from "../materials/materialLibrary";
 import { createProceduralTextures, type ProceduralTextureSet } from "../materials/proceduralTextures";
 import { resolveCutaway, type ResolvedCutaway, FULL } from "../presentation/cutaway";
-import { DEFAULT_SCENARIO, evaluateScenario, phaseAt } from "../presentation/scenario";
-import { colorPresetById, usePresentationStore, type PresentationState } from "../presentation/store";
+import { holdPointSec, phaseAt, type ScenarioContext, type ScenarioDefinition, type StationWorldFrame } from "../presentation/scenario";
+import { getScenario, standaloneScenarioFor } from "../presentation/scenarioRegistry";
+import { colorPresetById, usePresentationStore, type PresentationState, type LoadedInstanceInfo } from "../presentation/store";
+import type { PreviewState } from "../presentation/preview";
 import { VisualClock } from "../presentation/visualClock";
-import { GasPathOverlay, SheathOverlay } from "../interaction/gasPathOverlay";
 import { LabelsOverlay } from "../interaction/labels";
 import { PickingController } from "../interaction/picking";
-import { cameraPresets } from "./cameraPresets";
-import { ChamberInstance, type InstanceMeshMetadata } from "./chamberInstance";
+import { cameraPresets, type CameraPreset } from "./cameraPresets";
+import { EquipmentInstance, type InstanceMeshMetadata } from "./equipmentInstance";
+import { createEffects } from "./effectsRegistry";
 import { createCanvas, readForceWebGL2, tryCreateWebGL2, tryCreateWebGPU, type CreatedEngine } from "./engineFactory";
 import { LightingRig } from "./lighting";
+import { MeasurementOverlay } from "./measurementOverlay";
 import { QUALITY, QualityManager, RenderPipeline } from "./renderPipeline";
 
 export interface SceneHostOptions {
-  fixture?: "two-chambers" | null;
+  fixture?: string | null;
   forceWebGL2?: boolean;
   plasmaDebugDepth?: boolean;
   flipDepthY?: boolean;
@@ -58,17 +66,19 @@ interface World {
   textures: ProceduralTextureSet;
   materials: MaterialLibrary;
   lighting: LightingRig;
-  instances: Map<string, ChamberInstance>;
+  instances: Map<string, EquipmentInstance>;
+  stations: Record<string, StationWorldFrame>;
   depth: DepthRenderer;
   pipeline: RenderPipeline;
   highlight: HighlightLayer;
   picking: PickingController;
   labels: LabelsOverlay;
-  gasOverlays: Map<string, GasPathOverlay>;
-  sheathOverlays: Map<string, SheathOverlay>;
+  markers: MeasurementOverlay;
   ground: Mesh;
   backdrop: Mesh;
   resizeObserver: ResizeObserver;
+  bayCenter: Vector3;
+  bayRadius: number;
 }
 
 /** Half-circle profile for a backdrop sphere (revolved around +Y). */
@@ -83,39 +93,37 @@ function backdropProfile(radius: number): Vec2[] {
   return pts;
 }
 
-const LABEL_ASSETS: { assetId: string; text: string; priority: number }[] = [
-  { assetId: "showerhead_faceplate", text: "Showerhead faceplate (upper electrode)", priority: 10 },
-  { assetId: "wafer", text: "Wafer 300 mm", priority: 9 },
-  { assetId: "pedestal", text: "Heated pedestal", priority: 8 },
-  { assetId: "plasma_volume", text: "Plasma (illustrative)", priority: 7 },
-  { assetId: "lid", text: "Lid", priority: 6 },
-  { assetId: "slit_valve", text: "Slit valve", priority: 5 },
-  { assetId: "exhaust_port", text: "Exhaust port", priority: 4 },
-  { assetId: "gas_inlet", text: "Gas inlet", priority: 3 },
-  { assetId: "matching_network", text: "Matching network", priority: 2 },
-  { assetId: "chamber_body", text: "Chamber body", priority: 1 },
-];
+const NO_CUT = resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []);
+
+const FAMILY_LABEL: Record<string, string> = { CCP_PECVD: "CCP PECVD", REMOTE_PECVD: "Remote ICP PECVD", STI_CMP_ROTARY: "Rotary STI CMP", OHT: "OHT", CARRIER: "FOUP" };
 
 export class SceneHost {
   private world: World | null = null;
   private container: HTMLElement | null = null;
-  readonly clock = new VisualClock(DEFAULT_SCENARIO.durationSec);
+  readonly clock = new VisualClock(18, null);
   private unsubscribe: (() => void) | null = null;
   private lastState: PresentationState | null = null;
   private cutawayTimer: number | null = null;
   private pendingCut: ResolvedCutaway | null = null;
-  private appliedCut: ResolvedCutaway = resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []);
+  private appliedCut: ResolvedCutaway = NO_CUT;
   private readonly quality = new QualityManager();
   private lastPerfPublish = 0;
   private lastTimelinePublish = 0;
+  private lastPreviewPublish = 0;
   private frozenTime: number | null = null;
   private logs: string[] = [];
   private disposed = false;
+  /** CCP layout kept for the original debug/QA API. */
   readonly layout: ChamberLayout = CHAMBER_LAYOUT;
   private options: SceneHostOptions = {};
   private fallbackUsed = false;
   private pendingCanvas: HTMLCanvasElement | null = null;
   private pendingEngine: CreatedEngine | null = null;
+  private scenarioDef: ScenarioDefinition | null = null;
+  private ctx: ScenarioContext = { instances: [], stations: {} };
+  private lastPreview: PreviewState | null = null;
+  private lastFocusInstance: string | null = null;
+  private activeTemplateId: string | null = null;
 
   log(msg: string): void {
     this.logs.push(`${new Date().toISOString()} ${msg}`);
@@ -135,9 +143,9 @@ export class SceneHost {
     store.setRenderer({ status: "initializing", message: "렌더러 초기화 중…", forceWebGL2 });
 
     const warnings: string[] = [];
-    const geo = validateGeometryConfig(GEOMETRY_CONFIG);
-    warnings.push(...geo.errors.map((e) => `geometry: ${e}`), ...geo.warnings.map((w) => `geometry (warning): ${w}`));
-    warnings.push(...validateTemplate(CCP_CHAMBER_TEMPLATE).map((e) => `template: ${e}`));
+    for (const r of validateAllBundles()) {
+      warnings.push(...r.errors.map((e) => `${r.templateId}: ${e}`), ...r.warnings.map((w) => `${r.templateId}: ${w}`));
+    }
     store.setDevWarnings(warnings);
 
     let created: CreatedEngine | null = null;
@@ -224,7 +232,7 @@ export class SceneHost {
   }
 
   private instanceDefs(): EquipmentInstanceDef[] {
-    return this.options.fixture === "two-chambers" ? TWO_CHAMBER_FIXTURE : DEFAULT_INSTANCES;
+    return this.options.fixture ? (instanceFixture(this.options.fixture) ?? DEFAULT_INSTANCES) : DEFAULT_INSTANCES;
   }
 
   private async buildWorld(created: CreatedEngine): Promise<void> {
@@ -240,9 +248,9 @@ export class SceneHost {
 
     const camera = new ArcRotateCamera("camera", 240 * (Math.PI / 180), 66 * (Math.PI / 180), 1.75, new Vector3(0, 0.12, 0), scene);
     camera.minZ = 0.02;
-    camera.maxZ = 40;
+    camera.maxZ = 80;
     camera.lowerRadiusLimit = 0.06;
-    camera.upperRadiusLimit = 7;
+    camera.upperRadiusLimit = 18;
     camera.wheelDeltaPercentage = 0.02;
     camera.pinchDeltaPercentage = 0.02;
     camera.panningSensibility = 2500;
@@ -261,21 +269,74 @@ export class SceneHost {
     const materials = new MaterialLibrary(scene, textures);
     const lighting = new LightingRig(scene, env);
 
-    const instances = new Map<string, ChamberInstance>();
-    const gasOverlays = new Map<string, GasPathOverlay>();
-    const sheathOverlays = new Map<string, SheathOverlay>();
+    const instances = new Map<string, EquipmentInstance>();
+    const defs = this.instanceDefs();
     const t0 = performance.now();
-    for (const def of this.instanceDefs()) {
-      const inst = new ChamberInstance(scene, def, this.layout, materials, isWebGPU, store.visual.haloMargin, lighting.shadow);
+    for (const def of defs) {
+      const bundle = getBundle(def.templateId);
+      if (!bundle) {
+        this.log(`알 수 없는 template ${def.templateId} (instance ${def.instanceId}) - 건너뜀`);
+        continue;
+      }
+      const inst = new EquipmentInstance(scene, def, bundle, materials, lighting.shadow);
       instances.set(def.instanceId, inst);
-      gasOverlays.set(def.instanceId, new GasPathOverlay(scene, inst.root, this.layout, def.instanceId));
-      sheathOverlays.set(def.instanceId, new SheathOverlay(scene, inst.root, this.layout, def.instanceId, store.visual.sheathFraction));
     }
-    this.log(`Chamber 생성 ${instances.size}개, ${(performance.now() - t0).toFixed(0)} ms, meshes=${scene.meshes.length}`);
+    this.log(`Equipment 생성 ${instances.size}개 (${defs.map((d) => d.templateId).join(", ")}), ${(performance.now() - t0).toFixed(0)} ms, meshes=${scene.meshes.length}`);
 
-    // Ground plane for grounding shadows
+    // Station world frames (load ports) for carrier placement and the OHT evaluator
+    const stations: Record<string, StationWorldFrame> = {};
+    for (const inst of instances.values()) {
+      const st = inst.bundle.template.station;
+      if (!st) continue;
+      inst.root.computeWorldMatrix(true);
+      const seat = Vector3.TransformCoordinates(new Vector3(st.seatLocal[0], st.seatLocal[1], st.seatLocal[2]), inst.root.getWorldMatrix());
+      const yaw = inst.root.rotation.y;
+      const dfx = st.doorFacingLocal[0] * Math.cos(yaw) + st.doorFacingLocal[2] * Math.sin(yaw);
+      const dfz = -st.doorFacingLocal[0] * Math.sin(yaw) + st.doorFacingLocal[2] * Math.cos(yaw);
+      const stationId = `LP.${inst.def.instanceId}`;
+      stations[stationId] = { stationId, instanceId: inst.def.instanceId, seatWorld: [seat.x, seat.y, seat.z], yawRad: Math.atan2(dfx, dfz), doorFacing: [dfx, 0, dfz] };
+    }
+    this.ctx = { instances: defs.filter((d) => instances.has(d.instanceId)), stations };
+
+    // Effects (after the station frames exist: the OHT overlay draws the station regions on its rail)
+    for (const inst of instances.values()) {
+      let stationMarkers: { s: number; seatY: number; label: string }[] | undefined;
+      if (inst.bundle.pathPose) {
+        inst.root.computeWorldMatrix(true);
+        const inv = inst.root.getWorldMatrix().clone().invert();
+        stationMarkers = Object.values(stations).map((st) => {
+          const local = Vector3.TransformCoordinates(new Vector3(st.seatWorld[0], st.seatWorld[1], st.seatWorld[2]), inv);
+          const L = inst.bundle.layout as { rail?: { z0: number } };
+          return { s: local.z - (L.rail?.z0 ?? 0), seatY: local.y, label: st.instanceId };
+        });
+      }
+      inst.effects = createEffects(inst.templateId, { scene, instance: inst, materials, isWebGPU, visual: store.visual, stationMarkers });
+    }
+
+    // Bay extents (for the overview camera and the floor)
+    let bayCenter = new Vector3(0, 0, 0);
+    let bayRadius = 2.5;
+    {
+      const min = new Vector3(Infinity, Infinity, Infinity);
+      const max = new Vector3(-Infinity, -Infinity, -Infinity);
+      for (const inst of instances.values()) {
+        if (inst.def.mobile) continue;
+        const b = inst.worldBoundsAll();
+        if (!b) continue;
+        min.minimizeInPlace(b.min);
+        max.maximizeInPlace(b.max);
+      }
+      if (Number.isFinite(min.x)) {
+        bayCenter = min.add(max).scale(0.5);
+        bayRadius = Math.max(2.5, Vector3.Distance(min, max) * 0.5);
+      }
+    }
+
+    // Ground plane for grounding shadows (fab floor)
+    const floorY = floorTopY(this.layout.cfg);
     const ground = new Mesh("ground", scene);
-    applyMeshData(ground, revolveProfile(rectProfile(0, 4.5, this.layout.cfg.peripherals.frame_bottom_y - 0.012, this.layout.cfg.peripherals.frame_bottom_y - 0.002), { segments: 96 }));
+    applyMeshData(ground, revolveProfile(rectProfile(0, Math.max(4.5, bayRadius * 2.2), floorY - 0.01, floorY), { segments: 96 }));
+    ground.position.set(bayCenter.x, 0, bayCenter.z);
     const groundMat = new PBRMaterial("mat.ground", scene);
     groundMat.albedoColor = new Color3(0.12, 0.125, 0.14);
     groundMat.metallic = 0;
@@ -286,14 +347,13 @@ export class SceneHost {
     ground.isPickable = false;
     ground.metadata = { isGround: true };
 
-    // Plasma glow approximation targets: nearby interior surfaces of each instance
+    // Plasma glow approximation targets: nearby interior surfaces of each deposition instance
     const litMeshes: AbstractMesh[] = [];
     for (const inst of instances.values()) {
-      for (const id of ["showerhead_faceplate", "wafer", "edge_ring", "pedestal", "chamber_liner", "edge_insulator_ring", "pumping_baffle", "lift_pins"]) {
-        for (const m of inst.meshesByAsset.get(id) ?? []) litMeshes.push(m);
-      }
+      for (const id of inst.bundle.plasmaLitAssets ?? []) for (const m of inst.meshesByAsset.get(id) ?? []) litMeshes.push(m);
     }
     lighting.setPlasmaLitMeshes(litMeshes);
+    lighting.key.shadowMaxZ = Math.max(6, bayRadius * 4);
 
     // Opaque depth for the plasma ray march
     const depth = scene.enableDepthRenderer(camera, false, true, Constants.TEXTURE_NEAREST_SAMPLINGMODE, true);
@@ -307,11 +367,12 @@ export class SceneHost {
       if (mat && mat.needAlphaBlending()) return false;
       return true;
     };
-    for (const inst of instances.values()) inst.plasma.setDepthTexture(depthMap);
+    for (const inst of instances.values()) for (const p of inst.effects?.plasmas ?? []) p.setDepthTexture(depthMap);
 
     // Backdrop sphere: an explicit unlit background so both backends produce the same tone-mapped color.
     const backdrop = new Mesh("backdrop", scene);
-    applyMeshData(backdrop, revolveProfile(backdropProfile(18), { segments: 48, caps: false }));
+    applyMeshData(backdrop, revolveProfile(backdropProfile(Math.max(18, bayRadius * 6)), { segments: 48, caps: false }));
+    backdrop.position.set(bayCenter.x, 0, bayCenter.z);
     const backdropMat = new PBRMaterial("mat.backdrop", scene);
     backdropMat.unlit = true;
     backdropMat.albedoColor = new Color3(0.105, 0.115, 0.135);
@@ -327,9 +388,7 @@ export class SceneHost {
     highlight.innerGlow = false;
     highlight.outerGlow = true;
     // Transparent effect meshes must not touch the highlight stencil, otherwise the glow leaks into their footprint.
-    for (const inst of instances.values()) highlight.addExcludedMesh(inst.plasma.mesh);
-    for (const g of gasOverlays.values()) for (const m of g.root.getChildMeshes()) highlight.addExcludedMesh(m as Mesh);
-    for (const sh of sheathOverlays.values()) for (const m of sh.root.getChildMeshes()) highlight.addExcludedMesh(m as Mesh);
+    for (const inst of instances.values()) for (const m of inst.effects?.excludedMeshes() ?? []) highlight.addExcludedMesh(m);
     highlight.addExcludedMesh(backdrop);
 
     const picking = new PickingController(scene, {
@@ -344,13 +403,29 @@ export class SceneHost {
     });
 
     const labels = new LabelsOverlay(this.container!, scene);
+    const markers = new MeasurementOverlay(scene);
 
     const resizeObserver = new ResizeObserver(() => {
       engine.resize();
     });
     resizeObserver.observe(this.container!);
 
-    this.world = { created, scene, camera, env, textures, materials, lighting, instances, depth, pipeline, highlight, picking, labels, gasOverlays, sheathOverlays, ground, backdrop, resizeObserver };
+    this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius };
+
+    // Report loaded instances and pick a valid active instance / scenario
+    const info: LoadedInstanceInfo[] = Array.from(instances.values()).map((i) => ({
+      instanceId: i.def.instanceId,
+      templateId: i.templateId,
+      displayName: i.def.displayName,
+      familyLabel: FAMILY_LABEL[i.bundle.template.family] ?? i.bundle.template.family,
+      mobile: !!i.def.mobile,
+    }));
+    store.reportInstances(info);
+    if (!instances.has(store.activeInstanceId)) {
+      const first = info.find((i) => !i.mobile) ?? info[0];
+      if (first) store.setActiveInstance(first.instanceId);
+    }
+    this.ensureScenario(usePresentationStore.getState());
 
     // Initial state application
     this.lastState = null;
@@ -363,7 +438,7 @@ export class SceneHost {
       new Promise((_, rej) => setTimeout(() => rej(new Error("scene ready timeout (20 s)")), 20000)),
     ]);
     for (const inst of instances.values()) {
-      await inst.plasma.material.forceCompilationAsync(inst.plasma.mesh);
+      for (const p of inst.effects?.plasmas ?? []) await p.material.forceCompilationAsync(p.mesh);
     }
     this.log(`장면 준비 완료 (${created.backend}), meshes=${scene.meshes.length}, materials=${scene.materials.length}`);
 
@@ -396,8 +471,7 @@ export class SceneHost {
     w.resizeObserver.disconnect();
     w.picking.dispose();
     w.labels.dispose();
-    for (const g of w.gasOverlays.values()) g.dispose();
-    for (const s of w.sheathOverlays.values()) s.dispose();
+    w.markers.dispose();
     for (const i of w.instances.values()) i.dispose();
     w.highlight.dispose();
     w.pipeline.dispose();
@@ -430,10 +504,47 @@ export class SceneHost {
     if (g.__pecvdTwin?.host === this) delete g.__pecvdTwin;
   }
 
+  // ------------------------------------------------------------------ scenario
+
+  /** Make sure the store's scenario is runnable with the loaded instances; fall back to the active template's standalone. */
+  private ensureScenario(s: PresentationState): void {
+    const w = this.world;
+    if (!w) return;
+    let def = getScenario(s.scenarioId);
+    const loaded = this.ctx.instances;
+    const runnable = (d: ScenarioDefinition | undefined) => !!d && d.requiredInstanceIds.every((id) => w.instances.has(id)) && d.requiredTemplateIds.every((t) => loaded.some((i) => i.templateId === t));
+    if (!runnable(def)) {
+      const active = w.instances.get(s.activeInstanceId);
+      def = (active && standaloneScenarioFor(active.templateId)) || undefined;
+      if (!runnable(def)) def = undefined;
+      if (def && def.id !== s.scenarioId) {
+        const id = def.id;
+        queueMicrotask(() => usePresentationStore.getState().setScenario(id));
+      }
+    }
+    if (def && def !== this.scenarioDef) this.switchScenario(def);
+  }
+
+  private switchScenario(def: ScenarioDefinition): void {
+    this.scenarioDef = def;
+    this.clock.configure(def.scenario.durationSec, holdPointSec(def.scenario), true);
+    this.frozenTime = null;
+    this.lastFocusInstance = null;
+    this.log(`Scenario: ${def.id} (${def.kind}, ${def.scenario.durationSec} s)`);
+  }
+
+  get scenario(): ScenarioDefinition | null {
+    return this.scenarioDef;
+  }
+
   // ------------------------------------------------------------------ state application
 
-  private activeInstance(s: PresentationState): ChamberInstance | null {
+  private activeInstance(s: PresentationState): EquipmentInstance | null {
     return this.world?.instances.get(s.activeInstanceId) ?? null;
+  }
+
+  private activeBundle(s: PresentationState): EquipmentBundle<unknown> | null {
+    return this.activeInstance(s)?.bundle ?? null;
   }
 
   private applyState(s: PresentationState, force: boolean): void {
@@ -443,45 +554,68 @@ export class SceneHost {
     this.lastState = s;
     const changed = <K extends keyof PresentationState>(k: K) => force || !prev || prev[k] !== s[k];
 
-    if (changed("viewMode") || changed("cutaway") || changed("activeInstanceId")) this.scheduleCutaway(s, force || changed("viewMode") || changed("activeInstanceId"));
-    if (changed("viewMode") || changed("explodeAmount") || changed("activeInstanceId")) {
-      for (const [id, inst] of w.instances) inst.applyExplode(s.explodeAmount, s.viewMode === "exploded" && id === s.activeInstanceId);
+    if (changed("activeInstanceId")) {
+      const inst = this.activeInstance(s);
+      const templateId = inst?.templateId ?? null;
+      if (templateId && templateId !== this.activeTemplateId) {
+        this.activeTemplateId = templateId;
+        const b = inst!.bundle;
+        // a different template reads best with its own default sector; same-template switches keep the user's sector
+        if (!force) queueMicrotask(() => usePresentationStore.getState().setCutaway({ azimuthDeg: b.cutawayDefault.azimuthDeg, sweepDeg: b.cutawayDefault.sweepDeg }));
+        // standalone demonstrations follow the active equipment
+        const cur = this.scenarioDef;
+        if (!inst?.def.mobile && cur && cur.kind === "standalone" && cur.templateId !== templateId) {
+          const next = standaloneScenarioFor(templateId);
+          if (next) queueMicrotask(() => usePresentationStore.getState().setScenario(next.id));
+        }
+      }
+      w.markers.setInstance(inst, inst ? (measurementIndex(inst.templateId) ?? null) : null);
+      w.markers.setVisible(s.overlays.markers && !s.overview, s.selectedMeasurement);
     }
-    if (changed("viewMode") || changed("xrayOpacity") || changed("activeInstanceId")) {
-      for (const [id, inst] of w.instances) inst.applyXray(s.viewMode === "xray" && id === s.activeInstanceId, s.xrayOpacity);
+    if (changed("scenarioId")) this.ensureScenario(s);
+
+    const modeKey = `${s.viewMode}:${s.overview}`;
+    const prevModeKey = prev ? `${prev.viewMode}:${prev.overview}` : "";
+    const modeChanged = force || modeKey !== prevModeKey;
+    const viewMode = s.overview ? "assembled" : s.viewMode;
+
+    if (modeChanged || changed("cutaway") || changed("activeInstanceId")) this.scheduleCutaway(s, force || modeChanged || changed("activeInstanceId"));
+    if (modeChanged || changed("explodeAmount") || changed("activeInstanceId")) {
+      for (const [id, inst] of w.instances) inst.applyExplode(s.explodeAmount, viewMode === "exploded" && id === s.activeInstanceId);
     }
-    if (changed("hiddenAssets") || changed("isolatedAssetId") || changed("viewMode") || changed("activeInstanceId")) {
+    if (modeChanged || changed("xrayOpacity") || changed("activeInstanceId")) {
+      for (const [id, inst] of w.instances) inst.applyXray(viewMode === "xray" && id === s.activeInstanceId, s.xrayOpacity);
+    }
+    if (changed("hiddenAssets") || changed("isolatedAssetId") || modeChanged || changed("activeInstanceId")) {
       for (const [id, inst] of w.instances) {
         const active = id === s.activeInstanceId;
-        inst.applyVisibility(active ? new Set(s.hiddenAssets) : new Set(), active ? s.isolatedAssetId : null, active && s.viewMode === "exploded");
+        inst.applyVisibility(active ? new Set(s.hiddenAssets) : new Set(), active ? s.isolatedAssetId : null, active && viewMode === "exploded");
       }
       this.refreshHighlight(s);
     }
     if (changed("selectedAssetId") || changed("hoveredAssetId") || changed("activeInstanceId")) this.refreshHighlight(s);
     if (changed("lightingPreset")) w.lighting.setPreset(s.lightingPreset);
     if (changed("qualityPreset") || changed("effectiveQuality")) this.applyQuality(s);
-    if (changed("overlays") || changed("viewMode") || changed("activeInstanceId")) {
-      for (const [id, g] of w.gasOverlays) g.setVisible(s.overlays.gasPath && id === s.activeInstanceId && s.viewMode !== "exploded");
-      for (const [id, sh] of w.sheathOverlays) sh.setVisible(s.overlays.sheath && id === s.activeInstanceId && s.viewMode !== "exploded" && s.visual.plasmaVisible);
-      w.labels.setVisible(s.overlays.labels);
+    if (changed("overlays") || modeChanged || changed("activeInstanceId") || changed("selectedMeasurement")) {
+      w.labels.setVisible(s.overlays.labels || s.overview);
       this.refreshLabels(s);
-    }
-    if (changed("visual")) {
-      const inst = this.activeInstance(s);
-      if (inst) inst.plasma.setHaloMargin(s.visual.haloMargin);
+      w.markers.setVisible(s.overlays.markers && !s.overview, s.selectedMeasurement);
     }
     if (changed("requests")) {
       const r = s.requests;
       const p = prev?.requests;
       if (!p || r.resetCamera !== p.resetCamera) this.resetCamera();
       if (!p || r.focusSelected !== p.focusSelected) this.focusSelected(s);
+      if (!p || r.focusInstance !== p.focusInstance) this.focusInstance(s);
       if ((!p || r.cameraPreset !== p.cameraPreset) && s.cameraPresetId) this.applyCameraPreset(s.cameraPresetId);
     }
   }
 
   private scheduleCutaway(s: PresentationState, immediate: boolean): void {
-    const keepOuts = Object.values(this.layout.ports).map((p) => p.keepOut);
-    const resolved = resolveCutaway({ enabled: s.viewMode === "cutaway", azimuthDeg: s.cutaway.azimuthDeg, sweepDeg: s.cutaway.sweepDeg }, keepOuts);
+    const bundle = this.activeBundle(s);
+    const keepOuts = bundle?.cutawayKeepOuts ?? [];
+    const enabled = s.viewMode === "cutaway" && !s.overview;
+    const resolved = resolveCutaway({ enabled, azimuthDeg: s.cutaway.azimuthDeg, sweepDeg: s.cutaway.sweepDeg }, keepOuts);
     this.pendingCut = resolved;
     if (this.cutawayTimer !== null) window.clearTimeout(this.cutawayTimer);
     const run = () => {
@@ -489,7 +623,7 @@ export class SceneHost {
       const cut = this.pendingCut;
       if (!cut || !this.world) return;
       const t = performance.now();
-      for (const [id, inst] of this.world.instances) inst.applyCutaway(id === s.activeInstanceId ? cut : resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []));
+      for (const [id, inst] of this.world.instances) inst.applyCutaway(id === s.activeInstanceId ? cut : NO_CUT);
       this.appliedCut = cut;
       const dt = performance.now() - t;
       if (dt > 5) this.log(`cutaway 적용 ${dt.toFixed(0)} ms (${cut.enabled ? `${cut.effectiveAzimuthDeg.toFixed(0)}° / ${cut.effectiveSweepDeg.toFixed(0)}°` : "off"})`);
@@ -517,28 +651,50 @@ export class SceneHost {
   private refreshLabels(s: PresentationState): void {
     const w = this.world;
     if (!w) return;
+    if (s.overview) {
+      // equipment-level labels for the bay overview
+      w.labels.setItems(
+        Array.from(w.instances.values())
+          .filter((inst) => !inst.def.mobile)
+          .map((inst, i) => ({
+            id: `instance:${inst.def.instanceId}`,
+            text: `${inst.def.displayName}`,
+            priority: 20 - i,
+            anchor: () => {
+              const b = inst.worldBoundsAll();
+              return b ? new Vector3(b.center.x, b.max.y + 0.05, b.center.z) : null;
+            },
+            ownMeshes: () => new Set<AbstractMesh>(inst.allMeshes),
+          })),
+      );
+      return;
+    }
     const inst = this.activeInstance(s);
     if (!inst) {
       w.labels.setItems([]);
       return;
     }
-    const items = LABEL_ASSETS.map((l) => ({
-      id: l.assetId,
-      text: l.text,
-      priority: l.priority,
-      anchor: () => {
-        if (l.assetId === "plasma_volume") {
-          if (!inst.plasma.mesh.isEnabled()) return null;
-          const c = this.layout.plasma.center;
-          return Vector3.TransformCoordinates(new Vector3(c[0], c[1], c[2]), inst.root.getWorldMatrix());
-        }
-        const b = inst.worldBounds(l.assetId);
-        if (!b) return null;
-        if (l.assetId === "chamber_body") return new Vector3(b.center.x, b.max.y - 0.05, b.center.z);
-        return b.center;
-      },
-      ownMeshes: () => new Set<AbstractMesh>(inst.meshesByAsset.get(l.assetId) ?? []),
-    }));
+    const items = inst.components
+      .filter((c) => c.label && c.label.priority > 0)
+      .map((c) => ({
+        id: c.assetId,
+        text: c.label!.text,
+        priority: c.label!.priority,
+        anchor: () => {
+          if (c.kind === "effect") {
+            const plasma = inst.plasma;
+            if (!plasma || !plasma.mesh.isEnabled()) return null;
+            const center = inst.bundle.plasmaCenter ? inst.bundle.plasmaCenter(inst.bundle.layout) : (inst.bundle.layout as ChamberLayout).plasma?.center;
+            if (!center) return null;
+            return Vector3.TransformCoordinates(new Vector3(center[0], center[1], center[2]), inst.root.getWorldMatrix());
+          }
+          const b = inst.worldBounds(c.assetId);
+          if (!b) return null;
+          if (c.assetId === "chamber_body") return new Vector3(b.center.x, b.max.y - 0.05, b.center.z);
+          return b.center;
+        },
+        ownMeshes: () => new Set<AbstractMesh>(inst.meshesByAsset.get(c.assetId) ?? []),
+      }));
     w.labels.setItems(items);
   }
 
@@ -555,12 +711,24 @@ export class SceneHost {
 
   // ------------------------------------------------------------------ camera
 
+  /** Presets of the active equipment plus the bay overview. */
+  presetsFor(instanceId: string): CameraPreset[] {
+    const inst = this.world?.instances.get(instanceId);
+    const own = inst ? inst.bundle.cameraPresets : cameraPresets(this.layout);
+    return [...own, { id: "bay-overview", label: "FAB bay overview", labelKo: "Bay 전체 (네 장비 + rail)", alpha: 215 * DEG, beta: 58 * DEG, radius: 1, target: [0, 0, 0] }];
+  }
+
   private applyCameraPreset(id: string): void {
     const w = this.world;
     if (!w) return;
-    const preset = cameraPresets(this.layout).find((p) => p.id === id);
+    const s = usePresentationStore.getState();
+    if (id === "bay-overview") {
+      w.camera.interpolateTo(215 * DEG, 58 * DEG, Math.max(6, w.bayRadius * 2.1), new Vector3(w.bayCenter.x, w.bayCenter.y + 0.2, w.bayCenter.z));
+      return;
+    }
+    const inst = this.activeInstance(s);
+    const preset = (inst ? inst.bundle.cameraPresets : cameraPresets(this.layout)).find((p) => p.id === id);
     if (!preset) return;
-    const inst = this.activeInstance(usePresentationStore.getState());
     const target = new Vector3(preset.target[0], preset.target[1], preset.target[2]);
     const worldTarget = inst ? Vector3.TransformCoordinates(target, inst.root.getWorldMatrix()) : target;
     const alpha = preset.alpha + (inst ? inst.root.rotation.y : 0);
@@ -568,16 +736,43 @@ export class SceneHost {
   }
 
   resetCamera(): void {
-    this.applyCameraPreset("overview");
+    const s = usePresentationStore.getState();
+    if (s.overview) {
+      this.applyCameraPreset("bay-overview");
+      return;
+    }
+    const inst = this.activeInstance(s);
+    this.applyCameraPreset(inst ? inst.bundle.overviewPresetId : "overview");
+  }
+
+  private focusInstance(s: PresentationState): void {
+    const inst = this.activeInstance(s);
+    if (!inst) return;
+    if (inst.def.mobile) {
+      const b = inst.worldBoundsAll();
+      if (b && this.world) this.world.camera.interpolateTo(this.world.camera.alpha, this.world.camera.beta, Math.max(1.2, Vector3.Distance(b.min, b.max) * 1.8), b.center);
+      return;
+    }
+    this.applyCameraPreset(inst.bundle.overviewPresetId);
   }
 
   private focusSelected(s: PresentationState): void {
     const w = this.world;
     const inst = this.activeInstance(s);
-    if (!w || !inst || !s.selectedAssetId) return;
-    if (s.selectedAssetId === "plasma_volume") {
-      const c = this.layout.plasma.center;
-      const t = Vector3.TransformCoordinates(new Vector3(c[0], c[1], c[2]), inst.root.getWorldMatrix());
+    if (!w || !inst) return;
+    if (s.selectedMeasurement) {
+      const p = w.markers.worldPosition(s.selectedMeasurement);
+      if (p) {
+        w.camera.interpolateTo(w.camera.alpha, w.camera.beta, 0.5, p);
+        return;
+      }
+    }
+    if (!s.selectedAssetId) return;
+    const comp = inst.components.find((c) => c.assetId === s.selectedAssetId);
+    if (comp?.kind === "effect" && inst.plasma) {
+      const center = inst.bundle.plasmaCenter ? inst.bundle.plasmaCenter(inst.bundle.layout) : (inst.bundle.layout as ChamberLayout).plasma?.center;
+      if (!center) return;
+      const t = Vector3.TransformCoordinates(new Vector3(center[0], center[1], center[2]), inst.root.getWorldMatrix());
       w.camera.interpolateTo(w.camera.alpha, w.camera.beta, 0.45, t);
       return;
     }
@@ -588,17 +783,116 @@ export class SceneHost {
     w.camera.interpolateTo(w.camera.alpha, w.camera.beta, radius, b.center);
   }
 
-  /** Programmatic camera for QA screenshots (instance frame of the active instance). */
+  /** Programmatic camera for QA screenshots (world frame). */
   setCamera(alphaDeg: number, betaDeg: number, radius: number, target: [number, number, number]): void {
     const w = this.world;
     if (!w) return;
+    // setTarget rebuilds alpha/beta/radius from the current position, so set the angles afterwards;
+    // a running preset interpolation must not override a programmatic camera.
+    (w.camera as unknown as { _isInterpolating: boolean })._isInterpolating = false;
+    w.camera.setTarget(new Vector3(target[0], target[1], target[2]));
     w.camera.alpha = alphaDeg * (Math.PI / 180);
     w.camera.beta = betaDeg * (Math.PI / 180);
     w.camera.radius = radius;
-    w.camera.setTarget(new Vector3(target[0], target[1], target[2]));
+  }
+
+  /** Programmatic camera in the frame of an instance (QA): target is given in the instance frame. */
+  setCameraLocal(instanceId: string, alphaDeg: number, betaDeg: number, radius: number, target: [number, number, number]): void {
+    const w = this.world;
+    const inst = w?.instances.get(instanceId);
+    if (!w || !inst) return;
+    inst.root.computeWorldMatrix(true);
+    const t = Vector3.TransformCoordinates(new Vector3(target[0], target[1], target[2]), inst.root.getWorldMatrix());
+    (w.camera as unknown as { _isInterpolating: boolean })._isInterpolating = false;
+    w.camera.setTarget(t);
+    w.camera.alpha = alphaDeg * (Math.PI / 180) + inst.root.rotation.y;
+    w.camera.beta = betaDeg * (Math.PI / 180);
+    w.camera.radius = radius;
   }
 
   // ------------------------------------------------------------------ frame
+
+  private applyPreview(preview: PreviewState, s: PresentationState, effectTime: number): void {
+    const w = this.world!;
+    const presetColor = colorPresetById(s.visual.colorPreset);
+    const q = QUALITY[s.effectiveQuality];
+    const viewMode = s.overview ? "assembled" : s.viewMode;
+    const overlays = s.overlays as unknown as Record<string, boolean>;
+    for (const [id, inst] of w.instances) {
+      let ip = preview.instances[id];
+      const active = id === s.activeInstanceId && !s.overview;
+      if (ip) {
+        // sector cutaway: the removed sector must not turn with spinning revolved parts
+        if (active && viewMode === "cutaway" && inst.joints.some((j) => j.freezeInCutaway)) {
+          const joints = { ...ip.joints };
+          for (const j of inst.joints) if (j.freezeInCutaway) joints[j.jointId] = 0;
+          ip = { ...ip, joints };
+        }
+        inst.applyJoints(ip.joints);
+        if (inst.bundle.pathPose) {
+          for (const j of inst.joints) {
+            if (j.kind !== "path") continue;
+            const pose = inst.bundle.pathPose(inst.bundle.layout, j.jointId, ip.joints[j.jointId] ?? 0);
+            inst.setPathPose(j.jointId, pose.position, pose.yawRad);
+          }
+        }
+        const st = inst.bundle.template.station;
+        if (st) {
+          const all = st.waferPresentationAssetIds ?? [st.waferPresentationAssetId];
+          const shown = ip.presentedWaferId ? (ip.presentedWaferAssetId ?? st.waferPresentationAssetId) : null;
+          inst.setPreviewHidden(new Set(all.filter((a) => a !== shown)));
+        }
+      }
+      // mobile carriers follow their presented holder (one mesh entity, world pose set directly)
+      if (inst.def.mobile) {
+        const cp = preview.carriers[id];
+        if (cp) this.placeCarrier(inst, cp);
+      }
+      inst.effects?.update({
+        preview: ip ?? { instanceId: id, joints: {}, effects: {}, flags: {}, presentedWaferId: null, phaseLabelKo: "" },
+        active,
+        viewMode,
+        overlays,
+        effectTime,
+        cut: active ? this.appliedCut : NO_CUT,
+        plasmaSteps: active ? q.plasmaSteps : Math.min(q.plasmaSteps, 20),
+        camera: w.camera,
+        visual: s.visual,
+        color: presetColor,
+        debugDepth: !!this.options.plasmaDebugDepth,
+        flipDepthY: !!this.options.flipDepthY,
+      });
+      if (active && inst.plasma) {
+        const center = inst.bundle.plasmaCenter ? inst.bundle.plasmaCenter(inst.bundle.layout) : ((inst.bundle.layout as ChamberLayout).plasma?.center ?? [0, 0, 0]);
+        const cw = Vector3.TransformCoordinates(new Vector3(center[0], center[1], center[2]), inst.root.getWorldMatrix());
+        const intensity = ip?.effects.plasmaIntensity ?? 0;
+        const lightOn = s.visual.plasmaLightEnabled && s.visual.plasmaVisible && viewMode !== "exploded";
+        w.lighting.updatePlasmaLight(cw, intensity * s.visual.glowIntensity, presetColor.core, lightOn);
+      }
+    }
+    if (!w.instances.get(s.activeInstanceId)?.plasma || s.overview) w.lighting.updatePlasmaLight(Vector3.Zero(), 0, presetColor.core, false);
+  }
+
+  private placeCarrier(inst: EquipmentInstance, cp: { holder: { kind: "station" | "gripper"; id: string }; yawFromStationId?: string }): void {
+    const w = this.world!;
+    const frames = inst.bundle.carrierFrames ?? { seatLocal: [0, 0, 0], flangeLocal: [0, 0.3, 0], doorFacingLocal: [0, 0, 1] };
+    const doorYawLocal = Math.atan2(frames.doorFacingLocal[0], frames.doorFacingLocal[2]);
+    if (cp.holder.kind === "station") {
+      const st = w.stations[cp.holder.id];
+      if (!st) return;
+      inst.root.position.set(st.seatWorld[0] - frames.seatLocal[0], st.seatWorld[1] - frames.seatLocal[1], st.seatWorld[2] - frames.seatLocal[2]);
+      inst.root.rotation.y = st.yawRad - doorYawLocal;
+      return;
+    }
+    const oht = w.instances.get(cp.holder.id);
+    const attach = oht?.bundle.carrierAttach;
+    if (!oht || !attach) return;
+    const seatWorld = oht.worldPoint(attach.seatLocal, attach.jointId);
+    const yawStation = cp.yawFromStationId ? w.stations[cp.yawFromStationId] : undefined;
+    const yaw = yawStation ? yawStation.yawRad : oht.root.rotation.y;
+    inst.root.position.set(seatWorld.x - frames.seatLocal[0], seatWorld.y - frames.seatLocal[1], seatWorld.z - frames.seatLocal[2]);
+    inst.root.rotation.y = yaw - doorYawLocal;
+  }
 
   private renderFrame(): void {
     const w = this.world;
@@ -606,39 +900,29 @@ export class SceneHost {
     const s = usePresentationStore.getState();
     const now = performance.now();
     const time = this.frozenTime ?? this.clock.tick(now);
-    const sample = evaluateScenario(DEFAULT_SCENARIO, time, s.visual.visualSeed);
-    const preset = colorPresetById(s.visual.colorPreset);
-    const q = QUALITY[s.effectiveQuality];
-    const effectTime = time * s.visual.animationSpeed;
-    for (const [id, inst] of w.instances) {
-      const active = id === s.activeInstanceId;
-      const cut = active ? this.appliedCut : resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []);
-      inst.plasma.update(w.camera, {
-        time: effectTime,
-        intensity: sample.intensity,
-        flicker: sample.flicker,
-        glow: s.visual.glowIntensity,
-        opacity: s.visual.opacity,
-        edgeSoftness: s.visual.edgeSoftness,
-        variation: s.visual.variationStrength,
-        sheath: s.visual.sheathFraction,
-        seed: s.visual.visualSeed,
-        colorCore: preset.core,
-        colorHalo: preset.halo,
-        steps: q.plasmaSteps,
-        cut,
-        visible: s.visual.plasmaVisible && !(active && s.viewMode === "exploded"),
-        debugDepth: !!this.options.plasmaDebugDepth,
-        flipDepthY: !!this.options.flipDepthY,
-      });
-      if (active) {
-        const c = this.layout.plasma.center;
-        const center = Vector3.TransformCoordinates(new Vector3(c[0], c[1], c[2]), inst.root.getWorldMatrix());
-        const lightOn = s.visual.plasmaLightEnabled && s.visual.plasmaVisible && s.viewMode !== "exploded";
-        w.lighting.updatePlasmaLight(center, sample.intensity * s.visual.glowIntensity, preset.core, lightOn);
+    // effect time keeps running while the playhead holds in the stable phase
+    const animTime = this.frozenTime ?? this.clock.effectTimeSec;
+    const def = this.scenarioDef;
+    const effectTime = animTime * s.visual.animationSpeed;
+    let preview: PreviewState | null = null;
+    if (def) {
+      preview = def.evaluate(time, s.visual.visualSeed, animTime, this.ctx);
+      this.lastPreview = preview;
+      this.applyPreview(preview, s, effectTime);
+      // linked demonstrations: follow the phase focus (active equipment + camera)
+      if (def.kind === "linked" && s.followPhase && preview.phaseFocusInstanceId && preview.phaseFocusInstanceId !== this.lastFocusInstance) {
+        this.lastFocusInstance = preview.phaseFocusInstanceId;
+        if (w.instances.has(preview.phaseFocusInstanceId) && !s.overview) {
+          const st = usePresentationStore.getState();
+          if (st.activeInstanceId !== preview.phaseFocusInstanceId) st.setActiveInstance(preview.phaseFocusInstanceId);
+          st.requestFocusInstance();
+        }
       }
-      w.gasOverlays.get(id)?.update(effectTime);
     }
+    w.markers.update((pointId) => {
+      const fx = this.activeInstance(s)?.effects;
+      return fx?.pointPose ? fx.pointPose(pointId) : null;
+    });
     w.lighting.updateHeadlamp(w.camera);
     w.scene.render();
     w.labels.update(w.camera, (m) => {
@@ -663,19 +947,26 @@ export class SceneHost {
         dpr: 1 / w.created.engine.getHardwareScalingLevel(),
       });
     }
-    if (now - this.lastTimelinePublish > 100) {
+    if (now - this.lastTimelinePublish > 100 && def) {
       this.lastTimelinePublish = now;
-      const ph = phaseAt(DEFAULT_SCENARIO, time);
+      const ph = phaseAt(def.scenario, time);
       usePresentationStore.getState().reportTimeline({
         playheadSec: time,
         playing: this.clock.playing,
-        loop: this.clock.loop,
+        holding: this.clock.holding,
         speed: this.clock.speed,
         durationSec: this.clock.durationSec,
         phase: ph.id,
         phaseLabelKo: ph.labelKo,
-        intensity: sample.intensity,
+        intensity: preview?.plasma.intensity ?? 0,
+        scenarioId: def.id,
+        phaseEquipment: ph.equipment ?? null,
+        phaseFocusInstanceId: preview?.phaseFocusInstanceId ?? null,
       });
+    }
+    if (now - this.lastPreviewPublish > 150 && preview) {
+      this.lastPreviewPublish = now;
+      usePresentationStore.getState().reportPreview(preview);
     }
   }
 
@@ -688,13 +979,26 @@ export class SceneHost {
     }
   }
 
+  /** Last evaluated preview (debug / tests). */
+  get preview(): PreviewState | null {
+    return this.lastPreview;
+  }
+
+  get stations(): Record<string, StationWorldFrame> {
+    return this.world?.stations ?? {};
+  }
+
   private debugApi() {
     return {
       host: this,
       isReady: () => !!this.world,
       backend: () => this.world?.created.backend ?? null,
       setCamera: (a: number, b: number, r: number, t: [number, number, number]) => this.setCamera(a, b, r, t),
+      setCameraLocal: (id: string, a: number, b: number, r: number, t: [number, number, number]) => this.setCameraLocal(id, a, b, r, t),
       freezeTime: (t: number | null) => this.freezeTime(t),
+      preview: () => this.lastPreview,
+      scenario: () => this.scenarioDef?.id ?? null,
+      stations: () => this.stations,
       stats: () => {
         const w = this.world;
         if (!w) return null;
@@ -712,7 +1016,9 @@ export class SceneHost {
           hardwareScaling: w.created.engine.getHardwareScalingLevel(),
           totalVertices: w.scene.getTotalVertices(),
           cutaway: this.appliedCut,
-          plasmaEnabled: Array.from(w.instances.values()).map((i) => i.plasma.mesh.isEnabled()),
+          plasmaEnabled: Array.from(w.instances.values()).map((i) => (i.plasma ? i.plasma.mesh.isEnabled() : null)),
+          instances: Array.from(w.instances.keys()),
+          scenario: this.scenarioDef?.id ?? null,
         };
       },
       renderOnce: () => {
@@ -720,6 +1026,7 @@ export class SceneHost {
       },
       logs: () => this.getLogs(),
       store: usePresentationStore,
+      bundles: () => listBundles().map((b) => b.template.templateId),
     };
   }
 
@@ -727,7 +1034,10 @@ export class SceneHost {
     return this.appliedCut ?? { enabled: false, removed: null, kept: FULL, effectiveAzimuthDeg: 0, effectiveSweepDeg: 0, snapped: false };
   }
 
-  get componentName(): (id: string) => string {
-    return (id) => getComponent(id)?.name ?? id;
+  /** Instance-frame -> world helper for QA scripts. */
+  worldOf(instanceId: string, local: Vec3Tuple): Vector3 | null {
+    const inst = this.world?.instances.get(instanceId);
+    if (!inst) return null;
+    return inst.worldPoint(local);
   }
 }

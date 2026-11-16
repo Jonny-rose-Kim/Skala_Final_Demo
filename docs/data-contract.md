@@ -1,39 +1,59 @@
-# Data contract — assets, sensors, versions, future API
+# 데이터 구조
 
-## Identity and structure (V1, implemented in TypeScript/JSON)
+부품, 계측, carrier, 시나리오의 식별 구조와 버전을 정리한 문서다. 모두 TypeScript와 versioned JSON으로 구현되어 있고 DB나 API는 아직 없다.
 
-- `EquipmentTemplate` (`templateId`, `templateRevision`): `assemblies[]`, `components[]`, `ports[]`, `connections[]`.
-- `ComponentDef`: `assetId` (stable), `nodeKey` (semantic scene key), `name` (English), `kind`, `assembly`, optional `parentAssetId`, `description` (Korean), `materialRef`, `selectable`, `explode`, `cutaway` behavior, `azimuthDeg`, `dimensions(layout)`.
-- Relations are kept separate: **hierarchy** (assembly/parent), **topology** (`PortDef` with medium gas/vacuum/rf/electrical/thermal/mechanical/wafer + `ConnectionDef` from/to port), **spatial layout** (derived from geometry config), **scene mapping** (`mesh.metadata = { instanceId, assetId, decorative, azimuth, isCap, isGlass, isPlasma }`).
-- `EquipmentInstanceDef` (`config/equipment/instances.json`): `instanceId`, `templateId`, `displayName`, `position`, `rotationYDeg`, `detailLevel`. Adding another instance of an existing template is configuration only.
+## 장비 템플릿과 인스턴스
 
-## Sensors (V1: definitions + unbound)
+- `EquipmentTemplate`(`templateId`, `templateRevision`, `family`, `displayName`): `assemblies[]`, `components[]`, `ports[]`, `connections[]`, `joints[]`, `facts[]`, 선택적 `station`.
+- `ComponentDef`: `assetId`(불변 식별자), `nodeKey`, `kind`, `assembly`, `parentAssetId`, `materialRef`, `explode`, `cutaway`, `azimuthDeg`, `jointId`(따라가는 joint), `axisXZ`(회전 부품의 sector 축), `shell`, `alwaysOpaque`, `dimensions(layout)`, `structuralBasis`, `assumptions`.
+- `JointDef`: `jointId`, `kind`(revolute, prismatic, path), `origin`, `axis`, `range`, `unit`, `homeNote`, `freezeInCutaway`.
+- `StationInterfaceDef`: load port asset, FOUP seat frame과 door 방향, 불투명 transfer enclosure, wafer 표시 asset 목록.
+- `EquipmentInstanceDef`(`config/equipment/instances.json`): `instanceId`, `templateId`, `position`, `rotationYDeg`, `role`, `mobile`. Station ID는 `LP.<instanceId>`로 파생한다.
+- 관계는 종류별로 나눈다. Containment(assembly, parent), Connection(port와 connection, 매체 gas, vacuum, rf, electrical, thermal, mechanical, wafer, liquid, pneumatic, optical, carrier, coolant), Layout(instance pose, joint origin), Route(`materialFlow.ts`), SceneBinding(mesh metadata `instanceId`, `assetId`).
 
-- `SensorInstanceDef` (installed instrument, `mountAssetId` in the equipment local frame)
-- `MeasurementChannelDef` (`channelId`, quantity, unit, payloadType scalar|vector|spectrum|waveform|image, `measurementPointId`)
-- `MeasurementPointDef` (what/where is measured; distinct from the body mount and from label positions)
-- `ChannelBinding` (`source: "unbound"` for every channel in V1, `installationRevision`)
-- Observations: none are generated. UI shows "Unbound / 연결된 데이터 없음".
+## 계측 (`src/domain/measurement.ts`)
 
-## Versions
-
-| Version | Meaning | V1 value |
+| 객체 | 주요 필드 | 비고 |
 | --- | --- | --- |
-| `geometry_revision` | geometry config revision | `ccp-pecvd-300-v1.1.0` |
-| `templateRevision` | equipment template revision | `1.1.0` |
-| `config_revision` | instance configuration | `instances-v1` |
-| visual scenario id | scripted presentation | `ccp-illustrative-cycle-v1` |
-| `schema_version`, API/message version, `model_version` | backend DB / API / physics model | not applicable yet |
+| `InstrumentDef` | instrumentId, type, principle, installationStatus | integrated_instrument는 drive 내장 feedback |
+| `InstrumentInstallationDef` | instrumentId, mountedOnAssetId, mountFrameJointId, mountPosition, placementBasis, revision | 본체 위치 |
+| `MeasurementPointDefV2` | pointId, targetAssetId, frameJointId, pointKind(point, region, optical_path, line_reference, axis_reference), geometry, quantity, reference, coverageKo, candidate, resolver | 측정 대상 위치와 범위 |
+| `MeasurementChannelDefV2` | channelId, instrumentId(derived면 null), quantity, canonicalUnit, dataShape, channelRole(measurement, status, derived_estimate, model_output), derivedFrom | |
+| `ChannelPointBindingDef` | channelId, pointId, role, configurationRevision | channel당 primary 하나 |
+| `ChannelSourceBindingDef` | providerKind, providerId, sourceKey, timeDomain, adapterRevision | V1에는 없음 |
+| `CalibrationRevisionDef` | status unknown | 가짜 보정 날짜 없음 |
+| `Observation` | 타입만 정의 | 프론트엔드가 만들지 않음 |
 
-## Asset manifest (GLB replacement path)
+`QUANTITY_UNITS`가 허용 단위를 정하고 `validateMeasurementSeed`가 검증한다. Inspector는 Mount, Point linked, Data unbound를 각각 표시한다.
 
-`assets/manifests/ccp-pecvd-300.manifest.json` maps each `assetId`/`nodeKey` to its current source (`procedural`) and the
-optional GLB node name to use when a GLB is supplied. Loading a GLB must preserve `assetId`, materials are mapped by
-`materialRef`, and the plasma effect stays a Babylon ShaderMaterial (never baked into GLB).
+계측을 추가하거나 옮기는 방법: 템플릿의 `src/equipment/<장비>/measurement.ts`에 Instrument, Installation, Point, Channel, Binding을 적고 `npm run validate:config`를 돌린다. 존재하는 component와 joint, 지원하는 quantity와 unit만 연결된다. UI 편집기는 없다.
 
-## Future Operational API (not implemented)
+## Carrier, wafer, route (`src/domain/materialFlow.ts`)
 
-- REST: commands (`command_id`, `run_id`, `target_asset_id`, `action`, `payload`) → accepted/applied/rejected + reason code; queries for templates, instances, runs.
-- WebSocket: full snapshot on connect/reconnect, then updates with `run_id`, `snapshot_seq`, `sim_time`, `source`; channel sample sequences separate from snapshot sequences; stale/disconnected flags.
-- Pydantic contracts and TypeScript types must be generated or contract-tested together; DB columns are never exposed directly.
-- Storage: `asset_templates`, `assets`, `ports`, `connections`, `measurement_points`, `sensor_channels`, `channel_bindings`, `observation_streams`, `observations`, `simulation_runs`, `commands`, `events`, `recorded_snapshots` (rows per sensor, never per-sensor columns).
+- `CarrierDef` FOUP-01(25 slot), `WaferDef` W-01, `DEMO_RESERVED_SLOT` slot-13.
+- `IncomingStackDef` `sti-prepared-v1`: substrate, pad oxide, SiN stop, liner, trench fill, surface oxide. 외부 공정 유래이며 layer ID를 유지한다. 이번 증착은 `demo_overcoat` layer다.
+- `RecipeRevisionDef`: operation, equipmentTemplateId, filmMaterial, intendedRole, configurationRevision, incomingStackId, validationStatus(`assumed_demo`), preconditions.
+- `RouteDef` A, B: deposition instance, CMP, OHT, carrier, source와 destination station, steps.
+
+## PreviewState (`src/presentation/preview.ts`)
+
+InstancePreview(joints, effects, flags, presentedWaferId), CarrierPreview(holder station 또는 gripper, doorOpen, slots), WaferPreview(holder, reservedSlot, frontsideNormalLocal, IllustrativeFilmState). 모두 scripted presentation이며 measurement나 simulation state가 아니다.
+
+## 버전
+
+| 버전 | V1 값 |
+| --- | --- |
+| geometry_revision | `ccp-pecvd-300-v1.2.0`, `remote-icp-pecvd-300-v1.0.0`, `sti-cmp-rotary-300-v1.0.0`, `oht-bay-v1.0.0` |
+| templateRevision | CCP 1.2.0, Remote 1.0.0, CMP 1.0.0, OHT 1.0.0, FOUP 1.0.0 |
+| config_revision(instances) | `instances-v3` |
+| measurement seedRevision | `ccp-meas-seed-2`, `remote-meas-seed-1`, `cmp-meas-seed-1`, `oht-meas-seed-1` |
+| scenario id | `ccp-illustrative-cycle-v1`, `remote-icp-cycle-v1`, `sti-cmp-cycle-v1`, `oht-transfer-v1`, `route-a-linked-v1`, `route-b-linked-v1` |
+| schema_version, API 버전, model_version, calibration_revision | 해당 없음(백엔드 없음) |
+
+## 이후 저장 경계 (미구현)
+
+asset_templates, template_revisions, assets, coordinate_frames, ports, connections, instruments, instrument_installations, measurement_points, measurement_channels, channel_point_bindings, channel_source_bindings, calibration_revisions, observation_streams, observations, carriers, carrier_slots, wafers, wafer_locations, recipe_revisions, route_definitions, execution_records. 센서마다 column을 늘리지 않고 행으로 저장한다. 실제 Run이 생기면 사용한 revision을 고정한다.
+
+## 에셋 매니페스트
+
+`assets/manifests/ccp-pecvd-300.manifest.json`은 CCP용이다. 새 템플릿은 모두 procedural이며 GLB 교체 시 같은 방식으로 `assetId`를 유지하면 된다.

@@ -4,7 +4,7 @@
  * chamber axis are regenerated for the cutaway sector and expose a planar cap profile; parts attached
  * at an azimuth are hidden when their azimuth falls inside the removed sector.
  */
-import type { AngularInterval, ChamberLayout } from "../config/geometry";
+import type { AngularInterval, ChamberLayout, StationLayout } from "../config/geometry";
 import { DEG, TAU, normalizeAngle } from "../config/geometry";
 import type { CutawayBehavior, MaterialRef } from "../domain/types";
 import {
@@ -43,6 +43,17 @@ export interface PartGeometry {
   castShadow: boolean;
   /** Connection-like decoration hidden in the exploded view. */
   hideWhenExploded?: boolean;
+  /** Kinematic joint the part follows (authored at rest pose in the instance frame). */
+  jointId?: string;
+  /** Local (x, z) of the revolve axis for sector parts off the instance axis. */
+  axisXZ?: [number, number];
+  /** Never swapped to the x-ray material (simplified internal transfer enclosures). */
+  alwaysOpaque?: boolean;
+  /**
+   * Stretchable part (OHT belts): authored from y = 0 down to y = -baseLength under its joint origin;
+   * the scene scales it to (baseLength + joint value) / baseLength instead of regenerating the mesh.
+   */
+  stretch?: { baseLength: number; jointId: string };
   /** Build the surface mesh for the kept angular ranges (ignored for non-sector parts). */
   build: (kept: AngularInterval[]) => MeshData;
   /** Planar section profile for separate cap meshes (sector parts only). */
@@ -124,7 +135,7 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       build: (kept) => revolveProfile(prof, { segments: opts.segments ?? 128, ranges: kept, caps: false, uvScale: 1 }),
     });
   };
-  const fixed = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: { cutaway: CutawayBehavior; azimuth?: number; pickable?: boolean; isGlass?: boolean; castShadow?: boolean; hideWhenExploded?: boolean }) => {
+  const fixed = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: { cutaway: CutawayBehavior; azimuth?: number; pickable?: boolean; isGlass?: boolean; castShadow?: boolean; hideWhenExploded?: boolean; alwaysOpaque?: boolean }) => {
     parts.push({
       key,
       assetId,
@@ -135,6 +146,7 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       isGlass: opts.isGlass,
       castShadow: opts.castShadow ?? true,
       hideWhenExploded: opts.hideWhenExploded,
+      alwaysOpaque: opts.alwaysOpaque,
       sectorDependent: false,
       build: () => md,
     });
@@ -330,13 +342,15 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
     const [gw, gh, gd] = gp.gas_panel_size;
     const [gx, gy, gz] = gp.gas_panel_center;
     const panel = chamferedBox([gw, gh, gd], 0.006, [gx, gy, gz]);
-    // front panel inset with three MFC blocks
+    // front panel inset with MFC blocks: block 0 is MFC-01 (own asset), the others stay unassigned panel slots
     const inset = chamferedBox([gw - 0.03, gh - 0.03, 0.004], 0.001, [gx, gy, gz - gd / 2 - 0.001]);
-    const mfcs: MeshData[] = [];
-    for (let i = 0; i < 3; i++) mfcs.push(chamferedBox([0.045, 0.09, 0.02], 0.002, [gx - 0.055 + i * 0.055, gy + 0.03, gz - gd / 2 - 0.012]));
+    const mfcBlock = (i: number) => chamferedBox(L.mfcBlocks.size, 0.002, L.mfcBlocks.centers[i]);
+    const mfcSlots: MeshData[] = [];
+    for (let i = 1; i < L.mfcBlocks.centers.length; i++) mfcSlots.push(mfcBlock(i));
     const bracket = chamferedBox([0.06, 0.03, gz - gd / 2 - L.rOuter + 0.03], 0.002, [0, gy, (gz - gd / 2 + L.rOuter - 0.03) / 2]);
     fixed("gas_panel", "gas_panel", "painted_housing", mergeMeshData([panel, inset, bracket]), { cutaway: "keep" });
-    fixed("gas_panel_mfcs", "gas_panel", "stainless", mergeMeshData(mfcs), { cutaway: "keep", pickable: true });
+    if (mfcSlots.length) fixed("gas_panel_mfc_slots", "gas_panel", "stainless", mergeMeshData(mfcSlots), { cutaway: "keep", pickable: true });
+    fixed("mfc_01", "mfc_01", "stainless", mfcBlock(0), { cutaway: "keep", pickable: true });
 
     const topY = L.gasTubeTopY;
     const linePath: Vec3[] = [
@@ -662,13 +676,89 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
     fixed("pressure_sensor_cable", "pressure_sensor", "dark_steel", toRadialFrame(sensorCable, pt.azimuth, pt.centerY), { cutaway: "hide-in-sector", azimuth: pt.azimuth, pickable: false, castShadow: false });
   }
 
+  // ------------------------------------------------------------------ station interface (tool shell)
+  buildStationParts({ station: L.station, slitValveSize: cfg.ports.slit.valve_body_size, slitCenterY: cfg.ports.slit.center_y }, fixed);
+
   return parts;
+}
+
+export type FixedFn = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: { cutaway: CutawayBehavior; azimuth?: number; pickable?: boolean; isGlass?: boolean; castShadow?: boolean; hideWhenExploded?: boolean; alwaysOpaque?: boolean }) => void;
+
+/** What the station shell generator needs from a chamber-type layout. */
+export interface StationHost {
+  station: StationLayout;
+  slitValveSize: Vec3;
+  slitCenterY: number;
+}
+
+/**
+ * Lightweight tool shell along the slit valve direction: simplified load lock, EFEM enclosure and the
+ * load port deck with FOUP seating pins. The enclosures stay opaque on purpose (simplified internal transfer).
+ */
+export function buildStationParts(L: StationHost, fixed: FixedFn): void {
+  const st = L.station;
+  const push = fixed;
+  const w = st.enclosureWidth;
+  const h = st.enclosureTop - st.floorY;
+  const yc = (st.enclosureTop + st.floorY) / 2;
+  // authored along +X then rotated to the slit azimuth
+  const rot = st.azimuth;
+  const box = (r0: number, r1: number, yMid: number, height: number, width: number, chamfer = 0.008) => rotateYMeshData(chamferedBox([r1 - r0, height, width], chamfer, [(r0 + r1) / 2, yMid, 0]), rot);
+  // load lock: slightly narrower box with a flange ring toward the slit valve
+  const llW = Math.min(w - 0.1, L.slitValveSize[0] + 0.2);
+  const llH = L.slitValveSize[1] + 0.26;
+  const llY = L.slitCenterY;
+  const loadLock = box(st.loadLockR0, st.loadLockR1, llY, llH, llW);
+  const llFlange = rotateYMeshData(chamferedBox([0.02, llH + 0.04, llW + 0.04], 0.003, [st.loadLockR0 + 0.01, llY, 0]), rot);
+  const llLegs = mergeMeshData(
+    [-1, 1].map((sgn) => rotateYMeshData(chamferedBox([0.04, llY - llH / 2 - st.floorY, 0.04], 0.002, [(st.loadLockR0 + st.loadLockR1) / 2, (llY - llH / 2 + st.floorY) / 2, sgn * (llW / 2 - 0.05)]), rot)),
+  );
+  push("load_lock_box", "load_lock", "painted_housing", mergeMeshData([loadLock, llFlange]), { cutaway: "keep", alwaysOpaque: true });
+  push("load_lock_legs", "load_lock", "dark_steel", llLegs, { cutaway: "keep", pickable: false, alwaysOpaque: true });
+  // EFEM enclosure: full height box with a recessed front panel and a status light bar
+  const efem = box(st.loadLockR1, st.efemR1, yc, h, w);
+  const panel = rotateYMeshData(chamferedBox([0.006, h - 0.12, w - 0.12], 0.001, [st.efemR1 + 0.003, yc, 0]), rot);
+  const lightBar = rotateYMeshData(chamferedBox([0.012, 0.03, w - 0.3], 0.002, [st.efemR1 + 0.006, st.enclosureTop - 0.06, 0]), rot);
+  push("efem_box", "efem_enclosure", "painted_housing", mergeMeshData([efem, panel]), { cutaway: "keep", alwaysOpaque: true });
+  push("efem_light_bar", "efem_enclosure", "safety_marking", lightBar, { cutaway: "keep", pickable: false, castShadow: false, alwaysOpaque: true });
+  // load port: deck plate on a pedestal frame, door frame opening on the EFEM face, three kinematic pins
+  const deckY0 = st.deckTopY - st.deckThickness;
+  const deck = rotateYMeshData(chamferedBox([st.deckDepth, st.deckThickness, st.deckWidth], 0.004, [(st.deckR0 + st.deckR1) / 2, st.deckTopY - st.deckThickness / 2, 0]), rot);
+  const pedestal = rotateYMeshData(chamferedBox([st.deckDepth - 0.08, deckY0 - st.floorY, st.deckWidth - 0.1], 0.006, [(st.deckR0 + st.deckR1) / 2, (deckY0 + st.floorY) / 2, 0]), rot);
+  const doorFrame = rotateYMeshData(
+    mergeMeshData([
+      chamferedBox([0.014, 0.42, 0.03], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.25, 0.2]),
+      chamferedBox([0.014, 0.42, 0.03], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.25, -0.2]),
+      chamferedBox([0.014, 0.03, 0.43], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.46, 0]),
+    ]),
+    rot,
+  );
+  const seatR = Math.hypot(st.seat[0], st.seat[2]);
+  const pins: MeshData[] = [];
+  for (const [dr, dz] of [
+    [0.0, 0.09],
+    [0.0, -0.09],
+    [-0.09, 0.0],
+  ] as const) {
+    const pin = revolveProfile(chamferProfile(rectProfile(0, 0.008, st.deckTopY, st.deckTopY + 0.012), 0.002), { segments: 20 });
+    translateMeshData(pin, seatR + dr, 0, dz);
+    pins.push(rotateYMeshData(pin, rot));
+  }
+  push("deck", "load_port", "stainless", deck, { cutaway: "keep" });
+  push("deck_pedestal", "load_port", "painted_housing", pedestal, { cutaway: "keep" });
+  push("door_frame", "load_port", "dark_steel", doorFrame, { cutaway: "keep", pickable: false });
+  push("seat_pins", "load_port", "stainless", mergeMeshData(pins), { cutaway: "keep", pickable: false, castShadow: false });
 }
 
 /** Plasma proxy cylinder (slightly larger than the volume for the soft halo). */
 export function plasmaProxyMesh(L: ChamberLayout, haloMargin: number): MeshData {
   const r = L.plasma.radius + haloMargin + 0.002;
   return revolveProfile(rectProfile(0, r, L.plasma.bottomY, L.plasma.topY), { segments: 96 });
+}
+
+/** Shared helper for the other templates: translate a mesh built around the origin to a local axis (x, z). */
+export function offsetXZ(md: MeshData, x: number, z: number): MeshData {
+  return translateMeshData(md, x, 0, z);
 }
 
 /** Rounded rectangle utility re-export for UI-free consumers. */

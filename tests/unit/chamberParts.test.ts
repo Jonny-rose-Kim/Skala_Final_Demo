@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { TAU } from "../../src/config/geometry";
 import { CHAMBER_LAYOUT } from "../../src/config/geometry";
-import { COMPONENTS } from "../../src/domain/ccpChamberTemplate";
+import { CCP_CHAMBER_TEMPLATE } from "../../src/domain/ccpChamberTemplate";
+
+const COMPONENTS = CCP_CHAMBER_TEMPLATE.components;
 import { buildChamberParts, intersectRanges, spokeRanges } from "../../src/geometry/chamberParts";
 import { checkWindingConsistency, meshDataBounds, revolveCaps } from "../../src/geometry/meshlib";
 import { resolveCutaway } from "../../src/presentation/cutaway";

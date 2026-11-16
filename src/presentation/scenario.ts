@@ -1,10 +1,20 @@
 /**
- * VisualScenario: scripted, deterministic illustration sequence
- *   Off -> Ignition illustration -> Stable plasma -> Extinction illustration -> Off
- * Every value is a pure function f(time, visual_seed) so pause/scrub reproduce the same frame.
- * The transition times are presentation choices, not computed ignition/transient physics.
+ * VisualScenario: scripted, deterministic illustration sequences.
+ * The original CCP sequence (Off -> Ignition illustration -> Stable plasma -> Extinction illustration -> Off)
+ * is kept unchanged as DEFAULT_SCENARIO. Every value is a pure function f(time, visual_seed) so pause/scrub
+ * reproduce the same frame. Transition times are presentation choices, not computed physics.
+ * The phase marked `holdUntilRelease` is held by the VisualClock until the viewer asks to continue.
+ *
+ * Multi-equipment scenarios (Remote, CMP, OHT, Route A/B) are ScenarioDefinitions registered in
+ * `scenarioRegistry.ts`; they evaluate to a PreviewState (joint poses, holders, film state).
  */
-export type ScenarioPhaseId = "off" | "ignition" | "stable" | "extinction" | "off_end";
+import type { EquipmentInstanceDef } from "../domain/types";
+import type { PreviewState } from "./preview";
+
+export type ScenarioPhaseId = string;
+
+/** Which equipment a phase is about (the UI follows it in linked demonstrations). */
+export type PhaseEquipment = "ccp" | "remote" | "cmp" | "oht" | "carrier" | "external";
 
 export interface ScenarioPhase {
   id: ScenarioPhaseId;
@@ -12,6 +22,8 @@ export interface ScenarioPhase {
   labelKo: string;
   start: number;
   end: number;
+  holdUntilRelease?: boolean;
+  equipment?: PhaseEquipment;
 }
 
 export interface ScenarioSample {
@@ -39,10 +51,32 @@ export const DEFAULT_SCENARIO: VisualScenario = {
   title: scenarioConfig.title,
   durationSec: scenarioConfig.durationSec,
   renderSource: "illustrative",
-  phases: scenarioConfig.phases.map((p) => ({ id: p.id as ScenarioPhaseId, label: p.label, labelKo: p.labelKo, start: p.start, end: p.end })),
+  phases: scenarioConfig.phases.map((p) => ({
+    id: p.id as ScenarioPhaseId,
+    label: p.label,
+    labelKo: p.labelKo,
+    start: p.start,
+    end: p.end,
+    holdUntilRelease: "holdUntilRelease" in p ? !!p.holdUntilRelease : false,
+    equipment: "ccp" as const,
+  })),
 };
 
-function hash1(n: number): number {
+/** Where the clock parks: just inside the end of the held phase, so phaseAt() still reports that phase. */
+const HOLD_INSET_SEC = 1e-3;
+
+export function holdPointSec(scenario: VisualScenario): number | null {
+  const p = scenario.phases.find((ph) => ph.holdUntilRelease);
+  return p ? p.end - HOLD_INSET_SEC : null;
+}
+
+/** Start of the phase that follows the held phase (extinction), i.e. where release() continues. */
+export function releasePointSec(scenario: VisualScenario): number | null {
+  const p = scenario.phases.find((ph) => ph.holdUntilRelease);
+  return p ? p.end : null;
+}
+
+export function hash1(n: number): number {
   const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
   return s - Math.floor(s);
 }
@@ -58,13 +92,15 @@ export function phaseAt(scenario: VisualScenario, t: number): ScenarioPhase {
   return scenario.phases[scenario.phases.length - 1];
 }
 
-/** Deterministic evaluation: identical (t, seed) always yield the same sample. */
-export function evaluateScenario(scenario: VisualScenario, t: number, seed: number): ScenarioSample {
-  const p = phaseAt(scenario, t);
+/**
+ * Plasma glow sample of a phase table with the CCP phase vocabulary (off / ignition / stable / extinction).
+ * Identical (t, seed, animT) always yield the same sample. `t` is the playhead (selects the phase);
+ * `animT` is effect time, which keeps advancing while the stable phase is held.
+ */
+export function plasmaSampleForPhase(p: ScenarioPhase, kind: "off" | "ignition" | "stable" | "extinction", t: number, seed: number, animT: number): ScenarioSample {
   const prog = (t - p.start) / Math.max(p.end - p.start, 1e-6);
-  switch (p.id) {
+  switch (kind) {
     case "off":
-    case "off_end":
       return { phase: p.id, intensity: 0, flicker: 0, phaseProgress: prog };
     case "ignition": {
       // a few deterministic pre-breakdown flashes then a quick rise
@@ -78,7 +114,7 @@ export function evaluateScenario(scenario: VisualScenario, t: number, seed: numb
     }
     case "stable": {
       // very slow, small modulation (presentation only; not RF-cycle physics)
-      const slow = 1 + 0.025 * Math.sin(t * 0.9 + seed) + 0.015 * Math.sin(t * 2.3 + seed * 1.7);
+      const slow = 1 + 0.025 * Math.sin(animT * 0.9 + seed) + 0.015 * Math.sin(animT * 2.3 + seed * 1.7);
       return { phase: p.id, intensity: slow, flicker: 0, phaseProgress: prog };
     }
     case "extinction": {
@@ -87,4 +123,90 @@ export function evaluateScenario(scenario: VisualScenario, t: number, seed: numb
       return { phase: p.id, intensity: Math.max(decay, tail), flicker: 0, phaseProgress: prog };
     }
   }
+}
+
+/** Deterministic evaluation of the CCP plasma cycle (kept for the original sequence and its tests). */
+export function evaluateScenario(scenario: VisualScenario, t: number, seed: number, animT: number = t): ScenarioSample {
+  const p = phaseAt(scenario, t);
+  switch (p.id) {
+    case "off":
+    case "off_end":
+      return plasmaSampleForPhase(p, "off", t, seed, animT);
+    case "ignition":
+      return plasmaSampleForPhase(p, "ignition", t, seed, animT);
+    case "stable":
+      return plasmaSampleForPhase(p, "stable", t, seed, animT);
+    case "extinction":
+      return plasmaSampleForPhase(p, "extinction", t, seed, animT);
+    default:
+      return plasmaSampleForPhase(p, "off", t, seed, animT);
+  }
+}
+
+/** Static world placement of a load-port station (derived from instance pose + template seat frame). */
+export interface StationWorldFrame {
+  stationId: string;
+  instanceId: string;
+  seatWorld: [number, number, number];
+  /** Yaw of the FOUP (rad, about +Y) when seated: its door faces the tool. */
+  yawRad: number;
+  /** Unit vector the door faces (world XZ). */
+  doorFacing: [number, number, number];
+}
+
+export interface ScenarioContext {
+  instances: EquipmentInstanceDef[];
+  stations: Record<string, StationWorldFrame>;
+}
+
+export type ScenarioKind = "standalone" | "linked";
+
+/** A registered demonstration: phase table plus a pure evaluator to PreviewState. */
+export interface ScenarioDefinition {
+  id: string;
+  title: string;
+  titleKo: string;
+  kind: ScenarioKind;
+  /** Standalone scenarios belong to one template; linked ones to a route. */
+  templateId?: string;
+  routeId?: "A" | "B";
+  scenario: VisualScenario;
+  /** Instance ids that must exist in the loaded fixture for the scenario to be offered. */
+  requiredInstanceIds: string[];
+  /** Template ids that must be present (standalone scenarios). */
+  requiredTemplateIds: string[];
+  /** Label of the release action for the held phase (e.g. Extinguish), when the scenario holds. */
+  releaseLabel?: string;
+  evaluate(t: number, seed: number, animT: number, ctx: ScenarioContext): PreviewState;
+}
+
+/** Helper for evaluators: progress 0..1 of t inside phase `id` (0 before, 1 after). */
+export function phaseProgress(scenario: VisualScenario, id: string, t: number): number {
+  const p = scenario.phases.find((x) => x.id === id);
+  if (!p) return 0;
+  if (t <= p.start) return 0;
+  if (t >= p.end) return 1;
+  return (t - p.start) / Math.max(p.end - p.start, 1e-6);
+}
+
+/** True when t is after the end of phase `id`. */
+export function phaseDone(scenario: VisualScenario, id: string, t: number): boolean {
+  const p = scenario.phases.find((x) => x.id === id);
+  return !!p && t >= p.end;
+}
+
+export function phaseStarted(scenario: VisualScenario, id: string, t: number): boolean {
+  const p = scenario.phases.find((x) => x.id === id);
+  return !!p && t >= p.start;
+}
+
+/** Build a phase table from ordered (id, label, labelKo, durationSec, equipment, hold?) rows. */
+export function buildPhases(rows: { id: string; label: string; labelKo: string; duration: number; equipment?: PhaseEquipment; hold?: boolean }[]): { phases: ScenarioPhase[]; durationSec: number } {
+  const phases: ScenarioPhase[] = [];
+  let t = 0;
+  for (const r of rows) {
+    phases.push({ id: r.id, label: r.label, labelKo: r.labelKo, start: t, end: t + r.duration, holdUntilRelease: !!r.hold, equipment: r.equipment });
+    t += r.duration;
+  }
+  return { phases, durationSec: t };
 }

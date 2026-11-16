@@ -53,6 +53,15 @@ describe("equipment template", () => {
       expect(ids.has(id), id).toBe(true);
     }
   });
+  it("mounts the MFC flow sensor on MFC-01 inside the gas panel", () => {
+    const mfc = CCP_CHAMBER_TEMPLATE.components.find((c) => c.assetId === "mfc_01");
+    expect(mfc?.parentAssetId).toBe("gas_panel");
+    const sensor = SENSORS.find((s) => s.sensorId === "sensor.mfc_flow");
+    expect(sensor?.mountAssetId).toBe("mfc_01");
+    const L = deriveChamberLayout(loadGeometryConfig());
+    const point = measurementPoints(L).find((p) => p.pointId === sensor?.channels[0].measurementPointId);
+    expect(point?.targetAssetId).toBe("mfc_01");
+  });
   it("has all sensor channels unbound in V1", () => {
     const channelIds = SENSORS.flatMap((s) => s.channels.map((c) => c.channelId));
     expect(CHANNEL_BINDINGS.map((b) => b.channelId).sort()).toEqual(channelIds.sort());

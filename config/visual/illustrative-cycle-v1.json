@@ -3,7 +3,7 @@
   "id": "ccp-illustrative-cycle-v1",
   "title": "Illustrative plasma cycle",
   "render_source": "illustrative",
-  "note": "Scripted presentation sequence. Phase order and transition times are presentation choices, not computed ignition or transient physics. Stable-phase modulation is a slow visual pulse and does not represent MHz RF oscillation.",
+  "note": "Scripted presentation sequence. Phase order and transition times are presentation choices, not computed ignition or transient physics. Stable-phase modulation is a slow visual pulse and does not represent MHz RF oscillation. Playback holds at the end of the stable phase until the viewer triggers extinction.",
   "durationSec": 18,
   "phases": [
     {
@@ -25,7 +25,8 @@
       "label": "Stable plasma",
       "labelKo": "안정 상태",
       "start": 4.0,
-      "end": 14.0
+      "end": 14.0,
+      "holdUntilRelease": true
     },
     {
       "id": "extinction",

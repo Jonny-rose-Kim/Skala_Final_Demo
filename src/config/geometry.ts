@@ -135,10 +135,57 @@ export interface GeometryConfig {
     rf_generator_center: Vec3Tuple;
     gas_panel_size: Vec3Tuple;
     gas_panel_center: Vec3Tuple;
+    /** MFC blocks on the gas panel front face; block 0 is the modeled MFC-01, the rest are unassigned slots. */
+    mfc_block_size: Vec3Tuple;
+    mfc_block_pitch: number;
+    mfc_block_count: number;
+    mfc_block_offset_y: number;
     frame_leg_size: number;
     frame_leg_radius: number;
     frame_bottom_y: number;
   };
+  /** Lightweight tool shell (load lock, EFEM, load port) for carrier transport; internal robots are not modeled. */
+  station: StationConfigBlock;
+}
+
+/** Station (tool shell) config block shared by the chamber-type templates. */
+export interface StationConfigBlock {
+  note: string;
+  gap_from_slit_valve: number;
+  load_lock_length: number;
+  efem_length: number;
+  enclosure_width: number;
+  enclosure_top_y: number;
+  deck_depth: number;
+  deck_width: number;
+  deck_height_above_floor: number;
+  deck_thickness: number;
+  foup_seat_offset_from_efem_face: number;
+}
+
+/** Derived station (tool shell) placement along the slit valve direction. */
+export interface StationLayout {
+  /** Fab floor top in the instance frame (ground mesh top). */
+  floorY: number;
+  azimuth: number;
+  enclosureWidth: number;
+  enclosureTop: number;
+  loadLockLength: number;
+  efemLength: number;
+  /** Radial distances from the chamber axis along the slit direction. */
+  loadLockR0: number;
+  loadLockR1: number;
+  efemR1: number;
+  deckR0: number;
+  deckR1: number;
+  deckTopY: number;
+  deckDepth: number;
+  deckWidth: number;
+  deckThickness: number;
+  /** FOUP bottom seating reference in the instance frame. */
+  seat: Vec3Tuple;
+  /** Unit vector the FOUP door faces (toward the EFEM). */
+  doorFacing: Vec3Tuple;
 }
 
 export const DEG = Math.PI / 180;
@@ -229,9 +276,49 @@ export interface ChamberLayout {
   heater: { rIn: number; rOut: number; y0: number; y1: number; rElement: number; turns: number };
   bellows: { rOut: number; rIn: number; y0: number; y1: number; convolutions: number };
   baffle: { rIn: number; rOut: number; y0: number; y1: number; slots: number; fill: number };
+  /** MFC blocks on the gas panel front face (index 0 = MFC-01). */
+  mfcBlocks: { size: Vec3Tuple; centers: Vec3Tuple[] };
   transferWaferTopY: number;
   plasma: { bottomY: number; topY: number; radius: number; center: Vec3Tuple };
   ports: Record<PortPlacement["id"], PortPlacement>;
+  station: StationLayout;
+}
+
+/** Ground (fab floor) top relative to the chamber frame: just under the support frame feet. */
+export function floorTopY(cfg: GeometryConfig): number {
+  return cfg.peripherals.frame_bottom_y - 0.002;
+}
+
+export function deriveStationLayout(st: StationConfigBlock, frameBottomY: number, slitAzimuth: number, slitValveDepth: number, rOuter: number): StationLayout {
+  const valveOuter = rOuter + 0.012 + slitValveDepth;
+  const loadLockR0 = valveOuter + st.gap_from_slit_valve;
+  const loadLockR1 = loadLockR0 + st.load_lock_length;
+  const efemR1 = loadLockR1 + st.efem_length;
+  const deckR0 = efemR1;
+  const deckR1 = efemR1 + st.deck_depth;
+  const floorY = frameBottomY - 0.002;
+  const deckTopY = floorY + st.deck_height_above_floor;
+  const seatR = efemR1 + st.foup_seat_offset_from_efem_face;
+  const dir = azimuthToXZ(slitAzimuth, 1);
+  return {
+    floorY,
+    azimuth: slitAzimuth,
+    enclosureWidth: st.enclosure_width,
+    enclosureTop: st.enclosure_top_y,
+    loadLockLength: st.load_lock_length,
+    efemLength: st.efem_length,
+    loadLockR0,
+    loadLockR1,
+    efemR1,
+    deckR0,
+    deckR1,
+    deckTopY,
+    deckDepth: st.deck_depth,
+    deckWidth: st.deck_width,
+    deckThickness: st.deck_thickness,
+    seat: [dir.x * seatR, deckTopY, dir.z * seatR],
+    doorFacing: [-dir.x, 0, -dir.z],
+  };
 }
 
 export function loadGeometryConfig(): GeometryConfig {
@@ -366,6 +453,17 @@ export function deriveChamberLayout(cfg: GeometryConfig): ChamberLayout {
       slots: cfg.pumping_baffle.slot_count,
       fill: cfg.pumping_baffle.slot_fill,
     },
+    mfcBlocks: {
+      size: cfg.peripherals.mfc_block_size,
+      centers: Array.from({ length: cfg.peripherals.mfc_block_count }, (_, i): Vec3Tuple => {
+        const gp = cfg.peripherals;
+        return [
+          gp.gas_panel_center[0] + (i - (gp.mfc_block_count - 1) / 2) * gp.mfc_block_pitch,
+          gp.gas_panel_center[1] + gp.mfc_block_offset_y,
+          gp.gas_panel_center[2] - gp.gas_panel_size[2] / 2 - 0.002 - gp.mfc_block_size[2] / 2,
+        ];
+      }),
+    },
     transferWaferTopY: p.transfer_top_y + p.lift_pin_stroke + cfg.wafer.thickness,
     plasma: {
       bottomY: waferTopY,
@@ -374,6 +472,7 @@ export function deriveChamberLayout(cfg: GeometryConfig): ChamberLayout {
       center: [0, (waferTopY + faceplateBottomY) / 2, 0],
     },
     ports,
+    station: deriveStationLayout(cfg.station, cfg.peripherals.frame_bottom_y, ports.slit.azimuth, cfg.ports.slit.valve_body_size[2], rOuter),
   };
 }
 
@@ -466,6 +565,23 @@ export function validateGeometryConfig(cfg: GeometryConfig): ValidationReport {
   must(L.rBoltCircle > L.rOuter + cfg.chamber.bolt_head_diameter && L.rBoltCircle < L.rLid - cfg.chamber.bolt_head_diameter, "bolt circle must lie on the flange between wall and lid edge");
   must(L.rTopFlange <= L.rLid, "lid must cover the top flange");
   must(cfg.chamber.lid_oring_groove_diameter / 2 > L.rInner + 0.01 && cfg.chamber.lid_oring_groove_diameter / 2 < L.rBoltCircle - 0.01, "o-ring groove must be between the bore and bolt circle");
+
+  // Gas panel MFC blocks (block 0 = MFC-01)
+  const gp = cfg.peripherals;
+  must(Number.isInteger(gp.mfc_block_count) && gp.mfc_block_count >= 1, "gas panel needs at least one MFC block (MFC-01)");
+  must(gp.mfc_block_pitch >= gp.mfc_block_size[0], "MFC blocks must not overlap");
+  must((gp.mfc_block_count - 1) * gp.mfc_block_pitch + gp.mfc_block_size[0] <= gp.gas_panel_size[0], "MFC blocks must fit within the gas panel width");
+  must(Math.abs(gp.mfc_block_offset_y) + gp.mfc_block_size[1] / 2 <= gp.gas_panel_size[1] / 2, "MFC blocks must fit within the gas panel height");
+
+  // Station (tool shell): must clear the slit valve, the deck must sit beyond the EFEM face and the seat must be on the deck
+  const stn = L.station;
+  must(stn.loadLockR0 > L.rOuter + 0.012 + cfg.ports.slit.valve_body_size[2], "load lock must clear the slit valve body");
+  must(stn.deckR1 > stn.deckR0 && stn.deckDepth > 0.2, "load port deck needs a usable depth");
+  const seatR = Math.hypot(stn.seat[0], stn.seat[2]);
+  must(seatR > stn.deckR0 + 0.1 && seatR < stn.deckR1 - 0.1, "FOUP seat must lie on the load port deck with clearance");
+  must(stn.enclosureWidth > cfg.ports.slit.valve_body_size[0], "station enclosure must be wider than the slit valve body");
+  must(stn.enclosureTop > cfg.ports.slit.center_y + cfg.ports.slit.valve_body_size[1] / 2, "station enclosure must cover the slit valve height");
+  must(stn.deckTopY > stn.floorY + 0.5 && stn.deckTopY < stn.enclosureTop, "deck height must be between floor and enclosure top");
 
   return { errors, warnings };
 }

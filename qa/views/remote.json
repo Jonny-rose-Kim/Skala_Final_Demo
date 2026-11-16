@@ -1,0 +1,10 @@
+[
+  { "id": "r01_overview", "instance": "REMOTE-01", "mode": "assembled", "time": 20, "local": true, "cam": [240, 66, 2.4, [0, 0.3, 0]], "ui": true },
+  { "id": "r02_source_cutaway", "instance": "REMOTE-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 250, "sweepDeg": 110 }, "time": 20, "local": true, "cam": [255, 76, 0.75, [0, 0.56, 0]] },
+  { "id": "r03_longitudinal", "instance": "REMOTE-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 250, "sweepDeg": 120 }, "time": 20, "local": true, "cam": [262, 82, 1.45, [0, 0.32, 0]], "ui": true },
+  { "id": "r04_wafer_closeup", "instance": "REMOTE-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 250, "sweepDeg": 120 }, "time": 20, "local": true, "cam": [250, 80, 0.5, [0.02, 0.14, 0]] },
+  { "id": "r05_exploded", "instance": "REMOTE-01", "mode": "exploded", "time": 20, "local": true, "cam": [235, 62, 3.4, [0, 0.5, 0]] },
+  { "id": "r06_xray", "instance": "REMOTE-01", "mode": "xray", "time": 20, "local": true, "cam": [250, 72, 1.6, [0, 0.35, 0]] },
+  { "id": "r07_markers_oes", "instance": "REMOTE-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 250, "sweepDeg": 110 }, "time": 20, "local": true, "cam": [200, 70, 0.9, [0, 0.56, 0]], "overlays": { "markers": true }, "select": "oes_spectrometer", "measurement": { "kind": "point", "id": "remote.mp.source_oes_path" }, "ui": true },
+  { "id": "r08_bay", "overview": true, "time": 20, "cam": [215, 58, 7, [0, 0.2, -1.7]], "ui": true }
+]

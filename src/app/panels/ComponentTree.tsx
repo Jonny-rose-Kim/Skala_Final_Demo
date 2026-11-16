@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Search } from "lucide-react";
-import { ASSEMBLIES, COMPONENTS } from "../../domain/ccpChamberTemplate";
+import { getBundle } from "../../domain/registry";
 import { usePresentationStore } from "../../presentation/store";
 
 export function ComponentTree() {
@@ -12,19 +12,25 @@ export function ComponentTree() {
   const toggleHidden = usePresentationStore((s) => s.toggleHidden);
   const isolated = usePresentationStore((s) => s.isolatedAssetId);
   const activeInstanceId = usePresentationStore((s) => s.activeInstanceId);
+  const instances = usePresentationStore((s) => s.instances);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const info = instances.find((i) => i.instanceId === activeInstanceId);
+  const bundle = info ? getBundle(info.templateId) : undefined;
 
   const groups = useMemo(() => {
+    if (!bundle) return [];
     const q = query.trim().toLowerCase();
-    return ASSEMBLIES.slice()
+    const t = bundle.template;
+    return t.assemblies
+      .slice()
       .sort((a, b) => a.order - b.order)
       .map((a) => ({
         assembly: a,
-        items: COMPONENTS.filter((c) => c.assembly === a.id && (!q || c.name.toLowerCase().includes(q) || c.assetId.includes(q) || c.nodeKey.includes(q))),
+        items: t.components.filter((c) => c.assembly === a.id && (!q || c.name.toLowerCase().includes(q) || c.assetId.includes(q) || c.nodeKey.includes(q))),
       }))
       .filter((g) => g.items.length > 0);
-  }, [query]);
+  }, [query, bundle]);
 
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col border-r border-slate-800 bg-slate-950/70" data-testid="component-tree">
@@ -32,6 +38,7 @@ export function ComponentTree() {
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Component tree</div>
         <div className="mb-1.5 truncate text-[11px] text-slate-500" title={activeInstanceId}>
           {activeInstanceId}
+          {bundle ? <span className="text-slate-600"> · {bundle.template.displayName}</span> : null}
         </div>
         <label className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-900 px-2 py-1">
           <Search className="h-3.5 w-3.5 text-slate-500" aria-hidden />
@@ -59,6 +66,7 @@ export function ComponentTree() {
                   const isSel = selected === c.assetId;
                   const isHov = hovered === c.assetId;
                   const isHidden = hidden.includes(c.assetId) || (isolated !== null && isolated !== c.assetId);
+                  const isEffect = c.kind === "effect";
                   return (
                     <div
                       key={c.assetId}
@@ -71,7 +79,7 @@ export function ComponentTree() {
                       <button type="button" className={`flex-1 truncate py-1 text-left text-[12px] ${isHidden ? "text-slate-500 line-through" : ""}`} onClick={() => select(c.assetId)} title={c.description}>
                         {c.name}
                       </button>
-                      {c.assetId !== "plasma_volume" && (
+                      {!isEffect && (
                         <button type="button" className="rounded p-0.5 text-slate-500 opacity-60 hover:text-slate-200 group-hover:opacity-100" onClick={() => toggleHidden(c.assetId)} title={isHidden ? "Show" : "Hide"} aria-label={`${isHidden ? "Show" : "Hide"} ${c.name}`}>
                           {isHidden ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
                         </button>
@@ -82,6 +90,7 @@ export function ComponentTree() {
             </div>
           );
         })}
+        {!bundle && <div className="px-3 py-2 text-[12px] text-slate-500">장비를 불러오는 중…</div>}
       </div>
     </aside>
   );

@@ -3,6 +3,7 @@
  * Identity (asset ids / node keys), hierarchy, explode directions and Korean role descriptions
  * live here; geometry comes from the versioned geometry config.
  */
+import { CHAMBER_LAYOUT, type ChamberLayout } from "../config/geometry";
 import type { AssemblyDef, ComponentDef, ConnectionDef, EquipmentTemplate, PortDef } from "./types";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
@@ -15,6 +16,7 @@ export const ASSEMBLIES: AssemblyDef[] = [
   { id: "vacuum_exhaust", name: "Vacuum / exhaust", description: "Pumping baffle, exhaust port, throttle/isolation valve, foreline, pump", order: 5 },
   { id: "access_inspection", name: "Access & inspection", description: "Slit valve, viewport, pressure/temperature sensing 위치", order: 6 },
   { id: "visualization", name: "Visualization (illustrative)", description: "센서·물리 계산과 무관한 설명용 시각 효과", order: 7 },
+  { id: "station_interface", name: "Tool interface (station)", description: "OHT 반송을 위한 경량 tool shell: load port, 단순화한 EFEM/load lock 경계. 상세 로봇은 V1 범위가 아니다", order: 8 },
 ];
 
 const UP = (d: number) => ({ dir: [0, 1, 0] as [number, number, number], distance: d });
@@ -22,7 +24,7 @@ const DOWN = (d: number) => ({ dir: [0, -1, 0] as [number, number, number], dist
 const RADIAL = (d: number) => ({ dir: "radial" as const, distance: d });
 const NONE = { dir: [0, 0, 0] as [number, number, number], distance: 0 };
 
-export const COMPONENTS: ComponentDef[] = [
+export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
   // ---------------------------------------------------------------- chamber body
   {
     assetId: "chamber_body",
@@ -98,13 +100,30 @@ export const COMPONENTS: ComponentDef[] = [
     name: "Gas panel (MFC enclosure)",
     kind: "gas",
     assembly: "gas_distribution",
-    description: "Mass flow controller와 valve가 들어가는 gas panel의 대표 외형. V1에서는 외형만 제공하며 내부 MFC 구성과 유량은 연결되지 않았다.",
+    description: "Mass flow controller와 valve가 들어가는 gas panel의 대표 외형. 유량 센서는 panel이 아니라 내부 MFC(MFC-01)에 속한다. 나머지 MFC 블록은 아직 정의되지 않은 slot이다.",
     materialRef: "painted_housing",
     materialNote: "Painted sheet-metal enclosure (가정)",
     selectable: true,
     explode: { dir: [0, 0, 1], distance: 0.25 },
     cutaway: "keep",
     dimensions: (L) => [mm("Width", L.cfg.peripherals.gas_panel_size[0]), mm("Height", L.cfg.peripherals.gas_panel_size[1]), mm("Depth", L.cfg.peripherals.gas_panel_size[2])],
+  },
+  {
+    assetId: "mfc_01",
+    nodeKey: "gas.panel.mfc_01",
+    name: "Mass flow controller MFC-01",
+    kind: "gas",
+    assembly: "gas_distribution",
+    parentAssetId: "gas_panel",
+    description:
+      "Gas panel 안에 장착된 열식 질량유량 제어기(MFC). 공정 가스 유량을 측정하고 제어하며, 유량 센서(sensor.mfc_flow)가 이 부품에 속한다. 원인 분석에서 유량 이상을 gas panel 전체가 아니라 MFC 단위로 추적하기 위해 별도 부품으로 둔다. V1에서는 연결된 데이터가 없다.",
+    materialRef: "stainless",
+    materialNote: "Stainless MFC body (가정)",
+    selectable: true,
+    explode: { dir: [0, 0, 1], distance: 0.25 },
+    cutaway: "keep",
+    dimensions: (L) => [mm("Width", L.mfcBlocks.size[0]), mm("Height", L.mfcBlocks.size[1]), mm("Depth", L.mfcBlocks.size[2])],
+    assumptions: ["가스 종류, 유량 범위(full scale), 내부 구조는 정하지 않았다. 외형은 대표 블록이다."],
   },
   {
     assetId: "gas_line",
@@ -560,6 +579,61 @@ export const COMPONENTS: ComponentDef[] = [
   },
 ];
 
+export const STATION_COMPONENTS: ComponentDef<ChamberLayout>[] = [
+  {
+    assetId: "load_lock",
+    nodeKey: "station.load_lock",
+    name: "Load lock / gate boundary (simplified)",
+    kind: "enclosure",
+    assembly: "station_interface",
+    description:
+      "Slit valve 바깥쪽의 단순화한 load lock 구간. Atmospheric side(EFEM)와 Vacuum process side(chamber)를 구분하는 경계이며, 내부 wafer handling은 V1에서 'Simplified internal transfer'로 표현한다. 불투명하게 유지되어 생략한 경로가 열린 공간에서 보이지 않는다.",
+    materialRef: "painted_housing",
+    materialNote: "Painted enclosure (가정), 내부 미구현",
+    selectable: true,
+    explode: { dir: [-1, 0, 0], distance: 0.25 },
+    cutaway: "keep",
+    shell: false,
+    alwaysOpaque: true,
+    dimensions: (L) => [mm("Length (x)", L.station.loadLockLength), mm("Width (z)", L.station.enclosureWidth), mm("Height", L.station.enclosureTop - L.station.floorY)],
+    assumptions: ["Load lock 내부(pump/vent, 로봇)는 구현하지 않았다. 경계와 상태 전이만 설명한다."],
+  },
+  {
+    assetId: "efem_enclosure",
+    nodeKey: "station.efem",
+    name: "EFEM / transfer enclosure (simplified)",
+    kind: "enclosure",
+    assembly: "station_interface",
+    description: "Load port의 FOUP door와 load lock 사이의 대기측 wafer handling 영역. 상세 로봇 없이 닫힌 enclosure로 표현하며, wafer는 FOUP slot ↔ process stage 사이에서 'internal transfer' holder를 거친다.",
+    materialRef: "painted_housing",
+    materialNote: "Painted sheet-metal enclosure (가정)",
+    selectable: true,
+    explode: { dir: [-1, 0, 0], distance: 0.55 },
+    cutaway: "keep",
+    shell: false,
+    alwaysOpaque: true,
+    dimensions: (L) => [mm("Length (x)", L.station.efemLength), mm("Width (z)", L.station.enclosureWidth), mm("Height", L.station.enclosureTop - L.station.floorY)],
+    assumptions: ["EFEM 로봇, aligner, FOUP door opener는 구현하지 않았다. Simplified internal transfer 구간이다."],
+  },
+  {
+    assetId: "load_port",
+    nodeKey: "station.load_port",
+    name: "Load port (FOUP deck)",
+    kind: "station",
+    assembly: "station_interface",
+    description: "FOUP이 놓이는 load port deck과 seating reference. OHT는 이 deck 위의 FOUP만 다루며 chamber gate에 직접 도킹하지 않는다. Deck 높이는 대표 가정값이다.",
+    materialRef: "stainless",
+    materialNote: "Stainless deck, kinematic coupling pins (가정)",
+    selectable: true,
+    explode: { dir: [-1, 0, 0], distance: 0.9 },
+    cutaway: "keep",
+    shell: false,
+    dimensions: (L) => [mm("Deck height above floor", L.station.deckTopY - L.station.floorY), mm("Deck depth (x)", L.station.deckDepth), mm("Deck width (z)", L.station.deckWidth)],
+    assumptions: ["Deck 높이 900 mm는 흔한 load port 높이 범위의 대표값이며 특정 규격 인증을 뜻하지 않는다."],
+    label: { text: "Load port", priority: 2 },
+  },
+];
+
 export const PORTS: PortDef[] = [
   { portId: "gas_out", assetId: "gas_panel", medium: "gas", role: "outlet", name: "Gas panel outlet" },
   { portId: "in", assetId: "gas_line", medium: "gas", role: "inlet", name: "Line inlet" },
@@ -603,6 +677,12 @@ export const PORTS: PortDef[] = [
   { portId: "transfer", assetId: "pedestal", medium: "wafer", role: "bidirectional", name: "Lift pin handoff" },
   { portId: "tap", assetId: "pressure_sensor", medium: "vacuum", role: "inlet", name: "Pressure tap" },
   { portId: "pressure_tap", assetId: "chamber_body", medium: "vacuum", role: "outlet", name: "Pressure tap bore" },
+  { portId: "seat", assetId: "load_port", medium: "carrier", role: "bidirectional", name: "FOUP seating (bottom reference)" },
+  { portId: "door", assetId: "load_port", medium: "wafer", role: "bidirectional", name: "FOUP door interface" },
+  { portId: "atm", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Atmospheric transfer" },
+  { portId: "vac", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Load lock side" },
+  { portId: "atm", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Atmospheric side" },
+  { portId: "vac", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Vacuum side (slit)" },
 ];
 
 export const CONNECTIONS: ConnectionDef[] = [
@@ -628,19 +708,76 @@ export const CONNECTIONS: ConnectionDef[] = [
   { connectionId: "mech.shaft-pedestal", kind: "mechanical", from: { assetId: "pedestal_shaft", portId: "mount" }, to: { assetId: "pedestal", portId: "mount" }, description: "Shaft supports and moves the pedestal" },
   { connectionId: "wafer.slit-pedestal", kind: "wafer", from: { assetId: "slit_valve", portId: "transfer" }, to: { assetId: "pedestal", portId: "transfer" }, description: "Transfer path: slit opening ↔ lift pins at transfer height" },
   { connectionId: "vac.tap-sensor", kind: "vacuum", from: { assetId: "chamber_body", portId: "pressure_tap" }, to: { assetId: "pressure_sensor", portId: "tap" }, description: "Pressure tap bore → manometer standoff" },
+  { connectionId: "wafer.loadport-efem", kind: "wafer", from: { assetId: "load_port", portId: "door" }, to: { assetId: "efem_enclosure", portId: "atm" }, description: "FOUP door ↔ EFEM (simplified internal transfer)" },
+  { connectionId: "wafer.efem-loadlock", kind: "wafer", from: { assetId: "efem_enclosure", portId: "vac" }, to: { assetId: "load_lock", portId: "atm" }, description: "EFEM ↔ load lock (atmospheric/vacuum boundary)" },
+  { connectionId: "wafer.loadlock-slit", kind: "wafer", from: { assetId: "load_lock", portId: "vac" }, to: { assetId: "slit_valve", portId: "transfer" }, description: "Load lock ↔ slit valve (vacuum side)" },
 ];
 
-export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate = {
-  templateId: "ccp_pecvd_single_wafer_300",
-  templateRevision: "1.1.0",
-  title: "Single-wafer direct parallel-plate (CCP) PECVD process chamber",
-  assemblies: ASSEMBLIES,
-  components: COMPONENTS,
-  ports: PORTS,
-  connections: CONNECTIONS,
+/** Assets treated as "shell" (housings) by the x-ray mode. */
+export const CCP_SHELL_ASSETS = new Set([
+  "chamber_body",
+  "lid",
+  "chamber_liner",
+  "slit_valve",
+  "exhaust_port",
+  "throttle_valve",
+  "isolation_valve",
+  "foreline",
+  "vacuum_pump",
+  "matching_network",
+  "gas_panel",
+  "rf_generator",
+  "frame",
+  "viewport",
+  "pressure_sensor",
+]);
+
+/** Labels overlay entries (text, priority) of the CCP template. */
+export const CCP_LABELS: Record<string, { text: string; priority: number }> = {
+  showerhead_faceplate: { text: "Showerhead faceplate (upper electrode)", priority: 10 },
+  wafer: { text: "Wafer 300 mm", priority: 9 },
+  pedestal: { text: "Heated pedestal", priority: 8 },
+  plasma_volume: { text: "Plasma (illustrative)", priority: 7 },
+  lid: { text: "Lid", priority: 6 },
+  slit_valve: { text: "Slit valve", priority: 5 },
+  exhaust_port: { text: "Exhaust port", priority: 4 },
+  gas_inlet: { text: "Gas inlet", priority: 3 },
+  matching_network: { text: "Matching network", priority: 2 },
+  chamber_body: { text: "Chamber body", priority: 1 },
 };
 
-const byId = new Map(COMPONENTS.map((c) => [c.assetId, c]));
+const ALL_COMPONENTS: ComponentDef<ChamberLayout>[] = [...COMPONENTS.map((c) => ({ ...c, shell: CCP_SHELL_ASSETS.has(c.assetId), label: CCP_LABELS[c.assetId] })), ...STATION_COMPONENTS];
+
+export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate<ChamberLayout> = {
+  templateId: "ccp_pecvd_single_wafer_300",
+  templateRevision: "1.2.0",
+  family: "CCP_PECVD",
+  displayName: "CCP PECVD",
+  title: "Single-wafer direct parallel-plate (CCP) PECVD process chamber",
+  assemblies: ASSEMBLIES,
+  components: ALL_COMPONENTS,
+  ports: PORTS,
+  connections: CONNECTIONS,
+  joints: [],
+  facts: [
+    { label: "Source coupling", value: "Capacitive (CCP)", note: "RF-powered upper showerhead electrode, grounded heated pedestal" },
+    { label: "Plasma location", value: "Direct, between the electrodes", note: "주 방전 영역은 faceplate와 wafer 사이 전극 간격 안" },
+    { label: "Lower RF bias", value: "None in this template", note: "하부 전극은 ground return (기존 대표 구성 유지)" },
+    { label: "Process mode", value: "PECVD deposition", note: "Cleaning용 remote source는 이 template에 없음" },
+    { label: "Atmospheric / vacuum boundary", value: "Slit valve + simplified load lock", note: "Load port → EFEM → load lock → slit valve" },
+  ],
+  station: {
+    stationId: "LP.PECVD",
+    loadPortAssetId: "load_port",
+    seatLocal: CHAMBER_LAYOUT.station.seat,
+    doorFacingLocal: CHAMBER_LAYOUT.station.doorFacing,
+    transferEnclosureAssetId: "efem_enclosure",
+    waferPresentationAssetId: "wafer",
+    noteKo: "FOUP slot ↔ EFEM(simplified internal transfer) ↔ load lock ↔ slit valve ↔ pedestal. 내부 로봇은 구현하지 않았다.",
+  },
+};
+
+const byId = new Map(ALL_COMPONENTS.map((c) => [c.assetId, c]));
 export function getComponent(assetId: string): ComponentDef | undefined {
   return byId.get(assetId);
 }
@@ -652,7 +789,7 @@ export function connectionsFor(assetId: string): ConnectionDef[] {
 }
 
 /** Validate referential integrity of the template (used by unit tests and the dev warning overlay). */
-export function validateTemplate(t: EquipmentTemplate): string[] {
+export function validateTemplate(t: EquipmentTemplate<unknown>): string[] {
   const errors: string[] = [];
   const ids = new Set<string>();
   for (const c of t.components) {

@@ -1,4 +1,5 @@
 // Performance measurement with vsync disabled (real GPU, headed Chrome). Reports fps/frame time for representative states.
+// Usage: node qa/perf.mjs [webgl2|webgpu]
 import { chromium } from "playwright";
 const mode = process.argv[2] ?? "webgl2";
 const args = ["--ignore-gpu-blocklist", "--window-size=1920,1080", "--force-device-scale-factor=1", "--disable-frame-rate-limit", "--disable-gpu-vsync"];
@@ -10,7 +11,7 @@ await page.waitForFunction(() => window.__pecvdTwin && window.__pecvdTwin.isRead
 await page.waitForTimeout(800);
 const measure = async (label, setup) => {
   await page.evaluate(setup);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(900);
   const r = await page.evaluate(async () => {
     const engine = window.__pecvdTwin.host.world.scene.getEngine();
     const frames = [];
@@ -23,15 +24,18 @@ const measure = async (label, setup) => {
     });
     frames.sort((a, b) => a - b);
     const avg = frames.reduce((s, x) => s + x, 0) / frames.length;
-    return { frames: frames.length, avgMs: avg, p95Ms: frames[Math.floor(frames.length * 0.95)], fps: 1000 / avg, w: engine.getRenderWidth(), h: engine.getRenderHeight() };
+    return { frames: frames.length, avgMs: avg, p95Ms: frames[Math.floor(frames.length * 0.95)], fps: 1000 / avg, w: engine.getRenderWidth(), h: engine.getRenderHeight(), active: window.__pecvdTwin.host.world.scene.getActiveMeshes().length };
   });
-  console.log(`${mode} | ${label} | ${r.w}x${r.h} | ${r.fps.toFixed(0)} fps avg | ${r.avgMs.toFixed(2)} ms avg | p95 ${r.p95Ms.toFixed(2)} ms`);
+  console.log(`${mode} | ${label} | ${r.w}x${r.h} | active ${r.active} | ${r.fps.toFixed(0)} fps avg | ${r.avgMs.toFixed(2)} ms avg | p95 ${r.p95Ms.toFixed(2)} ms`);
 };
-await measure("assembled, plasma off, high", () => { const a = window.__pecvdTwin; a.store.getState().setQualityPreset("high"); a.store.getState().setViewMode("assembled"); a.freezeTime(0.5); a.setCamera(240, 66, 1.75, [0, 0.12, 0]); });
-await measure("cutaway, plasma on, high (overview)", () => { const a = window.__pecvdTwin; a.store.getState().setViewMode("cutaway"); a.freezeTime(8); a.setCamera(255, 70, 1.5, [0, 0.12, 0]); });
-await measure("cutaway, plasma on, high (close-up, plasma fills screen)", () => { const a = window.__pecvdTwin; a.freezeTime(8); a.setCamera(250, 80, 0.42, [0.02, 0.16, 0]); });
-await measure("cutaway, plasma on, balanced (close-up)", () => { const a = window.__pecvdTwin; a.store.getState().setQualityPreset("balanced"); a.freezeTime(8); a.setCamera(250, 80, 0.42, [0.02, 0.16, 0]); });
-await measure("x-ray, plasma on, high", () => { const a = window.__pecvdTwin; a.store.getState().setQualityPreset("high"); a.store.getState().setViewMode("xray"); a.freezeTime(8); a.setCamera(250, 72, 1.2, [0, 0.14, 0]); });
+await measure("CCP cutaway, plasma on, high (regression)", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setScenario("ccp-illustrative-cycle-v1"); st.setActiveInstance("PECVD-01.CH-A"); st.setViewMode("cutaway"); st.setCutaway({ azimuthDeg: 265, sweepDeg: 95 }); a.freezeTime(8); a.setCamera(255, 70, 1.5, [0, 0.12, 0]); });
+await measure("CCP cutaway close-up, plasma fills screen, high", () => { const a = window.__pecvdTwin; a.freezeTime(8); a.setCamera(250, 80, 0.42, [0.02, 0.16, 0]); });
+await measure("Bay overview (4 tools + rail), high", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setScenario("route-a-linked-v1"); st.setOverview(true); a.freezeTime(52); a.setCamera(205, 60, 10, [-0.3, 0.8, 0.2]); });
+await measure("Remote source cutaway (glow + afterglow + traces), high", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setScenario("remote-icp-cycle-v1"); st.setActiveInstance("REMOTE-01"); st.setViewMode("cutaway"); st.setCutaway({ azimuthDeg: 250, sweepDeg: 110 }); a.freezeTime(20); a.setCameraLocal("REMOTE-01", 255, 76, 0.75, [0, 0.56, 0]); });
+await measure("CMP contact cutaway (grooved pad, slurry, optical), high", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setScenario("sti-cmp-cycle-v1"); st.setActiveInstance("CMP-01"); st.setViewMode("cutaway"); st.setCutaway({ azimuthDeg: 270, sweepDeg: 100 }); a.freezeTime(15); a.setCameraLocal("CMP-01", 268, 76, 0.75, [-0.19, 0.98, 0]); });
+await measure("CMP assembled, platen spinning (playing)", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setViewMode("assembled"); a.freezeTime(null); a.host.clock.scrub(12); a.host.clock.play(); a.setCameraLocal("CMP-01", 230, 62, 3.0, [-0.3, 0.95, 0.1]); });
+await measure("OHT loaded travel (playing), high", () => { const st0 = window.__pecvdTwin.store.getState(); st0.setFollowPhase(false); st0.setQualityPreset("high"); st0.setOverview(false); const a = window.__pecvdTwin; const st = a.store.getState(); st.setScenario("oht-transfer-v1"); st.setActiveInstance("OHT-01"); st.setViewMode("assembled"); a.freezeTime(null); a.host.clock.scrub(18); a.host.clock.play(); a.setCameraLocal("OHT-01", 200, 64, 4.5, [0, 1.8, 1.8]); });
+await measure("Bay overview, balanced", () => { const a = window.__pecvdTwin; const st = a.store.getState(); st.setQualityPreset("balanced"); st.setScenario("route-a-linked-v1"); st.setOverview(true); a.freezeTime(52); a.setCamera(205, 60, 10, [-0.3, 0.8, 0.2]); });
 const gpu = await page.evaluate(() => window.__pecvdTwin.stats().gpu);
 console.log("gpu:", gpu);
 await browser.close();

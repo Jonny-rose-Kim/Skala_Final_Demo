@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.geometry-config/1",
-  "geometry_revision": "ccp-pecvd-300-v1.1.0",
+  "geometry_revision": "ccp-pecvd-300-v1.2.0",
   "template_id": "ccp_pecvd_single_wafer_300",
   "title": "Representative single-wafer direct parallel-plate (CCP) PECVD process chamber, 300 mm",
   "source": {
@@ -113,8 +113,25 @@
     "rf_generator_center": [0.640, -0.690, 0.000],
     "gas_panel_size": [0.200, 0.260, 0.160],
     "gas_panel_center": [0.000, 0.230, 0.480],
+    "mfc_block_size": [0.045, 0.090, 0.020],
+    "mfc_block_pitch": 0.055,
+    "mfc_block_count": 3,
+    "mfc_block_offset_y": 0.030,
     "frame_leg_size": 0.040,
     "frame_leg_radius": 0.300,
     "frame_bottom_y": -0.780
+  },
+  "station": {
+    "note": "Lightweight tool shell for carrier transport: slit valve side (-X) -> simplified load lock -> EFEM enclosure -> load port deck. Internal robots are not modeled (simplified internal transfer).",
+    "gap_from_slit_valve": 0.020,
+    "load_lock_length": 0.200,
+    "efem_length": 0.460,
+    "enclosure_width": 0.900,
+    "enclosure_top_y": 0.400,
+    "deck_depth": 0.440,
+    "deck_width": 0.520,
+    "deck_height_above_floor": 0.900,
+    "deck_thickness": 0.025,
+    "foup_seat_offset_from_efem_face": 0.220
   }
 }

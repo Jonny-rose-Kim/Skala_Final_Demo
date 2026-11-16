@@ -43,14 +43,15 @@ export const SENSORS: SensorInstanceDef[] = [
     sensorId: "sensor.mfc_flow",
     name: "MFC flow feedback",
     principle: "Thermal mass flow controller",
-    mountAssetId: "gas_panel",
-    channels: [{ channelId: "ch.flow.mfc1", name: "MFC-1 flow", quantity: "flow", unit: "sccm", payloadType: "scalar", measurementPointId: "mp.gas_panel_out" }],
+    mountAssetId: "mfc_01",
+    channels: [{ channelId: "ch.flow.mfc1", name: "MFC-1 flow", quantity: "flow", unit: "sccm", payloadType: "scalar", measurementPointId: "mp.mfc_01_out" }],
   },
 ];
 
 export function measurementPoints(L: ChamberLayout): MeasurementPointDef[] {
   const tap = L.ports.pressure_tap;
   const tapXZ = azimuthToXZ(tap.azimuth, L.rLinerIn);
+  const [mfcX, mfcY, mfcZ] = L.mfcBlocks.centers[0];
   const exhaustXZ = azimuthToXZ(L.ports.exhaust.azimuth, L.rOuter + L.cfg.ports.exhaust.stub_length + L.cfg.exhaust_line.throttle_valve_body_length / 2);
   return [
     {
@@ -86,12 +87,12 @@ export function measurementPoints(L: ChamberLayout): MeasurementPointDef[] {
       note: "Valve 개도 feedback.",
     },
     {
-      pointId: "mp.gas_panel_out",
-      name: "Gas panel outlet flow",
-      targetAssetId: "gas_panel",
+      pointId: "mp.mfc_01_out",
+      name: "MFC-01 outlet flow",
+      targetAssetId: "mfc_01",
       quantity: "flow",
-      position: [L.cfg.peripherals.gas_panel_center[0], L.cfg.peripherals.gas_panel_center[1] + L.cfg.peripherals.gas_panel_size[1] / 2, L.cfg.peripherals.gas_panel_center[2]],
-      note: "MFC 출구 기준 유량.",
+      position: [mfcX, mfcY + L.mfcBlocks.size[1] / 2, mfcZ],
+      note: "MFC-01 출구 기준 유량. MFC 본체는 gas panel 안에 있고, 센서는 gas panel이 아니라 MFC-01에 속한다.",
     },
   ];
 }

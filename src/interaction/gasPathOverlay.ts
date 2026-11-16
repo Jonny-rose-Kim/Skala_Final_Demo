@@ -15,12 +15,16 @@ import { DEG } from "../config/geometry";
 import { revolveProfile, roundPolyline, tubeAlongPath, type Vec3 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
 
-interface PathDef {
+export interface PathDef {
   id: string;
   points: Vec3[];
   color: Color3;
   arrows: number;
   speed: number; // path lengths per second
+  /** Tube radius (default 1.8 mm). */
+  radius?: number;
+  /** Corner rounding radius (default 20 mm). */
+  cornerRadius?: number;
 }
 
 export function gasPaths(L: ChamberLayout): PathDef[] {
@@ -93,17 +97,20 @@ interface ArrowSet {
   speed: number;
 }
 
-export class GasPathOverlay {
+/** Generic schematic path overlay (tubes + moving arrows along presentation time). */
+export class SchematicPathOverlay {
   readonly root: TransformNode;
   private readonly tubes: Mesh[] = [];
   private readonly arrowSets: ArrowSet[] = [];
   private readonly materials: PBRMaterial[] = [];
   private visible = false;
+  /** Flow factor 0..1 scaling the arrow speed (0 = arrows parked). */
+  flow = 1;
 
-  constructor(scene: Scene, parent: TransformNode, L: ChamberLayout, instanceId: string) {
-    this.root = new TransformNode(`${instanceId}::gas_overlay`, scene);
+  constructor(scene: Scene, parent: TransformNode, paths: PathDef[], instanceId: string, key = "gas_overlay") {
+    this.root = new TransformNode(`${instanceId}::${key}`, scene);
     this.root.parent = parent;
-    for (const p of gasPaths(L)) {
+    for (const p of paths) {
       const mat = new PBRMaterial(`${instanceId}::gas_mat_${p.id}`, scene);
       mat.unlit = true;
       mat.albedoColor = p.color;
@@ -111,14 +118,14 @@ export class GasPathOverlay {
       mat.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
       mat.backFaceCulling = false;
       this.materials.push(mat);
-      const smooth = roundPolyline(p.points, 0.02, 5);
-      const tube = new Mesh(`${instanceId}::gas_tube_${p.id}`, scene);
-      applyMeshData(tube, tubeAlongPath(smooth, 0.0018, { segments: 8, caps: true }));
+      const smooth = roundPolyline(p.points, p.cornerRadius ?? 0.02, 5);
+      const tube = new Mesh(`${instanceId}::${key}_tube_${p.id}`, scene);
+      applyMeshData(tube, tubeAlongPath(smooth, p.radius ?? 0.0018, { segments: 8, caps: true }));
       tube.material = mat;
       tube.parent = this.root;
       tube.isPickable = false;
       tube.receiveShadows = false;
-      tube.metadata = { instanceId, assetId: "gas_overlay", decorative: true, isOverlay: true };
+      tube.metadata = { instanceId, assetId: key, decorative: true, isOverlay: true };
       this.tubes.push(tube);
       // arrows
       const cum: number[] = [0];
@@ -135,14 +142,14 @@ export class GasPathOverlay {
       );
       const meshes: Mesh[] = [];
       for (let k = 0; k < p.arrows; k++) {
-        const cone = new Mesh(`${instanceId}::gas_arrow_${p.id}_${k}`, scene);
+        const cone = new Mesh(`${instanceId}::${key}_arrow_${p.id}_${k}`, scene);
         applyMeshData(cone, coneMd);
         cone.material = mat;
         cone.parent = this.root;
         cone.isPickable = false;
         cone.receiveShadows = false;
         cone.rotationQuaternion = Quaternion.Identity();
-        cone.metadata = { instanceId, assetId: "gas_overlay", decorative: true, isOverlay: true };
+        cone.metadata = { instanceId, assetId: key, decorative: true, isOverlay: true };
         meshes.push(cone);
       }
       this.arrowSets.push({ meshes, samples, cum, total, speed: p.speed });
@@ -163,7 +170,7 @@ export class GasPathOverlay {
     for (const set of this.arrowSets) {
       const n = set.meshes.length;
       for (let k = 0; k < n; k++) {
-        let s = ((timeSec * set.speed + k / n) % 1 + 1) % 1;
+        let s = ((timeSec * set.speed * this.flow + k / n) % 1 + 1) % 1;
         s *= set.total;
         // find segment
         let i = 1;
@@ -187,6 +194,13 @@ export class GasPathOverlay {
     for (const t of this.tubes) t.dispose(false, false);
     for (const m of this.materials) m.dispose(true, false);
     this.root.dispose();
+  }
+}
+
+/** CCP gas path overlay (supply -> showerhead -> wafer edge -> baffle -> exhaust). */
+export class GasPathOverlay extends SchematicPathOverlay {
+  constructor(scene: Scene, parent: TransformNode, L: ChamberLayout, instanceId: string) {
+    super(scene, parent, gasPaths(L), instanceId, "gas_overlay");
   }
 }
 

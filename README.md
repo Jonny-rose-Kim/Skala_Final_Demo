@@ -1,10 +1,8 @@
 # PECVD FAB Twin
 
-300mm 단일 웨이퍼용 CCP(평행판) PECVD 공정 챔버를 브라우저에서 3D로 살펴보는 웹 앱입니다.
-챔버 내부 구조와 플라즈마가 켜지고 꺼지는 모습을 단면, 투시, 분해 화면으로 볼 수 있습니다.
+반도체 FAB의 작은 bay 하나를 브라우저에서 3D로 살펴보는 웹 앱입니다. 300 mm 단일 웨이퍼용 CCP(평행판) PECVD 챔버, Remote ICP PECVD, Rotary STI CMP, 그리고 FOUP을 나르는 OHT가 한 장면에 들어 있습니다. 각 장비의 구조와 동작, 센서가 어디에서 무엇을 재는지, 그리고 증착한 웨이퍼가 FOUP과 OHT를 거쳐 CMP로 가는 흐름을 볼 수 있습니다.
 
-지금 버전(V1)은 프론트엔드만으로 동작합니다. 백엔드, 실제 센서 데이터, 물리 시뮬레이션은 아직 없고,
-화면에 나오는 플라즈마는 이해를 돕기 위한 시각 효과일 뿐 물리 계산 결과가 아닙니다.
+지금 버전(V1)은 프론트엔드만으로 동작합니다. 백엔드, 실제 센서 데이터, 물리 시뮬레이션은 없고, 화면에 나오는 플라즈마, slurry, 막 두께 변화는 이해를 돕기 위한 시각 효과일 뿐 계산 결과가 아닙니다.
 
 ## 기술 스택
 
@@ -36,10 +34,12 @@ npm run dev
 | `npm run typecheck` | 타입 검사 |
 | `npm test` | 단위 테스트 |
 | `npm run test:e2e` | E2E 테스트 (WebGL2, WebGPU 각각 실행) |
-| `npm run validate:config` | 챔버 치수 설정 파일 검사 |
+| `npm run validate:config` | 장비 치수 설정, 템플릿, 계측 정의, bay 배치 검사 |
 
 E2E 테스트와 `qa/` 폴더의 스크립트는 PC에 설치된 Google Chrome을 창으로 띄워서 실행합니다.
 리눅스라면 화면이 있는 환경(DISPLAY 설정)에서 돌려야 합니다. 앱을 실행하는 데는 필요 없습니다.
+
+화면 캡처는 `node qa/shoot.mjs webgl2 qa/out/<폴더> qa/views/<뷰 목록>.json`으로 찍습니다. `qa/views/`에 장비별 뷰 목록이 있습니다. 성능은 `node qa/perf.mjs webgl2`로 잽니다.
 
 부품 형상을 OBJ 파일로 내보내려면 `node --import tsx scripts/export-geometry-obj.ts`를 실행하세요.
 결과는 `assets/exports/`에 저장됩니다.
@@ -47,56 +47,62 @@ E2E 테스트와 `qa/` 폴더의 스크립트는 PC에 설치된 Google Chrome�
 ## 사용법
 
 - 마우스 왼쪽 드래그로 회전, 오른쪽 드래그(또는 Ctrl+드래그)로 이동, 휠로 확대/축소합니다.
-- 부품을 클릭하면 오른쪽 패널에 설명, 재질, 치수, 연결된 부품이 표시됩니다.
-- 위쪽 메뉴에서 보기 모드(조립, 단면, 투시, 분해), 카메라 위치, 화질을 바꿀 수 있습니다.
-- 왼쪽 부품 목록에서 검색하거나 특정 부품을 숨길 수 있습니다.
-- 오른쪽 아래에서 단면 각도, 투명도, 플라즈마 색과 밝기 등을 조절합니다.
-- 아래쪽 타임라인에서 플라즈마 연출(꺼짐, 점화, 안정, 소멸)을 재생하거나 원하는 시점으로 옮길 수 있습니다.
+- 위쪽의 Overview 버튼은 bay 전체(네 장비와 rail)를 보여 주고, 그 옆 목록에서 장비를 고르면 그 장비의 상세 화면으로 갑니다. 3D 화면에서 다른 장비를 클릭해도 바뀝니다.
+- 부품을 클릭하면 오른쪽 패널에 역할, 재질, 치수, 연결, 그리고 그 부품에 붙은 계측기와 측정 위치가 표시됩니다. 계측기와 측정 위치는 따로 선택할 수 있고, 값이 없는 채널은 Data unbound로 나옵니다.
+- 보기 모드(조립, 단면, 투시, 분해)와 카메라 preset은 장비마다 다릅니다. 단면은 가상 관찰이고 분해는 표시용 오프셋입니다.
+- 아래쪽 타임라인에서 시나리오를 고릅니다. 장비별 단독 시연 4개와, 증착 장비를 CCP 또는 Remote 중에서 고르는 연결 시연 Route A, B가 있습니다. Play, Pause, Restart, 위치 이동이 되고, 연결 시연에서는 Follow를 켜면 단계에 따라 장비와 카메라가 따라갑니다.
+- 오른쪽 아래 Process inset은 STI 단면의 막 변화를 과장된 축척으로 그린 설명용 그림입니다.
+- 오른쪽 패널의 Overlays에서 gas path, source와 precursor 경로, slurry, optical path, 계측 marker, rail 기준 frame을 켜고 끕니다.
 
-센서 항목은 구조만 만들어 두었고 연결된 데이터가 없어서 "연결된 데이터 없음"으로 표시됩니다.
+센서 항목은 계측기 본체, 측정 위치, 채널, 데이터 연결을 나누어 정의해 두었고, 연결된 데이터가 없어서 모두 Data unbound로 표시됩니다.
 
 ### URL 옵션
 
 | 옵션 | 설명 |
 | --- | --- |
 | `?renderer=webgl2` | WebGPU 대신 WebGL2로 실행 |
-| `?fixture=two-chambers` | 챔버 두 개를 띄우는 테스트 화면 |
+| `?fixture=two-chambers` | CCP 챔버 두 개를 띄우는 테스트 화면 |
+| `?fixture=two-remotes`, `?fixture=two-cmps` | Remote 두 개, CMP 두 개 테스트 화면 |
 | `?plasmaDebug=depth` | 플라즈마 깊이 처리 확인용 디버그 화면 |
 
 ## 폴더 구조
 
 ```
-config/            챔버 치수, 장비 목록, 플라즈마 연출 타이밍 (JSON)
+config/            장비 치수, bay 배치, 플라즈마 연출 타이밍 (JSON)
 src/
-  config/          치수 계산과 설정값 검증
-  domain/          부품, 포트, 센서 정의
-  geometry/        부품 3D 형상 생성
+  config/          CCP 치수 계산과 설정값 검증
+  domain/          부품, 포트, 계측 계약, carrier와 route, 템플릿 레지스트리
+  equipment/       장비별 모듈 (ccp, remote, cmp, oht, foup, routes)
+  geometry/        부품 3D 형상 생성 (기존 CCP 생성기와 공유 생성기)
   materials/       재질, 텍스처, 환경광
   plasma/          플라즈마 셰이더 (GLSL, WGSL)
-  scene/           엔진 초기화, 조명, 카메라, 렌더링
-  interaction/     부품 선택, 라벨, 가스 흐름 표시
-  presentation/    화면 상태, 단면 계산, 타임라인
+  scene/           엔진 초기화, 조명, 카메라, 범용 장비 instance, 계측 marker
+  interaction/     부품 선택, 라벨, 경로 overlay
+  presentation/    화면 상태, 단면 계산, 타임라인, PreviewState, 시나리오 등록
   providers/       실행 모드 정의
   app/             React UI
 scripts/           설정 검사, OBJ 내보내기
 tests/             단위 테스트, E2E 테스트
-qa/                스크린샷, 성능 측정 스크립트
+qa/                스크린샷, 성능 측정 스크립트와 뷰 목록
 docs/              설계 문서
 ```
 
 ## 문서
 
+- `docs/expansion-spec.md` 이번 확장(Remote, CMP, OHT)의 실제 구현 명세
 - `docs/architecture.md` 전체 구조와 상태 관리 방식
-- `docs/geometry-assumptions.md` 챔버 구조와 치수 가정
+- `docs/geometry-assumptions.md` CCP 챔버 구조와 치수 가정
+- `docs/equipment-assumptions.md` Remote, CMP, OHT의 구조 근거와 치수 가정
+- `docs/data-contract.md` 부품, 계측, carrier 데이터 구조와 버전
+- `docs/scenarios.md` 시나리오, clock, identity 규칙
 - `docs/visual-design.md` 재질, 조명, 플라즈마 표현 방식
-- `docs/data-contract.md` 부품/센서 데이터 구조와 이후 API 계획
 - `docs/model-assumptions.md` 물리 모델 범위 (아직 구현하지 않음)
 - `docs/status.md` 진행 상황, 테스트 결과, 성능 측정값
 - `assets/ATTRIBUTIONS.md` 외부 자료 출처
 
 ## 참고
 
-- 챔버 치수는 특정 장비의 실제 도면이 아니라 일반적인 구조를 바탕으로 정한 가정값입니다.
+- 모든 치수는 특정 장비의 실제 도면이 아니라 일반적인 구조를 바탕으로 정한 가정값입니다.
 - 개발과 테스트는 Ubuntu 22.04, RTX 4070 SUPER, Chrome 148에서 했습니다.
 - 리눅스용 Chrome은 기본 설정에서 WebGPU를 지원하지 않아 WebGL2로 실행됩니다.
   WebGPU로 보려면 Chrome을 `--enable-unsafe-webgpu --enable-features=Vulkan` 옵션으로 실행하세요.

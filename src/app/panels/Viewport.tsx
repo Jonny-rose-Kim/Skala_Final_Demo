@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { usePresentationStore } from "../../presentation/store";
 import { SceneHost } from "../../scene/sceneHost";
+import { ProcessInset } from "./ProcessInset";
 
 export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -14,7 +15,7 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
     if (!el) return;
     const host = new SceneHost();
     const q = new URLSearchParams(window.location.search);
-    const fixture = q.get("fixture") === "two-chambers" ? "two-chambers" : null;
+    const fixture = q.get("fixture");
     let cancelled = false;
     void host
       .mount(el, {
@@ -76,6 +77,8 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
       <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-slate-400">
         Orbit: 좌클릭 드래그 · Pan: 우클릭/Ctrl 드래그 · Zoom: 휠 · 클릭: 부품 선택
       </div>
+      <div className="pointer-events-none absolute right-2 top-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-amber-200/80">VISUAL DEMO · Illustrative</div>
+      <ProcessInset />
     </div>
   );
 }

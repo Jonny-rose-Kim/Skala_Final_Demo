@@ -1,0 +1,29 @@
+{
+  "$schema_id": "pecvd-twin.oht-geometry-config/1",
+  "geometry_revision": "oht-bay-v1.0.0",
+  "template_id": "oht_single_vehicle",
+  "title": "Representative overhead hoist transport: straight ceiling rail, one vehicle with belt hoist and gripper, serving three load ports",
+  "source": {
+    "kind": "assumed",
+    "note": "Ceiling rail + vehicle + belt hoist + gripper + FOUP 대표 구조의 일관된 가상 설계값이다. Rail 높이, vehicle 치수, hoist stroke, gripper offset은 가정이며 특정 제조사 제품 규격이 아니다. 하나의 직선 rail, vehicle 1대, Load port 3개만 다룬다.",
+    "references": ["Muratec CFA / OHT: rail vehicle, hoisting, FOUP and load port relation (structure only)", "Daifuku Cleanway: FOUP logistics between ceiling rail and process tools (structure only)", "SEMI E84 scope: carrier handoff communication (not implemented; scope reference only)"]
+  },
+  "units": "m",
+  "coordinate_system": { "up_axis": "+Y", "handedness": "left (Babylon.js default)", "origin": "Fab floor under the rail center line (y = 0); the rail runs along +Z", "azimuth": "phi in degrees from +X toward +Z" },
+  "rail": { "z0": -5.2, "z1": 5.6, "bottom_y": 2.90, "height": 0.12, "width": 0.10, "flange_width": 0.16, "flange_thickness": 0.012, "hanger_pitch": 1.2, "hanger_radius": 0.012, "ceiling_y": 3.40, "ceiling_pad_size": 0.26 },
+  "vehicle": {
+    "body_size": [0.50, 0.42, 0.80],
+    "body_top_gap": 0.04,
+    "bogie_size": [0.16, 0.10, 0.22],
+    "bogie_spacing": 0.50,
+    "wheel_radius": 0.04,
+    "wheel_width": 0.03,
+    "yoke_size": [0.06, 0.06, 0.60],
+    "front_sensor_size": [0.08, 0.05, 0.03],
+    "travel_reference_z": -4.6,
+    "park_position_z": -4.6
+  },
+  "hoist": { "stroke": 1.50, "belt_count": 4, "belt_offsets": [[0.10, 0.14], [-0.10, 0.14], [0.10, -0.14], [-0.10, -0.14]], "belt_width": 0.02, "belt_thickness": 0.004, "belt_base_length": 0.03, "gripper_plate_size": [0.36, 0.03, 0.36], "finger_size": [0.03, 0.07, 0.10], "finger_open_gap": 0.17, "finger_closed_gap": 0.10, "finger_lip": 0.02 },
+  "foup": { "body_size": [0.44, 0.34, 0.42], "door_thickness": 0.012, "door_inset": 0.02, "flange_size": [0.12, 0.012, 0.12], "flange_neck_height": 0.04, "flange_neck_radius": 0.02, "coupling_pad_size": 0.03, "coupling_pad_height": 0.006, "coupling_pad_positions": [[0.0, 0.09], [0.0, -0.09], [-0.09, 0.0]], "slot_count": 25 },
+  "station": { "approach_clearance": 0.05, "lateral_tolerance": 0.006 }
+}

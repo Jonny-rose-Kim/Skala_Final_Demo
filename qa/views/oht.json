@@ -1,0 +1,10 @@
+[
+  { "id": "o01_bay_rail", "overview": true, "time": 0, "scenario": "oht-transfer-v1", "cam": [205, 60, 10, [-0.3, 0.8, 0.2]], "ui": true },
+  { "id": "o02_vehicle_park", "instance": "OHT-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 0.5, "local": true, "cam": [215, 70, 2.2, [0, 2.4, 0.6]], "ui": true },
+  { "id": "o03_pickup_engage", "instance": "OHT-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 13.4, "local": true, "cam": [230, 72, 1.6, [0, 1.3, 5.2]], "overlays": { "railFrames": true } },
+  { "id": "o04_loaded_travel", "instance": "OHT-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 21.5, "local": true, "cam": [200, 64, 4.5, [0, 1.8, 7]], "ui": true },
+  { "id": "o05_dropoff_seat", "instance": "OHT-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 30.9, "local": true, "cam": [150, 70, 1.8, [0, 1.2, 8.8]] },
+  { "id": "o06_gripper_closeup", "instance": "OHT-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 13.4, "local": true, "cam": [240, 78, 0.8, [0, 1.3, 5.2]], "overlays": { "markers": true }, "select": "gripper_plate" },
+  { "id": "o07_exploded", "instance": "OHT-01", "mode": "exploded", "scenario": "oht-transfer-v1", "time": 0.5, "local": true, "cam": [215, 66, 3.2, [0, 2.2, 0.6]] },
+  { "id": "o08_foup_selected", "instance": "FOUP-01", "mode": "assembled", "scenario": "oht-transfer-v1", "time": 21.5, "cam": [215, 62, 1.4, [-1.297, 1.3, 2.5]], "select": "foup_flange", "ui": true }
+]

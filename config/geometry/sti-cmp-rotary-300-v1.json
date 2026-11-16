@@ -1,0 +1,220 @@
+{
+  "$schema_id": "pecvd-twin.cmp-geometry-config/1",
+  "geometry_revision": "sti-cmp-rotary-300-v1.0.0",
+  "template_id": "sti_cmp_rotary_single_platen",
+  "title": "Representative single-platen, single-head rotary oxide (STI) CMP module with conditioner, slurry delivery, window-in-pad optical endpoint and post-CMP clean/dry, 300 mm",
+  "source": {
+    "kind": "assumed",
+    "note": "Generic rotary CMP 대표 구조(face-down wafer, rotating pad on a rigid platen, carrier head with membrane and retaining ring, separate conditioner, slurry nozzle, window-in-pad optical endpoint, brush clean + spin dry)의 일관된 가상 설계값이다. 1 platen / 1 head는 초기 seed이며 최대 개수나 산업 표준 개수가 아니다. 특정 제조사 장비의 실측 치수가 아니다.",
+    "references": [
+      "Applied Materials CMP overview: front-surface polishing, backside downforce, post-polish clean/rinse/dry (structure only)",
+      "Applied Materials Reflexion LK: window-in-pad endpoint exists as a structure (not the same product)",
+      "EBARA technology table: pad / slurry / dresser relation, dry-in dry-out (structure only)",
+      "SMC CMP force control: pneumatic regulators / pressure switches per zone (measurement role only)"
+    ]
+  },
+  "units": "m",
+  "coordinate_system": {
+    "up_axis": "+Y",
+    "handedness": "left (Babylon.js default)",
+    "origin": "Fab floor under the platen axis (y = 0)",
+    "azimuth": "phi in degrees from +X toward +Z"
+  },
+  "wafer": {
+    "diameter": 0.3,
+    "thickness": 0.000775
+  },
+  "base": {
+    "deck_top_y": 0.85,
+    "deck_thickness": 0.03,
+    "x0": -0.86,
+    "x1": 0.62,
+    "z0": -0.64,
+    "z1": 0.64,
+    "frame_inset": 0.06
+  },
+  "platen": {
+    "radius": 0.38,
+    "thickness": 0.05,
+    "top_y": 0.95,
+    "hub_radius": 0.12,
+    "drive_housing_radius": 0.11,
+    "drive_housing_bottom_y": 0.55,
+    "motor_radius": 0.08,
+    "motor_length": 0.18
+  },
+  "pad": {
+    "radius": 0.38,
+    "thickness": 0.0025,
+    "groove_pitch": 0.004,
+    "groove_width": 0.0008,
+    "groove_depth": 0.0008,
+    "window": {
+      "radius_position": 0.19,
+      "length_radial": 0.05,
+      "width_tangential": 0.02,
+      "azimuth_deg": 0
+    }
+  },
+  "head": {
+    "polish_x": -0.19,
+    "load_travel": 0.45,
+    "housing_radius": 0.19,
+    "housing_height": 0.1,
+    "bottom_y_raised": 1.02,
+    "ring_inner_radius": 0.151,
+    "ring_outer_radius": 0.19,
+    "ring_thickness": 0.025,
+    "membrane_radius": 0.15,
+    "membrane_thickness": 0.003,
+    "zone_radii": [
+      0.06,
+      0.11,
+      0.15
+    ],
+    "spindle_radius": 0.03,
+    "carriage_size": [
+      0.26,
+      0.22,
+      0.26
+    ],
+    "beam_y": 1.32,
+    "beam_height": 0.08,
+    "beam_width": 0.12,
+    "beam_x0": -0.8,
+    "beam_x1": 0.5,
+    "post_size": 0.1,
+    "rotary_union_height": 0.06,
+    "column_x": 0.44,
+    "column_size": 0.12
+  },
+  "load_cup": {
+    "x": -0.64,
+    "z": 0.0,
+    "radius": 0.17,
+    "top_y": 0.9,
+    "edge_pin_height": 0.01,
+    "alcove": {
+      "x0": -0.86,
+      "x1": -0.42,
+      "z0": -0.26,
+      "z1": 0.26,
+      "y0": 0.85,
+      "y1": 0.99,
+      "hatch_travel": 0.46
+    }
+  },
+  "conditioner": {
+    "pivot_x": 0.45,
+    "pivot_z": 0.32,
+    "arm_length": 0.42,
+    "arm_y": 1.0,
+    "disc_radius": 0.05,
+    "disc_thickness": 0.012,
+    "sweep_min": 0.0,
+    "sweep_max": 0.5,
+    "column_radius": 0.05,
+    "lift_stroke": 0.04
+  },
+  "slurry": {
+    "post_x": 0.1,
+    "post_z": -0.5,
+    "nozzle_x": 0.05,
+    "nozzle_z": -0.14,
+    "arm_y": 1.0,
+    "nozzle_drop": 0.03,
+    "line_radius": 0.004,
+    "flow_meter_pos": [
+      0.3,
+      0.92,
+      -0.52
+    ],
+    "panel_pos": [
+      0.5,
+      0.92,
+      -0.52
+    ],
+    "panel_size": [
+      0.14,
+      0.14,
+      0.14
+    ]
+  },
+  "splash_guard": {
+    "inner_radius": 0.4,
+    "thickness": 0.01,
+    "height": 0.12
+  },
+  "drain": {
+    "azimuth_deg": 135,
+    "radius_position": 0.44,
+    "pipe_radius": 0.02,
+    "drop_y": 0.3
+  },
+  "endpoint": {
+    "head_size": [
+      0.04,
+      0.045,
+      0.08
+    ],
+    "rotary_interface_y": 0.8,
+    "rotary_interface_radius": 0.04,
+    "module_pos": [
+      0.52,
+      0.45,
+      0.3
+    ],
+    "module_size": [
+      0.18,
+      0.16,
+      0.14
+    ]
+  },
+  "efem": {
+    "x0": -1.24,
+    "x1": -0.86,
+    "z0": -0.45,
+    "z1": 0.45,
+    "top_y": 1.15,
+    "deck_depth": 0.44,
+    "deck_width": 0.52,
+    "deck_height_above_floor": 0.9,
+    "deck_thickness": 0.025,
+    "foup_seat_offset_from_face": 0.22
+  },
+  "wet_transfer": {
+    "x0": -1.15,
+    "x1": -0.42,
+    "z0": 0.26,
+    "z1": 0.47,
+    "y0": 0.85,
+    "y1": 0.99
+  },
+  "clean_module": {
+    "center_x": -0.64,
+    "center_z": 0.72,
+    "size": [
+      0.4,
+      0.34,
+      0.46
+    ],
+    "base_y": 0.85,
+    "roller_radius": 0.035,
+    "roller_length": 0.34,
+    "roller_gap": 0.012,
+    "wafer_y_offset": 0.16
+  },
+  "dry_module": {
+    "center_x": -1.08,
+    "center_z": 0.72,
+    "size": [
+      0.4,
+      0.34,
+      0.46
+    ],
+    "base_y": 0.85,
+    "chuck_radius": 0.08,
+    "bowl_radius": 0.185,
+    "wafer_y_offset": 0.15
+  }
+}
