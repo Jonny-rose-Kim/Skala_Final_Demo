@@ -8,6 +8,10 @@
 import { DEMO_CARRIER, DEMO_RESERVED_SLOT, DEMO_WAFER, incomingFilmState } from "../../domain/materialFlow";
 import { clamp01, emptyInstancePreview, smoothstep, type IllustrativeFilmState, type PreviewState } from "../../presentation/preview";
 import { buildPhases, phaseAt, phaseProgress, plasmaSampleForPhase, type ScenarioContext, type ScenarioDefinition, type VisualScenario } from "../../presentation/scenario";
+import { makeStationHandlingScenario, type ProcessSegment } from "../handling/handlingScenario";
+import { stationIdleJoints } from "../handling/stationScenario";
+import { idleToolPose } from "../idle";
+import { REMOTE_STATION_PLAN } from "./handling";
 import { REMOTE_TEMPLATE_ID } from "./template";
 
 const rows = buildPhases([
@@ -83,7 +87,9 @@ export function remoteStandalonePreview(t: number, seed: number, animT: number, 
   const remotes = ctx.instances.filter((i) => i.templateId === REMOTE_TEMPLATE_ID);
   for (const inst of ctx.instances) {
     const p = emptyInstancePreview(inst.instanceId);
+    p.joints = idleToolPose(inst.templateId);
     if (inst.templateId === REMOTE_TEMPLATE_ID) {
+      p.joints = stationIdleJoints(REMOTE_STATION_PLAN);
       p.effects = { plasmaIntensity: fx.intensity, plasmaFlicker: fx.flicker, sourceGasFlow: fx.sourceGasFlow, precursorFlow: fx.precursorFlow };
       p.flags = { gateClosed: true, pumpdownIllustration: phase.id === "pumpdown" };
       p.presentedWaferId = inst.instanceId === remotes[0]?.instanceId ? DEMO_WAFER.waferId : `W-${inst.instanceId}`;
@@ -94,13 +100,14 @@ export function remoteStandalonePreview(t: number, seed: number, animT: number, 
   const first = remotes[0];
   if (first) {
     const stationId = Object.values(ctx.stations).find((s) => s.instanceId === first.instanceId)?.stationId;
-    if (stationId) out.carriers[DEMO_CARRIER.carrierId] = { carrierId: DEMO_CARRIER.carrierId, holder: { kind: "station", id: stationId }, doorOpen: false, slots: Object.fromEntries(Object.keys(DEMO_CARRIER.initialSlots).map((k) => [k, null])), docked: true };
+    if (stationId) out.carriers[DEMO_CARRIER.carrierId] = { carrierId: DEMO_CARRIER.carrierId, holder: { kind: "station", id: stationId }, doorOpen: false, slots: Object.fromEntries(Object.keys(DEMO_CARRIER.initialSlots).map((k) => [k, null])), docked: false, dockOffset: 0 };
     out.wafers[DEMO_WAFER.waferId] = {
       waferId: DEMO_WAFER.waferId,
-      holder: { kind: "process_stage", instanceId: first.instanceId, noteKo: "Heated stage 위 (standalone inspection)" },
+      holder: { kind: "process_stage", instanceId: first.instanceId, attachment: "stage_surface", noteKo: "Heated stage 위 (standalone inspection)" },
       reservedSlot: DEMO_RESERVED_SLOT,
       frontsideNormalLocal: [0, 1, 0],
       film: applyOvercoat(incomingFilmState(DEMO_WAFER.waferId), fx.overcoat, phase.id),
+      wetState: "dry",
     };
   }
   return out;
@@ -118,3 +125,32 @@ export const REMOTE_STANDALONE_SCENARIO: ScenarioDefinition = {
   releaseLabel: "Precursor off",
   evaluate: remoteStandalonePreview,
 };
+
+/** Remote cycle without the hold and without the leading idle phase (embedded in handling sequences and routes). */
+export function remoteProcessScenario(): VisualScenario {
+  const src = REMOTE_SCENARIO.phases.filter((p) => p.id !== "idle");
+  const t0 = src[0].start;
+  const phases = src.map((p) => ({ ...p, start: p.start - t0, end: p.end - t0, holdUntilRelease: false }));
+  return { ...REMOTE_SCENARIO, id: "remote-icp-process-segment", durationSec: REMOTE_SCENARIO.durationSec - t0, phases };
+}
+
+/** Remote process segment used by the handling scenario and route B. */
+export const REMOTE_PROCESS_SEGMENT: ProcessSegment = {
+  scenario: remoteProcessScenario(),
+  equipment: "remote",
+  sample(tp, seed, animT) {
+    const fx = remoteCycleEffects(remoteProcessScenario(), tp, seed, animT);
+    return { effects: { plasmaIntensity: fx.intensity, plasmaFlicker: fx.flicker, sourceGasFlow: fx.sourceGasFlow, precursorFlow: fx.precursorFlow }, plasma: { intensity: fx.intensity, flicker: fx.flicker }, film: (f) => applyOvercoat(f, fx.overcoat, fx.phaseId) };
+  },
+  done: (f) => applyOvercoat(f, 1, "done"),
+};
+
+export const REMOTE_HANDLING_SCENARIO: ScenarioDefinition = makeStationHandlingScenario({
+  id: "remote-handling-cycle-v1",
+  title: "Remote ICP PECVD: FOUP to chamber and back (robot, load lock, vacuum blade)",
+  titleKo: "Remote ICP PECVD wafer handling (FOUP → chamber → FOUP)",
+  templateId: REMOTE_TEMPLATE_ID,
+  plan: REMOTE_STATION_PLAN,
+  process: REMOTE_PROCESS_SEGMENT,
+  stageWaferAssetId: "wafer",
+});

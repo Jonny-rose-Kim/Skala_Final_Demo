@@ -8,12 +8,21 @@ import type { Vec3Tuple } from "../config/geometry";
 
 export type HolderKind =
   | "carrier_slot"
+  /** Kept for backward compatibility; the detailed sequences no longer use an opaque transfer holder. */
   | "internal_transfer"
   | "process_stage"
   | "cmp_head"
   | "load_cup"
   | "clean_module"
-  | "dry_module";
+  | "dry_module"
+  /** Robot end effector (atmospheric / dry / wet robot); `attachment` names the robot. */
+  | "end_effector"
+  /** Load-lock wafer support pins. */
+  | "loadlock_support"
+  /** Vacuum-side transfer blade inside the load lock. */
+  | "transfer_blade"
+  /** CMP flip station jaws. */
+  | "flip_station";
 
 export interface WaferHolder {
   kind: HolderKind;
@@ -21,8 +30,13 @@ export interface WaferHolder {
   instanceId?: string;
   carrierId?: string;
   slotId?: string;
+  /** Attachment frame inside the holder (e.g. "atm_robot", "lift_pins", "pedestal", "wet_robot"). */
+  attachment?: string;
   noteKo?: string;
 }
+
+/** Liquid state of the wafer surface during the CMP sequence (presentation flag, not a measurement). */
+export type WaferWetState = "dry" | "wet_dirty" | "wet_clean";
 
 export interface CarrierHolder {
   kind: "station" | "gripper";
@@ -52,7 +66,7 @@ export interface IllustrativeFilmState {
   /** Nitride top exposed by the illustrated clearing (presentation flag, not an endpoint detection). */
   nitrideExposed: boolean;
   status: FilmStatus;
-  /** Scale statement shown with the inset. */
+  /** Scale statement that goes with any display of this state. */
   scaleNote: "Schematic · Exaggerated scale · Illustrative";
 }
 
@@ -64,6 +78,8 @@ export interface WaferPreview {
   /** Frontside normal in the local frame of the presenting holder (-Y = face down). */
   frontsideNormalLocal: Vec3Tuple;
   film: IllustrativeFilmState;
+  /** Surface liquid state (scripted; a wet wafer is never returned to a FOUP slot). */
+  wetState?: WaferWetState;
 }
 
 export interface CarrierPreview {
@@ -76,6 +92,8 @@ export interface CarrierPreview {
   docked: boolean;
   /** Station whose seating orientation the carrier keeps while carried (door keeps facing the tools). */
   yawFromStationId?: string;
+  /** Docking stroke applied by the load port (m, along the station door-facing direction); 0 = undocked seat. */
+  dockOffset?: number;
 }
 
 export interface InstancePreview {
@@ -132,4 +150,10 @@ export function lerp(a: number, b: number, t: number): number {
 /** Eased progress of t inside [t0, t1]. */
 export function eased(t: number, t0: number, t1: number): number {
   return smoothstep(t0, t1, t);
+}
+
+/** Inverse of the cubic smoothstep on [0, 1]: returns u with 3u^2 - 2u^3 = f. */
+export function smoothstepInverse(f: number): number {
+  const ff = clamp01(f);
+  return 0.5 - Math.sin(Math.asin(1 - 2 * ff) / 3);
 }

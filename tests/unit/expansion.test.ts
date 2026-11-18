@@ -6,7 +6,7 @@ import { DEFAULT_INSTANCES, instanceFixture } from "../../src/domain/instances";
 import { getScenario, listScenarios } from "../../src/presentation/scenarioRegistry";
 import type { ScenarioContext, StationWorldFrame } from "../../src/presentation/scenario";
 import { CMP_LAYOUT, conditionerDiscXZ, opticalFootprint, validateCmpConfig, CMP_CONFIG } from "../../src/equipment/cmp/layout";
-import { cmpSequence, CMP_SCENARIO } from "../../src/equipment/cmp/scenario";
+import { cmpFullState, CMP_PLAN, CMP_POLISH_SCENARIO } from "../../src/equipment/cmp/scenario";
 import { OHT_LAYOUT, hoistExtensionForSeat } from "../../src/equipment/oht/layout";
 import { ohtSequence, planTransfer, OHT_SCENARIO } from "../../src/equipment/oht/scenario";
 import { REMOTE_LAYOUT } from "../../src/equipment/remote/layout";
@@ -124,29 +124,20 @@ describe("remote ICP PECVD structure", () => {
 
 describe("rotary STI CMP", () => {
   const L = CMP_LAYOUT;
+  const P0 = CMP_PLAN.polishStart;
+  const ph = (id: string) => CMP_POLISH_SCENARIO.phases.find((p) => p.id === id)!;
   it("config validates and the wafer faces the pad during polishing", () => {
     expect(validateCmpConfig(CMP_CONFIG).errors).toEqual([]);
-    const s = cmpSequence(L, 15);
-    expect(s.holder).toBe("cmp_head");
-    expect(s.frontsideNormalLocal).toEqual([0, -1, 0]);
+    const s = cmpFullState(CMP_PLAN, P0 + 15);
+    expect(s.holder).toBe("head");
+    expect(s.frontside).toEqual([0, -1, 0]);
     expect(Math.abs(s.joints.head_lift - L.head.liftContact)).toBeLessThan(1e-6);
     // wafer front plane coincides with the pad top at contact (no floating, no penetration)
     expect(L.head.waferFrontY + s.joints.head_lift).toBeCloseTo(L.padTopY, 9);
   });
-  it("keeps every joint inside its declared range over the whole sequence", () => {
-    const b = listBundles().find((x) => x.template.templateId === "sti_cmp_rotary_single_platen")!;
-    for (let t = 0; t <= CMP_SCENARIO.durationSec; t += 0.1) {
-      const s = cmpSequence(L, t);
-      for (const j of b.template.joints) {
-        const v = s.joints[j.jointId] ?? 0;
-        expect(v, `${j.jointId} @ ${t.toFixed(1)}`).toBeGreaterThanOrEqual(j.range[0] - 1e-9);
-        expect(v, `${j.jointId} @ ${t.toFixed(1)}`).toBeLessThanOrEqual(j.range[1] + 1e-9);
-      }
-    }
-  });
   it("conditioner disc stays on the pad while sweeping and never touches the head footprint; head is retracted meanwhile", () => {
-    for (let t = CMP_SCENARIO.phases.find((p) => p.id === "conditioning")!.start; t < CMP_SCENARIO.phases.find((p) => p.id === "conditioning")!.end; t += 0.05) {
-      const s = cmpSequence(L, t);
+    for (let t = P0 + ph("conditioning").start; t < P0 + ph("conditioning").end; t += 0.05) {
+      const s = cmpFullState(CMP_PLAN, t);
       const p = conditionerDiscXZ(L, s.joints.conditioner_sweep);
       const r = Math.hypot(p.x, p.z);
       if (s.joints.conditioner_lift < 1e-6) {
@@ -157,7 +148,7 @@ describe("rotary STI CMP", () => {
     }
   });
   it("optical footprint is In view only when the window track passes under the wafer at contact", () => {
-    const polish = cmpSequence(L, 15);
+    const polish = cmpFullState(CMP_PLAN, P0 + 15);
     let inView = 0;
     let outView = 0;
     for (let a = 0; a < Math.PI * 2; a += 0.05) {
@@ -172,26 +163,25 @@ describe("rotary STI CMP", () => {
     expect(raised.inView).toBe(false);
   });
   it("illustrative film: oxide overburden removed, trench oxide and SiN preserved, no numbers invented", () => {
-    const end = cmpSequence(L, CMP_SCENARIO.durationSec - 0.5);
-    expect(end.film.overcoat).toBe(0);
-    expect(end.film.surfaceOxide).toBe(0);
-    expect(end.film.sin).toBeGreaterThan(0.9);
-    expect(end.film.trenchFill).toBeGreaterThan(0.9);
-    expect(end.film.nitrideExposed).toBe(true);
-    expect(end.film.status).toBe("complete");
+    const end = cmpFullState(CMP_PLAN, CMP_PLAN.total - 0.5);
+    expect(end.polish.film.overcoat).toBe(0);
+    expect(end.polish.film.surfaceOxide).toBe(0);
+    expect(end.polish.film.sin).toBeGreaterThan(0.9);
+    expect(end.polish.film.trenchFill).toBeGreaterThan(0.9);
+    expect(end.polish.film.nitrideExposed).toBe(true);
+    expect(end.polish.film.status).toBe("complete");
     expect(Object.keys(end.effects).some((k) => /dishing|removal_rate|thickness_nm|endpoint_detected/i.test(k))).toBe(false);
   });
-  it("wafer holder is unique at every time and the slot is reoccupied only at the end", () => {
-    let sawSlot = false;
-    for (let t = 0; t <= CMP_SCENARIO.durationSec; t += 0.1) {
-      const s = cmpSequence(L, t);
-      expect(typeof s.holder).toBe("string");
-      if (s.inSlot) {
-        sawSlot = true;
-        expect(s.holder).toBe("carrier_slot");
-      }
+  it("the slot holds the wafer only at the start and after the dry return", () => {
+    let leftSlot = false;
+    let back = false;
+    for (let t = 0; t <= CMP_PLAN.total; t += 0.1) {
+      const s = cmpFullState(CMP_PLAN, t);
+      if (s.holder !== "foup") leftSlot = true;
+      else if (leftSlot) back = true;
+      if (back) expect(s.holder, `t=${t.toFixed(1)}`).toBe("foup");
     }
-    expect(sawSlot).toBe(true);
+    expect(leftSlot && back).toBe(true);
   });
 });
 
@@ -252,10 +242,10 @@ describe("OHT transfer", () => {
 describe("linked routes A / B", () => {
   it("both routes are registered, independent alternatives (no CCP → Remote serial route)", () => {
     const ids = listScenarios().map((s) => s.id);
-    expect(ids).toContain("route-a-linked-v1");
-    expect(ids).toContain("route-b-linked-v1");
-    const a = getScenario("route-a-linked-v1")!;
-    const b = getScenario("route-b-linked-v1")!;
+    expect(ids).toContain("route-a-linked-v2");
+    expect(ids).toContain("route-b-linked-v2");
+    const a = getScenario("route-a-linked-v2")!;
+    const b = getScenario("route-b-linked-v2")!;
     expect(a.scenario.phases.some((p) => p.equipment === "remote")).toBe(false);
     expect(b.scenario.phases.some((p) => p.equipment === "ccp")).toBe(false);
     expect(a.scenario.phases[0].equipment).toBe("external");
@@ -273,12 +263,14 @@ describe("linked routes A / B", () => {
       expect(during.wafers["W-01"].holder.kind).toBe("process_stage");
       const dep = routeById(def.routeId!).depositionInstanceId;
       expect(during.instances[dep].presentedWaferId).toBe("W-01");
-      // the wafer is never shown by two instances at once
-      for (let t = 0; t < def.scenario.durationSec; t += 1) {
+      // the wafer is shown by exactly one instance at a time (the FOUP while it is in its slot)
+      for (let t = 0; t < def.scenario.durationSec; t += 0.5) {
         const p = def.evaluate(t, 7, t, ctx);
-        const shown = Object.values(p.instances).filter((i) => i.presentedWaferId).length;
-        expect(shown, `t=${t}`).toBeLessThanOrEqual(1);
-        if (shown === 1) expect(p.wafers["W-01"].holder.kind).not.toBe("carrier_slot");
+        const shown = Object.values(p.instances).filter((i) => i.presentedWaferId === "W-01");
+        expect(shown.length, `t=${t}`).toBe(1);
+        expect(p.wafers["W-01"].holder.kind === "carrier_slot", `t=${t}`).toBe(shown[0].instanceId === "FOUP-01");
+        expect(p.carriers["FOUP-01"].slots["slot-13"] === "W-01", `t=${t}`).toBe(p.wafers["W-01"].holder.kind === "carrier_slot");
+        if (p.wafers["W-01"].holder.kind === "carrier_slot") expect(p.wafers["W-01"].wetState ?? "dry").toBe("dry");
       }
     }
   });

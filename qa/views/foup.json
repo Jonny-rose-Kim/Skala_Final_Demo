@@ -1,0 +1,212 @@
+[
+  {
+    "id": "f01_lp_closed",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 0.5,
+    "camInstance": "FOUP-01",
+    "cam": [
+      196,
+      76,
+      0.85,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ]
+  },
+  {
+    "id": "f02_lp_section_one_wafer",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 0.5,
+    "camInstance": "FOUP-01",
+    "cam": [
+      196,
+      76,
+      0.85,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f03_lp_section_close",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 0.5,
+    "camInstance": "FOUP-01",
+    "cam": [
+      184,
+      84,
+      0.42,
+      [
+        0,
+        0.19,
+        0.05
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f04_lp_section_pick",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 5.6,
+    "camInstance": "FOUP-01",
+    "cam": [
+      205,
+      70,
+      1.2,
+      [
+        0.15,
+        0.2,
+        0
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f05_lp_section_empty",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 30,
+    "camInstance": "FOUP-01",
+    "cam": [
+      196,
+      76,
+      0.85,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f06_oht_section",
+    "scenario": "oht-transfer-v1",
+    "instance": "OHT-01",
+    "mode": "assembled",
+    "time": 20,
+    "camInstance": "FOUP-01",
+    "cam": [
+      200,
+      82,
+      1.1,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f07_active_cutaway_quarter",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "FOUP-01",
+    "mode": "cutaway",
+    "cutaway": {
+      "azimuthDeg": 270,
+      "sweepDeg": 90
+    },
+    "time": 0.5,
+    "local": true,
+    "cam": [
+      250,
+      68,
+      0.95,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ]
+  },
+  {
+    "id": "f08_active_xray",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "FOUP-01",
+    "mode": "xray",
+    "time": 0.5,
+    "local": true,
+    "cam": [
+      215,
+      66,
+      1.0,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ]
+  },
+  {
+    "id": "f09_overview_section",
+    "overview": true,
+    "scenario": "ccp-handling-cycle-v1",
+    "time": 0.5,
+    "cam": [
+      215,
+      58,
+      9,
+      [
+        -0.5,
+        0.3,
+        0.1
+      ]
+    ],
+    "carrierSection": true
+  },
+  {
+    "id": "f10_ui_empty",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 30,
+    "camInstance": "FOUP-01",
+    "cam": [
+      196,
+      76,
+      0.85,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ],
+    "carrierSection": true,
+    "ui": true
+  },
+  {
+    "id": "f11_ui_one_wafer",
+    "scenario": "ccp-handling-cycle-v1",
+    "instance": "PECVD-01.CH-A",
+    "mode": "assembled",
+    "time": 0.5,
+    "camInstance": "FOUP-01",
+    "cam": [
+      196,
+      76,
+      0.85,
+      [
+        0,
+        0.19,
+        0
+      ]
+    ],
+    "carrierSection": true,
+    "ui": true
+  }
+]

@@ -20,6 +20,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Constants } from "@babylonjs/core/Engines/constants";
 import { HighlightLayer } from "@babylonjs/core/Layers/highlightLayer";
+import { SceneInstrumentation } from "@babylonjs/core/Instrumentation/sceneInstrumentation";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
@@ -49,6 +50,7 @@ import { createEffects } from "./effectsRegistry";
 import { createCanvas, readForceWebGL2, tryCreateWebGL2, tryCreateWebGPU, type CreatedEngine } from "./engineFactory";
 import { LightingRig } from "./lighting";
 import { MeasurementOverlay } from "./measurementOverlay";
+import { FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
 import { QUALITY, QualityManager, RenderPipeline } from "./renderPipeline";
 
 export interface SceneHostOptions {
@@ -79,6 +81,25 @@ interface World {
   resizeObserver: ResizeObserver;
   bayCenter: Vector3;
   bayRadius: number;
+  instrumentation: SceneInstrumentation;
+  /** World bounding center of every static instance (distance LOD). */
+  lodCenters: Map<string, Vector3>;
+  /** Visual-only bay surroundings (floor tiles, ceiling, walls, utility chase). */
+  environment: FabEnvironment;
+}
+
+/** True when a sphere touches the segment a-b. */
+function segmentSphereHit(a: Vector3, b: Vector3, c: Vector3, r: number): boolean {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const abz = b.z - a.z;
+  const len2 = abx * abx + aby * aby + abz * abz;
+  let t = len2 > 0 ? ((c.x - a.x) * abx + (c.y - a.y) * aby + (c.z - a.z) * abz) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const dx = a.x + abx * t - c.x;
+  const dy = a.y + aby * t - c.y;
+  const dz = a.z + abz * t - c.z;
+  return dx * dx + dy * dy + dz * dz <= r * r;
 }
 
 /** Half-circle profile for a backdrop sphere (revolved around +Y). */
@@ -121,9 +142,14 @@ export class SceneHost {
   private pendingEngine: CreatedEngine | null = null;
   private scenarioDef: ScenarioDefinition | null = null;
   private ctx: ScenarioContext = { instances: [], stations: {} };
+  /** Instances with a visible glow volume and camera-to-glow segments (limits the opaque depth pass). */
+  private depthFocus: { instances: Set<string>; segments: { a: Vector3; b: Vector3 }[] } = { instances: new Set(), segments: [] };
   private lastPreview: PreviewState | null = null;
   private lastFocusInstance: string | null = null;
   private activeTemplateId: string | null = null;
+  /** Exploded view shows one frozen snapshot of the scripted state (robot, holders, carrier together). */
+  private explodeSnapshot: PreviewState | null = null;
+  private lastLodUpdate = 0;
 
   log(msg: string): void {
     this.logs.push(`${new Date().toISOString()} ${msg}`);
@@ -365,7 +391,12 @@ export class SceneHost {
       if (meta?.isPlasma || meta?.isOverlay) return false;
       const mat = m.material;
       if (mat && mat.needAlphaBlending()) return false;
-      return true;
+      // only what can hide a glow volume: the meshes of the tool that owns it, and anything between the camera and it
+      const focus = this.depthFocus;
+      if (meta?.instanceId && focus.instances.has(meta.instanceId)) return true;
+      const bs = m.getBoundingInfo().boundingSphere;
+      for (const seg of focus.segments) if (segmentSphereHit(seg.a, seg.b, bs.centerWorld, bs.radiusWorld)) return true;
+      return false;
     };
     for (const inst of instances.values()) for (const p of inst.effects?.plasmas ?? []) p.setDepthTexture(depthMap);
 
@@ -410,7 +441,21 @@ export class SceneHost {
     });
     resizeObserver.observe(this.container!);
 
-    this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius };
+    const instrumentation = new SceneInstrumentation(scene);
+    const lodCenters = new Map<string, Vector3>();
+    for (const inst of instances.values()) {
+      if (inst.def.mobile) continue;
+      const b = inst.worldBoundsAll();
+      if (b) lodCenters.set(inst.def.instanceId, b.center.clone());
+    }
+    // bay surroundings with utility drops to every placed tool's facility interface
+    const drops: FacilityDrop[] = [];
+    for (const inst of instances.values()) {
+      const fi = inst.bundle.facilityInterface?.(inst.bundle.layout);
+      if (fi && !inst.def.mobile) drops.push(facilityDropFor(inst.def.instanceId, inst.def.position, inst.def.rotationYDeg, fi));
+    }
+    const environment = new FabEnvironment(scene, materials, floorY, drops);
+    this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius, instrumentation, lodCenters, environment };
 
     // Report loaded instances and pick a valid active instance / scenario
     const info: LoadedInstanceInfo[] = Array.from(instances.values()).map((i) => ({
@@ -469,6 +514,7 @@ export class SceneHost {
       /* ignore */
     }
     w.resizeObserver.disconnect();
+    w.instrumentation.dispose();
     w.picking.dispose();
     w.labels.dispose();
     w.markers.dispose();
@@ -480,6 +526,7 @@ export class SceneHost {
     w.textures.dispose();
     w.env.dispose();
     w.ground.dispose(false, true);
+    w.environment.dispose();
     w.backdrop.dispose(false, true);
     w.scene.dispose();
   }
@@ -579,12 +626,15 @@ export class SceneHost {
     const modeChanged = force || modeKey !== prevModeKey;
     const viewMode = s.overview ? "assembled" : s.viewMode;
 
-    if (modeChanged || changed("cutaway") || changed("activeInstanceId")) this.scheduleCutaway(s, force || modeChanged || changed("activeInstanceId"));
+    if (modeChanged || changed("cutaway") || changed("activeInstanceId") || changed("carrierSection")) this.scheduleCutaway(s, force || modeChanged || changed("activeInstanceId") || changed("carrierSection"));
     if (modeChanged || changed("explodeAmount") || changed("activeInstanceId")) {
       for (const [id, inst] of w.instances) inst.applyExplode(s.explodeAmount, viewMode === "exploded" && id === s.activeInstanceId);
     }
     if (modeChanged || changed("xrayOpacity") || changed("activeInstanceId")) {
       for (const [id, inst] of w.instances) inst.applyXray(viewMode === "xray" && id === s.activeInstanceId, s.xrayOpacity);
+    }
+    if (changed("coverMode") || modeChanged || changed("activeInstanceId")) {
+      for (const [id, inst] of w.instances) inst.setCoversRemoved(this.coversRemovedFor(s, id));
     }
     if (changed("hiddenAssets") || changed("isolatedAssetId") || modeChanged || changed("activeInstanceId")) {
       for (const [id, inst] of w.instances) {
@@ -608,7 +658,15 @@ export class SceneHost {
       if (!p || r.focusSelected !== p.focusSelected) this.focusSelected(s);
       if (!p || r.focusInstance !== p.focusInstance) this.focusInstance(s);
       if ((!p || r.cameraPreset !== p.cameraPreset) && s.cameraPresetId) this.applyCameraPreset(s.cameraPresetId);
+      if (p && r.focusCarrier !== p.focusCarrier) this.focusCarrier();
     }
+  }
+
+  /** Cover display rule: auto = removed on the active tool outside the bay overview (display only). */
+  private coversRemovedFor(s: PresentationState, instanceId: string): boolean {
+    if (s.coverMode === "closed") return false;
+    if (s.coverMode === "removed") return true;
+    return instanceId === s.activeInstanceId && !s.overview;
   }
 
   private scheduleCutaway(s: PresentationState, immediate: boolean): void {
@@ -623,7 +681,7 @@ export class SceneHost {
       const cut = this.pendingCut;
       if (!cut || !this.world) return;
       const t = performance.now();
-      for (const [id, inst] of this.world.instances) inst.applyCutaway(id === s.activeInstanceId ? cut : NO_CUT);
+      for (const [id, inst] of this.world.instances) inst.applyCutaway(this.cutFor(id, inst, cut, s));
       this.appliedCut = cut;
       const dt = performance.now() - t;
       if (dt > 5) this.log(`cutaway 적용 ${dt.toFixed(0)} ms (${cut.enabled ? `${cut.effectiveAzimuthDeg.toFixed(0)}° / ${cut.effectiveSweepDeg.toFixed(0)}°` : "off"})`);
@@ -632,6 +690,17 @@ export class SceneHost {
     };
     if (immediate) run();
     else this.cutawayTimer = window.setTimeout(run, 90);
+  }
+
+  /**
+   * Cut of one instance: the active one follows the cutaway view; carriers keep their own section (the
+   * template's default sector) while the FOUP section view is on, whichever tool is active.
+   */
+  private cutFor(id: string, inst: EquipmentInstance, activeCut: ResolvedCutaway, s: PresentationState): ResolvedCutaway {
+    if (id === s.activeInstanceId && activeCut.enabled) return activeCut;
+    const b = inst.bundle;
+    if (s.carrierSection && b.carrierSlots) return resolveCutaway({ enabled: true, azimuthDeg: b.cutawayDefault.azimuthDeg, sweepDeg: b.cutawayDefault.sweepDeg }, b.cutawayKeepOuts);
+    return NO_CUT;
   }
 
   private refreshHighlight(s: PresentationState): void {
@@ -756,6 +825,22 @@ export class SceneHost {
     this.applyCameraPreset(inst.bundle.overviewPresetId);
   }
 
+  /** Camera to the carrier from the side its section opens to (the carrier's "section" preset); the active tool and view stay. */
+  private focusCarrier(): void {
+    const w = this.world;
+    const inst = w ? Array.from(w.instances.values()).find((i) => i.bundle.carrierSlots) : undefined;
+    if (!w || !inst) return;
+    const preset = inst.bundle.cameraPresets.find((p) => p.id === "section") ?? inst.bundle.cameraPresets[0];
+    if (!preset) return;
+    inst.root.computeWorldMatrix(true);
+    const m = inst.root.getWorldMatrix();
+    const target = Vector3.TransformCoordinates(new Vector3(preset.target[0], preset.target[1], preset.target[2]), m);
+    // preset direction in the carrier frame, turned into world alpha / beta with the carrier's pose
+    const local = new Vector3(Math.cos(preset.alpha) * Math.sin(preset.beta), Math.cos(preset.beta), Math.sin(preset.alpha) * Math.sin(preset.beta));
+    const d = Vector3.TransformNormal(local, m).normalize();
+    w.camera.interpolateTo(Math.atan2(d.z, d.x), Math.acos(Math.min(1, Math.max(-1, d.y))), preset.radius, target);
+  }
+
   private focusSelected(s: PresentationState): void {
     const w = this.world;
     const inst = this.activeInstance(s);
@@ -821,6 +906,8 @@ export class SceneHost {
     for (const [id, inst] of w.instances) {
       let ip = preview.instances[id];
       const active = id === s.activeInstanceId && !s.overview;
+      // carriers show one wafer per occupied slot (slot map); the single presentation rule below is for tools
+      const cp = inst.def.mobile ? preview.carriers[id] : undefined;
       if (ip) {
         // sector cutaway: the removed sector must not turn with spinning revolved parts
         if (active && viewMode === "cutaway" && inst.joints.some((j) => j.freezeInCutaway)) {
@@ -837,17 +924,15 @@ export class SceneHost {
           }
         }
         const st = inst.bundle.template.station;
-        if (st) {
-          const all = st.waferPresentationAssetIds ?? [st.waferPresentationAssetId];
-          const shown = ip.presentedWaferId ? (ip.presentedWaferAssetId ?? st.waferPresentationAssetId) : null;
-          inst.setPreviewHidden(new Set(all.filter((a) => a !== shown)));
+        const all = inst.bundle.template.waferPresentationAssetIds ?? st?.waferPresentationAssetIds ?? (st ? [st.waferPresentationAssetId] : []);
+        if (all.length) {
+          const shown = ip.presentedWaferId ? (ip.presentedWaferAssetId ?? st?.waferPresentationAssetId ?? all[0]) : null;
+          inst.setPreviewHidden(cp ? new Set() : new Set(all.filter((a) => a !== shown)));
         }
       }
       // mobile carriers follow their presented holder (one mesh entity, world pose set directly)
-      if (inst.def.mobile) {
-        const cp = preview.carriers[id];
-        if (cp) this.placeCarrier(inst, cp);
-      }
+      if (cp) this.placeCarrier(inst, cp);
+      if (inst.bundle.carrierSlots) inst.setPresentKeys(cp ? new Set(Object.keys(cp.slots).filter((k) => cp.slots[k])) : new Set());
       inst.effects?.update({
         preview: ip ?? { instanceId: id, joints: {}, effects: {}, flags: {}, presentedWaferId: null, phaseLabelKo: "" },
         active,
@@ -873,14 +958,16 @@ export class SceneHost {
     if (!w.instances.get(s.activeInstanceId)?.plasma || s.overview) w.lighting.updatePlasmaLight(Vector3.Zero(), 0, presetColor.core, false);
   }
 
-  private placeCarrier(inst: EquipmentInstance, cp: { holder: { kind: "station" | "gripper"; id: string }; yawFromStationId?: string }): void {
+  private placeCarrier(inst: EquipmentInstance, cp: { holder: { kind: "station" | "gripper"; id: string }; yawFromStationId?: string; dockOffset?: number }): void {
     const w = this.world!;
     const frames = inst.bundle.carrierFrames ?? { seatLocal: [0, 0, 0], flangeLocal: [0, 0.3, 0], doorFacingLocal: [0, 0, 1] };
     const doorYawLocal = Math.atan2(frames.doorFacingLocal[0], frames.doorFacingLocal[2]);
     if (cp.holder.kind === "station") {
       const st = w.stations[cp.holder.id];
       if (!st) return;
-      inst.root.position.set(st.seatWorld[0] - frames.seatLocal[0], st.seatWorld[1] - frames.seatLocal[1], st.seatWorld[2] - frames.seatLocal[2]);
+      // docking slides the FOUP toward the tool along the door-facing direction (0 at OHT handoffs)
+      const dk = cp.dockOffset ?? 0;
+      inst.root.position.set(st.seatWorld[0] + st.doorFacing[0] * dk - frames.seatLocal[0], st.seatWorld[1] - frames.seatLocal[1], st.seatWorld[2] + st.doorFacing[2] * dk - frames.seatLocal[2]);
       inst.root.rotation.y = st.yawRad - doorYawLocal;
       return;
     }
@@ -907,6 +994,13 @@ export class SceneHost {
     let preview: PreviewState | null = null;
     if (def) {
       preview = def.evaluate(time, s.visual.visualSeed, animTime, this.ctx);
+      // exploded: robot joints, wafer holders and the carrier stay on one frozen snapshot; leaving the
+      // view applies the current evaluator state again
+      const exploded = s.viewMode === "exploded" && !s.overview;
+      if (exploded) {
+        if (!this.explodeSnapshot) this.explodeSnapshot = preview;
+        preview = this.explodeSnapshot;
+      } else this.explodeSnapshot = null;
       this.lastPreview = preview;
       this.applyPreview(preview, s, effectTime);
       // linked demonstrations: follow the phase focus (active equipment + camera)
@@ -924,6 +1018,28 @@ export class SceneHost {
       return fx?.pointPose ? fx.pointPose(pointId) : null;
     });
     w.lighting.updateHeadlamp(w.camera);
+    w.environment.update(w.camera.globalPosition, s.environment);
+    // the opaque depth map only feeds the plasma ray march: stop refreshing it while no glow volume is drawn
+    let glowVisible = false;
+    this.depthFocus.instances.clear();
+    this.depthFocus.segments.length = 0;
+    for (const [id, inst] of w.instances)
+      for (const p of inst.effects?.plasmas ?? [])
+        if (p.mesh.isEnabled() && p.mesh.isVisible) {
+          glowVisible = true;
+          this.depthFocus.instances.add(id);
+          this.depthFocus.segments.push({ a: w.camera.globalPosition.clone(), b: p.mesh.getBoundingInfo().boundingSphere.centerWorld.clone() });
+        }
+    const depthMap = w.depth.getDepthMap();
+    const wantRefresh = glowVisible ? 1 : 0;
+    if (depthMap.refreshRate !== wantRefresh) {
+      depthMap.refreshRate = wantRefresh;
+      if (glowVisible) depthMap.resetRefreshCounter();
+    }
+    if (now - this.lastLodUpdate > 200) {
+      this.lastLodUpdate = now;
+      this.updateLod(s);
+    }
     w.scene.render();
     w.labels.update(w.camera, (m) => {
       const meta = m.metadata as (InstanceMeshMetadata & { isOverlay?: boolean; isGround?: boolean }) | undefined;
@@ -967,6 +1083,18 @@ export class SceneHost {
     if (now - this.lastPreviewPublish > 150 && preview) {
       this.lastPreviewPublish = now;
       usePresentationStore.getState().reportPreview(preview);
+    }
+  }
+
+  /** Distance LOD: fine details (fasteners, labels, cable ties) of far, inactive tools are hidden. */
+  private updateLod(s: PresentationState): void {
+    const w = this.world!;
+    const cam = w.camera.globalPosition;
+    for (const [id, inst] of w.instances) {
+      const c = w.lodCenters.get(id);
+      const active = id === s.activeInstanceId && !s.overview;
+      const near = !c || Vector3.Distance(cam, c) < 4.5;
+      inst.setFineDetailVisible(active || near || inst.def.mobile === true);
     }
   }
 
@@ -1015,6 +1143,9 @@ export class SceneHost {
           renderHeight: w.created.engine.getRenderHeight(),
           hardwareScaling: w.created.engine.getHardwareScalingLevel(),
           totalVertices: w.scene.getTotalVertices(),
+          activeTriangles: Math.round(w.scene.getActiveIndices() / 3),
+          drawCalls: w.instrumentation.drawCallsCounter?.current ?? null,
+          environment: w.environment.stats(),
           cutaway: this.appliedCut,
           plasmaEnabled: Array.from(w.instances.values()).map((i) => (i.plasma ? i.plasma.mesh.isEnabled() : null)),
           instances: Array.from(w.instances.keys()),
@@ -1027,6 +1158,36 @@ export class SceneHost {
       logs: () => this.getLogs(),
       store: usePresentationStore,
       bundles: () => listBundles().map((b) => b.template.templateId),
+      /** Evaluate the current scenario at time t without rendering (pure; tests scan holder switches with it). */
+      evaluateAt: (t: number) => (this.scenarioDef ? this.scenarioDef.evaluate(t, usePresentationStore.getState().visual.visualSeed, t, this.ctx) : null),
+      /** Enabled wafer presentation meshes (instance, asset, world center) for continuity checks. */
+      waferMeshes: () => {
+        const out: { instanceId: string; assetId: string; center: [number, number, number] }[] = [];
+        const w = this.world;
+        if (!w) return out;
+        for (const inst of w.instances.values()) {
+          const st = inst.bundle.template.station;
+          const ids = inst.bundle.template.waferPresentationAssetIds ?? st?.waferPresentationAssetIds ?? (st ? [st.waferPresentationAssetId] : []);
+          for (const a of ids) {
+            const node = inst.assetNodes.get(a);
+            if (!node || !node.isEnabled()) continue;
+            const b = inst.worldBounds(a);
+            if (b) out.push({ instanceId: inst.def.instanceId, assetId: a, center: [b.center.x, b.center.y, b.center.z] });
+          }
+        }
+        return out;
+      },
+      covers: () => {
+        const w = this.world;
+        return w ? Object.fromEntries(Array.from(w.instances.entries()).map(([id, i]) => [id, i.hasCovers ? i.coversAreRemoved : null])) : {};
+      },
+      /** Kept sector of every instance in degrees (null = not cut): cutaway and FOUP section checks. */
+      cuts: () => {
+        const w = this.world;
+        if (!w) return {};
+        const deg = (r: number) => (r * 180) / Math.PI;
+        return Object.fromEntries(Array.from(w.instances.entries()).map(([id, i]) => [id, i.kept.length === 1 && i.kept[0].sweep >= 2 * Math.PI - 1e-6 ? null : i.kept.map((k) => ({ startDeg: deg(k.start), sweepDeg: deg(k.sweep) }))]));
+      },
     };
   }
 

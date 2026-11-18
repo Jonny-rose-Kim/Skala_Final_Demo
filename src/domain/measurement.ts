@@ -11,8 +11,8 @@
  *   CalibrationRevision     calibration lineage (unknown in V1; never fabricated)
  *   Observation             a sample (type only; nothing in the frontend ever creates one)
  *
- * A point being linked to a channel does not mean data exists. The inspector shows mount, point link and
- * data binding as three separate states and never collapses them into one "connected" boolean.
+ * A point being linked to a channel does not mean data exists. Mount, point link and data binding are
+ * three separate states and are never collapsed into one "connected" boolean.
  */
 import type { Vec3Tuple } from "../config/geometry";
 import type { AssetId, EquipmentTemplate } from "./types";
@@ -340,9 +340,4 @@ export function validateMeasurementSeed(seed: MeasurementSeed, template: Equipme
     if (cal.status === "configured" && !cal.reference) errors.push(`calibration ${cal.calibrationId}: configured calibration needs a reference`);
   }
   return errors;
-}
-
-/** Korean status words used by the inspector; one function so wording stays consistent. */
-export function describeDataStatus(status: DataStatus): string {
-  return status === "bound" ? "Data bound" : "Data unbound · 연결된 데이터 없음";
 }

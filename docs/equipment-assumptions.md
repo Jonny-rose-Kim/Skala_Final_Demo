@@ -1,53 +1,68 @@
 # 장비별 구조 근거와 가정
 
-치수는 모두 `config/geometry/*.json`에 있고 `assumed`로 표시한다. 어느 값도 특정 제조사 도면이나 실측이 아니다. 아래에서 "근거"는 구조를 그렇게 잡은 이유이고 "가정"은 이 프로젝트가 임의로 정한 값이다.
+치수는 모두 `config/geometry/*.json`에 있고 `assumed`로 표시한다. 어느 값도 특정 제조사 도면, 실측, 공정 조건이 아니다. 아래에서 "근거"는 구조를 그렇게 잡은 이유이고 "가정"은 이 프로젝트가 임의로 정한 값이다.
 
-## CCP PECVD (기존, 변경 없음)
+## 공통 wafer handling station (CCP, Remote)
 
-구조와 치수는 `docs/geometry-assumptions.md` 그대로다. 이번에 추가한 것은 slit valve 바깥의 tool shell뿐이다.
+CCP와 Remote는 같은 station 모듈(`src/equipment/handling/`)을 쓴다. 순서는 FOUP, EFEM 대기 robot, load lock, 진공 transfer blade, slit valve, chamber다. CCP에서 Remote로 이어지는 직렬 경로는 없다.
 
-- 가정: load lock 길이 200 mm, EFEM 길이 460 mm, enclosure 폭 900 mm, load port deck 높이 900 mm, FOUP seat는 EFEM 전면에서 220 mm. 내부 로봇은 없고 enclosure는 투시 모드에서도 불투명하다(simplified internal transfer).
-- 계측 seed: 기존 5개 센서를 같은 ID로 유지하고 slit gate limit switch를 추가했다. viewport OES는 설치 후보로만 둔다.
+- Load port: deck 깊이 440 mm, 높이 900 mm. Dock plate가 30 mm 밀어 FOUP door 면을 EFEM opening에 붙인다. Door opener는 FOUP door를 60 mm 당긴 뒤 340 mm 내린다. Opening은 360 x 300 mm.
+- EFEM: 깊이 840 mm, 폭 1100 mm, 높이 2.0 m, 위에 180 mm FFU. Panel은 점검용 cover이며 cover 제거와 door 열림은 다른 상태다.
+- 대기 robot: 바닥형 SCARA. Base, Z column(stroke 380 mm), link 1, link 2(각 280 mm), wrist, backside fork end effector가 각각 joint와 component다. Fork tine은 FOUP slot rib과 load lock support pin 사이로 지나가도록 안쪽 88 mm, 바깥쪽 118 mm 사이에 있다. 회전할 때는 wafer를 robot 축 위로 당겨 swing 반지름을 줄인다.
+- Load lock: 길이 440 mm, 폭 500 mm. 300 mm wafer, support pin 4개(지름 6 mm), 2단 blade, 대기 door gate의 후퇴 공간이 들어가는지 config validation이 확인한다. 이전의 200 mm block은 이 조건을 만족하지 못해 바꿨다.
+- 대기 door와 slit valve는 동시에 열리지 않는다. Pump-down과 vent는 scripted 단계이며 압력 관측을 만들지 않는다.
+- 진공 blade: 2단 telescopic(1단 carriage, 2단 blade), 두께 3 mm. Guide rail과 actuator housing이 load lock 안에 있고 slit valve를 지날 때만 gate가 열려 있다.
+- Pedestal(CCP)은 transfer 위치를 100 mm에서 70 mm로 낮추고 lift pin stroke를 44 mm로 늘렸다. Remote stage는 process 105 mm, transfer 50 mm, pin stroke 37 mm다. Blade가 stage에 닿지 않게 하려는 값이다.
+- Z 방향 인계: robot이 slot 아래에서 올라가며 wafer를 들고, support pin 위에 내려놓고 내려간다. Blade와 lift pin도 같은 방식이다. Holder는 접촉 높이를 지나는 순간 바뀐다.
 
-## Remote ICP PECVD (`config/geometry/remote-icp-pecvd-300-v1.json`)
+## CCP PECVD (`config/geometry/ccp-pecvd-300-v1.json`, v1.3.0)
+
+Chamber 내부 구조와 치수는 `docs/geometry-assumptions.md` 그대로다. 외부에 process enclosure, HMI, 점검 panel, 관찰창, 가스·RF·배기 facility interface plate를 붙였다.
+
+계측 seed는 기존 센서 ID를 그대로 둔다. Slit gate limit switch가 있고 viewport OES는 설치 후보로만 둔다. 자세한 대응은 `docs/sensor-crosswalk.md`.
+
+## Remote ICP PECVD (`config/geometry/remote-icp-pecvd-300-v1.json`, v1.1.0)
 
 근거: ICP로 여기한 upstream 방전과 downstream precursor 투입 구조는 Park, Rhee(2004)와 Lucovsky(1989)의 remote PECVD 사례를 따른다. Oxford ICPCVD 자료는 ICP라는 이름만으로 remote 구조를 단정할 수 없다는 점을 확인하는 데 썼다. 구조만 참고했고 치수와 공정 조건은 가져오지 않았다.
 
 - 방전관: quartz, 내경 100 mm, 벽 6 mm, 길이 280 mm. 관 끝은 금속 clamp로 잡는다.
 - Coil: 구리관 지름 9.5 mm, 4 turn, pitch 36 mm, 관 외벽에서 10 mm 띄움. 관 내부나 wafer 위에는 금속 전극이 없다.
-- Housing: 알루미늄, 내경 300 mm, 높이 330 mm. Source viewport는 225도 방향, OES 본체는 housing 밖.
-- Transport section: 내경 100 mm, 길이 120 mm, flange 지름 180 mm. Lid 중앙 bore(130 mm)로 열린다. 60도 방향에 source pressure tap 후보가 있으나 기본 instance에는 설치하지 않았다.
-- Precursor injection ring: 내경 360 mm, 단면 22 x 16 mm, 구멍 36개, lid 아래 205 mm 높이. RF를 걸지 않는 수동 분배 부품이다.
-- Chamber: 내경 460 mm, 높이 250 mm. Stage 지름 340 mm, wafer 상면 105.8 mm. Substrate RF bias는 없다.
-- 발광: 주 glow는 coil 구간 위아래 20 mm 여유까지만, afterglow는 transport section 안에서만 그린다. Wafer 위에는 glow slab을 만들지 않는다.
-- Ion filter, Faraday shield, photon trap은 이 template revision에 없다.
+- Housing: 알루미늄, 내경 300 mm, 높이 330 mm. Source viewport는 225도 방향, OES 본체는 housing 밖. 점검 보기에서 housing cover를 떼면 coil과 관이 보인다.
+- Transport section: 내경 100 mm, 길이 120 mm. 60도 방향 source pressure tap은 후보로만 둔다.
+- Precursor injection ring: 내경 360 mm, 구멍 36개. RF를 걸지 않는 수동 분배 부품이며 CCP showerhead처럼 보이지 않게 단면을 작게 했다.
+- Source gas와 precursor는 다른 panel, 다른 line이다. 새 bias, ion filter, Faraday shield는 넣지 않았고 power, match, 센서를 중복해 만들지 않았다.
+- 발광: 주 glow는 관 안 coil 구간, afterglow는 transport section 안에서만 그린다. Wafer 위에는 glow slab을 만들지 않는다.
 
-계측(R-MP-01 ~ 09)은 `src/equipment/remote/measurement.ts`에 있다. 냉각 회로는 coil 전용이라고 가정했다.
+## Rotary STI CMP (`config/geometry/sti-cmp-rotary-300-v1.json`, v1.1.0)
 
-## Rotary STI CMP (`config/geometry/sti-cmp-rotary-300-v1.json`)
+근거: Applied Materials CMP 자료의 face-down polishing, post-polish clean과 dry 흐름, Reflexion LK의 window-in-pad endpoint, EBARA 자료의 pad, slurry, dresser 관계를 구조 참고로 썼다. 1 platen, 1 head는 seed이며 산업 표준 개수가 아니다. Polishing 부분(platen, head, conditioner, slurry, optical endpoint)의 치수는 v1.0.0과 같다.
 
-근거: Applied Materials CMP 자료의 face-down polishing, backside downforce, post-polish clean과 dry 흐름, Reflexion LK의 window-in-pad endpoint, EBARA 자료의 pad, slurry, dresser 관계를 구조 참고로 썼다. 1 platen, 1 head는 seed이며 산업 표준 개수가 아니다.
+Front end는 새로 만들었다. 이전에는 wafer가 FOUP slot에서 load cup으로 바로 옮겨졌다.
 
-- Platen 반지름 380 mm, 두께 50 mm, 상면 950 mm. Pad 두께 2.5 mm, 동심 groove pitch 4 mm.
-- Head: housing 반지름 190 mm, retaining ring 내경 302 mm, 외경 380 mm, 두께 25 mm, membrane 반지름 150 mm, zone 반지름 60, 110, 150 mm. Polish 위치 x = -190 mm, load cup 위치 x = -640 mm(lateral 축 450 mm).
-- 접촉: head lift가 -67.5 mm일 때 wafer frontside 면이 pad 상면과 일치한다. Load cup pick은 -110 mm.
-- Conditioner: pivot (450, 320) mm, arm 420 mm, disc 반지름 50 mm. Sweep 0 ~ 0.5 rad에서 disc가 pad 위에 있고, park 각도(계산값 약 0.93 rad)에서 pad 밖이다. 기본 demo는 head가 물러난 뒤의 ex-situ conditioning이다.
-- Slurry nozzle: (50, -140) mm, pad 위 head footprint 밖. Point-of-use flow meter는 nozzle 직전 line.
-- Optical endpoint: pad window가 반지름 190 mm 궤도에 있고 optical head는 platen 안 같은 위치. 고정 source와 detector module은 platen 축 아래의 rotary optical interface로 잇는다(simplified optical interface).
-- Dry loading: alcove(x -860 ~ -420 mm)와 상부 sliding hatch. Wafer는 alcove 안에서 face-down으로 뒤집혀 load cup에 놓인다고 가정한다. 연마 후에는 wet transfer 안에서 face-up으로 돌아온다고 가정한다.
-- Clean module은 brush roller 2개와 rinse nozzle, dry module은 spin chuck과 bowl이다. 둘 다 별도 asset이다.
+- Dry EFEM: 깊이 840 mm. Backside fork를 가진 바닥형 dry robot이 FOUP와 transfer tower 사이를 오간다. Dry robot은 dry wafer만 잡는다.
+- Transfer tower(EFEM 뒷벽에 걸침): 아래가 spin dryer, 위가 flip station이다. Flip station은 jaw 두 개로 wafer edge를 잡은 상태에서만 180도 돈다(face up에서 face down).
+- Wet robot: 지붕 beam 두 개에 Z housing을 얹은 overhead SCARA다. Column이 아래로 내려오고 link 1, link 2, wrist drop post, 밀봉 roll actuator, edge-grip fork가 차례로 매달린다. Fork는 tip stop과 pusher로 wafer edge를 clamp하고, clamp한 상태에서만 roll 축으로 뒤집는다. 처음 만든 바닥형은 wrist drop post가 회전 자세에서 자기 column을 지나가는 문제가 있어 overhead로 바꿨다. Overhead이면 robot 축 아래에 아무것도 없어서 wafer를 축 아래로 당겨 돌리고 뒤집을 수 있다.
+- Load cup: edge pin 3개(30, 150, 270도, 높이 20 mm). Wet robot fork가 pin 사이로 지나가며 alcove 옆 opening으로 들어간다. Head는 위쪽 hatch로 wafer를 집는다.
+- Brush cleaner: 위아래 PVA brush roller 한 쌍, edge drive roller 두 조, rinse nozzle, drain, shutter가 있는 opening.
+- End-effector rinse station: dirty-wet wafer를 옮긴 wet robot fork를 DIW로 헹구는 box. 이 단계를 지난 뒤에만 clean-wet wafer를 잡는다(clean-ready 상태는 presentation flag).
+- Spin dryer: vacuum chuck이 bowl 안으로 60 mm 내려가 돈다. Wet robot은 wet side shutter로 넣고, dry robot은 EFEM 쪽 dry side shutter로 꺼낸다. 두 shutter는 동시에 열리지 않는다.
+- 순서: FOUP에서 dry pick, flip, load cup, head, polish, load cup, wet robot이 clamp한 채 face up으로 뒤집기, cleaner, fork rinse, clean-wet 인계, dryer, dry robot, FOUP. 젖은 wafer는 FOUP로 돌아가지 않는다.
+- Conditioning은 head가 물러난 뒤의 ex-situ 방식 그대로다. Slurry와 물은 illustrative 효과다.
 
-계측(C-MP-01 ~ 12)은 `src/equipment/cmp/measurement.ts`에 있다. zone과 ring pressure는 regulator outlet의 gauge 압력이며 contact pressure map이 아니다. Endpoint의 raw spectrum, endpoint indicator, thickness estimate는 role이 다른 세 channel이다.
+계측(C-MP-01 ~ 12)은 `src/equipment/cmp/measurement.ts`에 있다. Zone과 ring pressure는 regulator outlet의 gauge 압력이며 contact pressure map이 아니다.
 
-## OHT (`config/geometry/oht-bay-v1.json`)
+## OHT와 FOUP (`config/geometry/oht-bay-v1.json`, v1.1.0)
 
 근거: Muratec과 Daifuku 자료의 rail vehicle, hoist, FOUP, load port 관계만 참고했다. SEMI E84는 범위 확인용이며 구현하지 않았다.
 
-- Rail: z -5.2 ~ 5.6 m, 아랫면 높이 2.9 m, hanger 간격 1.2 m, 천장 3.4 m.
-- Vehicle body 0.50 x 0.42 x 0.80 m, bogie 2개, 전방과 하강 obstruction sensor 1개.
-- Hoist: belt 4개, stroke 1.5 m, retracted pose에서 gripper plate 하면 2.38 m, finger 하단 2.31 m.
-- Gripper: finger open gap 170 mm, closed gap 100 mm(FOUP flange 120 mm 아래로 들어감).
-- FOUP: 0.44 x 0.34 x 0.42 m, flange 120 x 12 x 120 mm, neck 40 mm, slot 25. 운반 중 닫혀 있다.
-- Bay: load port seat 3개 모두 x = -1.297 m 선 위에 있고 높이 0.9 m라서 travel과 hoist만으로 닿는다. Lateral 공차 6 mm. `npm run validate:config`가 station별 s, lateral, hoist extension을 출력한다.
+- Rail: I형 단면, z -5.2 ~ 5.6 m, 아랫면 높이 2.9 m, hanger 간격 1.2 m(turnbuckle 포함), 2.4 m마다 이음판, 양 끝 end stop과 완충재. 레일 옆에 비접촉 급전선 두 가닥과 insulator가 있다.
+- Bogie: 구동 바퀴가 하부 flange 위를 web 양쪽에서 구른다. Side plate가 flange 가장자리를 감싸고, web 양옆에 guide roller가 있다. 앞 bogie 바깥에 구동 motor와 감속기, 반대쪽에 급전 pickup이 있다.
+- Body: 0.50 x 0.42 x 0.80 m, 앞뒤 cover, bumper, 상태 lamp, 아랫면 hoist window, 전방과 하강 obstruction sensor와 bracket.
+- Hoist: belt 4개(길이는 scale로만 바뀜), belt 출구 guide pulley, stroke 1.5 m. Gripper plate 위에 finger guide rail, finger actuator, belt clamp block이 있다.
+- Gripper finger: +X 쪽 finger A와 -X 쪽 finger B가 안쪽으로 닫힌다. 이전 revision은 finger 축 방향이 반대라서 닫을 때 바깥으로 움직였다. Open gap 170 mm, closed gap 100 mm.
+- FOUP: 0.42 x 0.335 x 0.39 m, 25 slot(pitch 10 mm, slot 1 높이 65 mm), top flange 120 x 12 x 120 mm, handle, kinematic coupling pad 3개. OHT는 닫힌 FOUP만 나른다. Hoist가 내려간 상태로 주행하지 않는다.
+- FOUP 안의 웨이퍼: slot마다 웨이퍼 표시가 하나씩 있고, 시나리오가 주는 carrier slot map에서 점유된 slot의 웨이퍼만 보인다. 지금 시연의 lot은 W-01 한 장(slot 13)이다. Slot map은 scripted 상태이며 load port wafer mapping sensor의 결과가 아니다(그런 센서는 모델에 없다).
+- FOUP 단면 보기: seat 축(웨이퍼 stack 중심)을 지나는 평면으로 door 반대쪽 절반을 잘라 낸다. Shell, handle, slot rib, flange, coupling은 상자 부품을 그 평면으로 자르고 잘린 자리에 단면 cap을 붙인다. 웨이퍼는 revolve 형상이라 같은 평면에서 sector로 잘린다. Door는 앞쪽 절반에 있어서 잘리지 않는다. 보기 전용이며 FOUP door, OHT, load port 상태와 무관하다. X-ray에서는 shell과 door만 투명해지고 slot rib은 불투명하게 남아 slot 위치가 보인다.
+- Bay: load port seat 세 개(CCP, Remote, CMP)가 x = -1.974 m 선 위, 높이 0.9 m에 있다. 장비 front end가 길어지면서 seat가 바깥으로 나와 rail과 CMP 위치를 함께 옮겼다(`config/equipment/instances.json`, instances-v4).
 
 계측(O-MP-01 ~ 08)은 `src/equipment/oht/measurement.ts`에 있다. Scripted travel, hoist, gripper 값은 Preview status이며 encoder와 switch channel은 비어 있다.

@@ -1,5 +1,6 @@
 // Flexible QA capture: node qa/shoot.mjs <webgl2|webgpu> <outDir> <json-views-file>
-// Each view: { id, instance?, overview?, mode, time, cam:[alpha,beta,radius,[x,y,z]], local?:true, cutaway?:{azimuthDeg,sweepDeg}, scenario?, select?, overlays?:{}, ui?:true, plasmaOff?:true }
+// Each view: { id, instance?, overview?, mode, time, cam:[alpha,beta,radius,[x,y,z]], local?:true, camInstance?, cutaway?:{azimuthDeg,sweepDeg}, scenario?, select?, overlays?:{}, ui?:true, plasmaOff?:true, covers?:"auto"|"closed"|"removed", env?:{visible,ceiling,walls}, carrierSection?:true }
+// camInstance: camera given in that instance's frame without making it the active instance (e.g. the FOUP while a tool is active).
 import { chromium } from "playwright";
 import fs from "node:fs";
 const mode = process.argv[2] ?? "webgl2";
@@ -29,6 +30,9 @@ for (const v of VIEWS) {
     if (v.scenario) st.setScenario(v.scenario);
     if (v.instance) st.setActiveInstance(v.instance);
     if (v.overlays) for (const [k, val] of Object.entries(v.overlays)) st.setOverlay(k, val);
+    if (st.setCoverMode) st.setCoverMode(v.covers ?? "auto");
+    if (st.setEnvironment) st.setEnvironment({ visible: true, ceiling: true, walls: true, ...(v.env ?? {}) });
+    if (st.setCarrierSection) st.setCarrierSection(!!v.carrierSection);
     st.setOverview(!!v.overview);
     if (!v.overview) st.setViewMode(v.mode ?? "assembled");
     if (v.cutaway) st.setCutaway(v.cutaway);
@@ -40,14 +44,16 @@ for (const v of VIEWS) {
     const api = window.__pecvdTwin;
     api.freezeTime(v.time ?? 0);
     const st = api.store.getState();
-    if (v.local && v.instance) api.setCameraLocal(v.instance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
+    if (v.camInstance) api.setCameraLocal(v.camInstance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
+    else if (v.local && v.instance) api.setCameraLocal(v.instance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
     else api.setCamera(v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
     void st;
   }, { v });
   await page.waitForTimeout(700);
   await page.evaluate(({ v }) => {
     const api = window.__pecvdTwin;
-    if (v.local && v.instance) api.setCameraLocal(v.instance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
+    if (v.camInstance) api.setCameraLocal(v.camInstance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
+    else if (v.local && v.instance) api.setCameraLocal(v.instance, v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
     else api.setCamera(v.cam[0], v.cam[1], v.cam[2], v.cam[3]);
   }, { v });
   await page.waitForTimeout(400);

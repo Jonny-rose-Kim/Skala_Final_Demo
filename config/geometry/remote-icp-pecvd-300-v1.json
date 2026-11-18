@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.remote-geometry-config/1",
-  "geometry_revision": "remote-icp-pecvd-300-v1.0.0",
+  "geometry_revision": "remote-icp-pecvd-300-v1.1.0",
   "template_id": "remote_pecvd_upstream_icp",
   "title": "Representative Remote ICP PECVD: upstream dielectric discharge tube with external induction coil, downstream precursor injection, heated wafer stage, 300 mm",
   "source": {
@@ -42,6 +42,8 @@
     "diameter": 0.340,
     "body_height": 0.040,
     "top_y": 0.105,
+    "transfer_top_y": 0.050,
+    "lift_pin_stroke": 0.037,
     "shaft_diameter": 0.060,
     "shaft_bottom_y": -0.300,
     "heater_cavity_inner_diameter": 0.060,
@@ -111,7 +113,7 @@
     "glow_margin_above_coil": 0.020
   },
   "ports": {
-    "slit": { "azimuth_deg": 180, "width": 0.360, "height": 0.050, "center_y": 0.085, "valve_body_size": [0.470, 0.170, 0.090], "door_thickness": 0.012 },
+    "slit": { "azimuth_deg": 180, "width": 0.360, "height": 0.050, "center_y": 0.085, "valve_body_size": [0.470, 0.170, 0.090], "door_thickness": 0.012, "gate_travel": 0.065 },
     "viewport": { "azimuth_deg": 45, "center_y": 0.150, "bore_diameter": 0.060, "flange_diameter": 0.120, "flange_thickness": 0.014, "tube_length": 0.045, "window_diameter": 0.080, "window_thickness": 0.008 },
     "pressure_tap": { "azimuth_deg": 120, "center_y": 0.150, "bore_diameter": 0.016, "sensor_body_diameter": 0.060, "sensor_body_length": 0.075, "standoff_length": 0.060 },
     "exhaust": { "azimuth_deg": 320, "center_y": 0.034, "bore_diameter": 0.060, "flange_diameter": 0.125, "stub_length": 0.090 }
@@ -145,17 +147,77 @@
     "frame_leg_radius": 0.280,
     "frame_bottom_y": -0.780
   },
+  "process_enclosure": { "note": "Process module panel enclosure up to just above the lid (instance frame). The source housing passes through the square top cut-out and stays visible as the source enclosure in the normal view; the coil and tube are seen in inspection modes.", "x0": -0.375, "x1": 0.92, "z0": -0.62, "z1": 0.62, "top_y": 0.44, "top_cut_half": 0.175, "station_opening": { "half_q": 0.27, "y0": -0.03, "y1": 0.2 }, "window": { "x0": -0.2, "x1": 0.35, "y0": -0.06, "y1": 0.38 }, "facility": { "z": 0.25, "y": 0.15 } },
+  "source_mount": { "note": "Source mounting frame on the enclosure top: four posts, clamp ring around the housing, top cross bars (design assumption).", "half": 0.22, "clamp_y": 0.58, "top_y": 0.84 },
   "station": {
-    "note": "Same lightweight tool shell as the CCP: slit valve side (-X) -> simplified load lock -> EFEM -> load port deck.",
-    "gap_from_slit_valve": 0.020,
-    "load_lock_length": 0.200,
-    "efem_length": 0.460,
-    "enclosure_width": 0.900,
-    "enclosure_top_y": 0.400,
-    "deck_depth": 0.440,
-    "deck_width": 0.520,
-    "deck_height_above_floor": 0.900,
-    "deck_thickness": 0.025,
-    "foup_seat_offset_from_efem_face": 0.220
+    "note": "Same wafer-handling station as the CCP template (shared module): load port with dock plate and door opener, EFEM with an atmospheric SCARA robot, load lock with support pins, atmospheric door and a two-stage vacuum transfer blade, then the slit valve. Generic design assumption.",
+    "revision_note": "v1.1.0: the simplified 200 mm load lock block was replaced by the shared handling station; the heated stage gained a lift (process 105 mm, transfer 50 mm) and lift pins with a 37 mm stroke so the blade stack clears the stage. The process-position geometry is unchanged.",
+    "gap_from_slit_valve": 0.02,
+    "transfer_plane_below_slit_center": 0.004,
+    "load_lock": {
+      "length": 0.44,
+      "width": 0.5,
+      "wall_thickness": 0.025,
+      "floor_thickness": 0.03,
+      "lid_thickness": 0.022,
+      "interior_below_plane": 0.027,
+      "interior_above_plane": 0.045,
+      "wafer_offset_from_vacuum_wall": 0.19,
+      "support_pins": { "r_offsets": [-0.07, 0.07], "q_offsets": [-0.055, 0.055], "diameter": 0.006, "raise_above_plane": 0.016, "drop_below_plane": 0.004 },
+      "vacuum_opening": { "width": 0.36, "height": 0.05 },
+      "atm_door": { "opening_width": 0.34, "opening_height": 0.04, "frame_depth": 0.03, "gate_travel": 0.06, "gate_thickness": 0.012 },
+      "pump_port_diameter": 0.05,
+      "leg_size": 0.04
+    },
+    "vacuum_blade": {
+      "thickness": 0.003,
+      "width": 0.08,
+      "pad_height": 0.0008,
+      "root_to_pocket": 0.12,
+      "tip_beyond_pocket": 0.13,
+      "carriage_length": 0.06,
+      "carriage_width": 0.07,
+      "carriage_thickness": 0.005,
+      "stage_length": 0.36,
+      "stage_width": 0.06,
+      "stage_thickness": 0.006,
+      "stage_rear_margin": 0.022,
+      "rail_width": 0.03,
+      "rail_height": 0.012
+    },
+    "efem": { "depth": 0.84, "width": 1.1, "height_above_floor": 2.0, "ffu_height": 0.18, "panel_thickness": 0.012, "frame_size": 0.04, "door_zone_depth": 0.08 },
+    "atm_robot": {
+      "axis_offset_from_back_wall": 0.38,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.38,
+      "z_margin_below": 0.012,
+      "link_length": 0.28,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.31,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [0.088, 0.118],
+      "tip_beyond_center": 0.12
+    },
+    "load_port": {
+      "deck_depth": 0.44,
+      "deck_width": 0.52,
+      "deck_height_above_floor": 0.9,
+      "deck_thickness": 0.025,
+      "dock_stroke": 0.03,
+      "door_gap": 0.002,
+      "opening_width": 0.36,
+      "opening_height": 0.3,
+      "opening_bottom_above_deck": 0.035,
+      "door_pull": 0.06,
+      "door_lower": 0.34,
+      "door_plate_thickness": 0.02
+    }
   }
 }

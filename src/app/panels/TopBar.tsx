@@ -1,6 +1,7 @@
-import { Box, Layers, Scissors, Eye, Grid3x3, Camera, RotateCcw, Crosshair, PanelLeft, PanelRight, PanelBottom, Sun, Lightbulb, Factory } from "lucide-react";
+import { Box, Layers, Scissors, Eye, Grid3x3, Camera, RotateCcw, Crosshair, PanelLeft, PanelBottom, Sun, Lightbulb, Factory, PackageOpen } from "lucide-react";
 import { usePresentationStore, type ViewMode, type QualityPreset } from "../../presentation/store";
 import { cameraPresets } from "../../scene/cameraPresets";
+import { getBundle } from "../../domain/registry";
 import { CHAMBER_LAYOUT } from "../../config/geometry";
 import { MODES } from "../../providers/modes";
 import type { SceneHost } from "../../scene/sceneHost";
@@ -40,6 +41,9 @@ export function TopBar({ host }: { host: SceneHost | null }) {
   const instances = usePresentationStore((s) => s.instances);
   const activeInstanceId = usePresentationStore((s) => s.activeInstanceId);
   const setActiveInstance = usePresentationStore((s) => s.setActiveInstance);
+  const carrierSection = usePresentationStore((s) => s.carrierSection);
+  const setCarrierSection = usePresentationStore((s) => s.setCarrierSection);
+  const hasCarrier = instances.some((i) => i.mobile && getBundle(i.templateId)?.carrierSlots);
   const mode = MODES.find((m) => m.id === appMode)!;
   const presets = host ? host.presetsFor(activeInstanceId) : cameraPresets(CHAMBER_LAYOUT);
 
@@ -86,6 +90,11 @@ export function TopBar({ host }: { host: SceneHost | null }) {
             <m.icon className="h-3.5 w-3.5" aria-hidden /> {m.label}
           </Button>
         ))}
+        {hasCarrier && (
+          <Button active={carrierSection} onClick={() => setCarrierSection(!carrierSection)} title="FOUP 단면 보기: seat 축을 지나는 평면으로 FOUP 뒤쪽 절반을 잘라 slot과 웨이퍼를 보여 줍니다. 선택한 장비와 보기 모드는 그대로이고, 몇 장이 들었는지는 화면 왼쪽 위에 나옵니다." testId="carrier-section-button">
+            <PackageOpen className="h-3.5 w-3.5" aria-hidden /> FOUP section
+          </Button>
+        )}
       </nav>
       <div className="h-6 w-px shrink-0 bg-slate-800" />
       <div className="flex shrink-0 items-center gap-1">
@@ -145,11 +154,8 @@ export function TopBar({ host }: { host: SceneHost | null }) {
           </Badge>
         )}
         <div className="h-6 w-px shrink-0 bg-slate-800" />
-        <Button active={panels.tree} onClick={() => togglePanel("tree")} title="Component tree 열기/닫기" testId="toggle-tree">
+        <Button active={panels.tree} onClick={() => togglePanel("tree")} title="Component tree 펼치기/접기 (접으면 왼쪽 가장자리에 얇은 줄로 남습니다)" testId="toggle-tree">
           <PanelLeft className="h-3.5 w-3.5" aria-hidden />
-        </Button>
-        <Button active={panels.inspector} onClick={() => togglePanel("inspector")} title="Inspector 열기/닫기" testId="toggle-inspector">
-          <PanelRight className="h-3.5 w-3.5" aria-hidden />
         </Button>
         <Button active={panels.timeline} onClick={() => togglePanel("timeline")} title="Timeline 열기/닫기" testId="toggle-timeline">
           <PanelBottom className="h-3.5 w-3.5" aria-hidden />

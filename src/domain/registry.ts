@@ -39,8 +39,12 @@ export interface EquipmentBundle<L = unknown> {
   pathPose?: (layout: L, jointId: string, s: number) => { position: [number, number, number]; yawRad: number };
   /** Transport equipment: seat frame of a carried FOUP, authored in the instance frame at the rest pose and following `jointId`. */
   carrierAttach?: { jointId: string; seatLocal: [number, number, number] };
+  /** Facility interface plate of the tool (instance frame): where the bay environment routes its utility drops. */
+  facilityInterface?: (layout: L) => { center: [number, number, number]; normal: [number, number, number] };
   /** Carrier templates: seat (origin) and top handling flange frames in the carrier frame. */
   carrierFrames?: { seatLocal: [number, number, number]; flangeLocal: [number, number, number]; doorFacingLocal: [number, number, number] };
+  /** Carrier templates: slot count and the slot id of a 1-based slot index (keys of CarrierPreview.slots). */
+  carrierSlots?: { count: number; slotId: (index: number) => string };
 }
 
 const bundles = new Map<string, EquipmentBundle<unknown>>();

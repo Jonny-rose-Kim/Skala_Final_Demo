@@ -11,7 +11,6 @@ model, font or CDN resource is loaded while the application runs.
 | Cleanroom environment (IBL) | `src/materials/environment.ts` generates an RGBE `.hdr` panorama in memory | Project code |
 | Plasma volume shader (CCP electrode gap, Remote source tube and afterglow) | `src/plasma/shaders/plasma.glsl.ts`, `plasma.wgsl.ts` | Project code, illustrative approximation |
 | Schematic overlays (gas path, source/precursor traces, slurry, optical path, rail frames, measurement markers) | `src/interaction/gasPathOverlay.ts`, `src/equipment/*/effects.ts`, `src/scene/measurementOverlay.ts` | Project code, illustrative |
-| STI cross-section inset | `src/app/panels/ProcessInset.tsx` (SVG from `IllustrativeFilmState`) | Project code, schematic, exaggerated scale |
 | Icons | `lucide-react` 1.70.0 | ISC license (npm package) |
 | 3D engine | `@babylonjs/core` 9.34.0, `@babylonjs/loaders` 9.34.0 | Apache-2.0 |
 | UI | React 19.3.1, Tailwind CSS 4.3.5, Zustand 5.1.0 | MIT |

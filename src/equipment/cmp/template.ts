@@ -1,10 +1,12 @@
 /**
  * Rotary STI CMP template: single rigid platen + rotating pad, one carrier head (membrane, 3 pressure
  * zones, retaining ring), separate conditioner, slurry delivery, window-in-pad optical endpoint,
- * wet enclosure, dry loading interface (load cup + alcove), post-CMP brush clean and spin dry, station deck.
- * During polishing the wafer frontside faces the pad (down) and its backside faces the head membrane.
+ * wet enclosure, load cup + alcove, dry-in / dry-out front end (dry EFEM robot, flip station, wet robot,
+ * brush cleaner, spin dryer, end-effector rinse). During polishing the wafer frontside faces the pad (down)
+ * and its backside faces the head membrane.
  */
 import type { AssemblyDef, ComponentDef, ConnectionDef, EquipmentTemplate, JointDef, PortDef } from "../../domain/types";
+import { cmpFrontComponents, cmpFrontConnections, cmpFrontJoints, cmpFrontPorts, cmpWaferAssets } from "./frontEnd";
 import type { CmpLayout } from "./layout";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
@@ -23,10 +25,14 @@ export const CMP_ASSEMBLIES: AssemblyDef[] = [
   { id: "slurry_supply", name: "Slurry supply", description: "Feed line, point-of-use flow meter, nozzle, pad 위 공급 경로", order: 4 },
   { id: "endpoint_optics", name: "Optical endpoint", description: "Pad window, platen 안 optical head, rotary optical interface, 고정 source/detector module", order: 5 },
   { id: "wet_enclosure", name: "Wet enclosure", description: "Splash guard, wet bowl(deck), drain, base frame", order: 6 },
-  { id: "dry_loading", name: "Dry loading interface", description: "Load cup과 alcove(hatch). Wafer는 여기서 face-down으로 head에 인계된다 (simplified internal transfer)", order: 7 },
-  { id: "post_cmp", name: "Post-CMP clean / dry", description: "Brush clean/rinse module과 spin-dry module (별도 asset)", order: 8 },
-  { id: "station_interface", name: "Tool interface (station)", description: "Load port deck, EFEM(dry) enclosure, wet transfer tunnel", order: 9 },
-  { id: "visualization", name: "Visualization (illustrative)", description: "Slurry film/stream overlay, optical path overlay", order: 10 },
+  { id: "dry_loading", name: "Load cup / alcove", description: "Load cup(edge pin)과 alcove(hatch, wet robot 쪽 side opening). Wet robot이 face-down wafer를 놓고 head가 집어 간다", order: 7 },
+  { id: "post_cmp", name: "Post-CMP clean / dry", description: "Brush cleaner(roller pair, edge roller, spray, drain)와 spin dryer(chuck, bowl, shutter, drain)", order: 8 },
+  { id: "station_interface", name: "Load port / dry EFEM", description: "Load port(dock plate, door opener), dry EFEM panel assembly, FFU, HMI", order: 9 },
+  { id: "dry_robot", name: "Dry robot", description: "FOUP, flip station, dryer 반출 사이에서 dry, face-up wafer만 옮기는 SCARA robot", order: 10 },
+  { id: "transfer_tower", name: "Transfer tower (flip station)", description: "EFEM 뒤 벽을 관통하는 tower 위층의 flip station. Jaw clamp 상태에서 face-up을 face-down으로 바꾼다", order: 11 },
+  { id: "wet_robot", name: "Wet robot / wet zone", description: "Edge-grip end effector와 roll 축을 가진 wet robot, end effector rinse station, wet deck, splash shield, drip tray", order: 12 },
+  { id: "tool_enclosure", name: "Tool enclosure / facility", description: "Wet process enclosure panel assembly(점검용 cover, viewing window)와 facility interface", order: 13 },
+  { id: "visualization", name: "Visualization (illustrative)", description: "Slurry film/stream overlay, optical path overlay", order: 14 },
 ];
 
 export const CMP_JOINTS: (L: CmpLayout) => JointDef[] = (L) => [
@@ -49,7 +55,6 @@ export const CMP_JOINTS: (L: CmpLayout) => JointDef[] = (L) => [
     freezeInCutaway: true,
   },
   { jointId: "load_hatch", name: "Load alcove hatch", kind: "prismatic", origin: [(L.loadCup.alcove.x0 + L.loadCup.alcove.x1) / 2, L.loadCup.alcove.y1, 0], axis: [0, 0, 1], range: [0, L.loadCup.alcove.hatch_travel], unit: "m", homeNote: "0 = closed; travel = open (slides +Z)" },
-  { jointId: "dry_spin", name: "Dry spindle rotation", kind: "revolute", origin: [L.dry.center[0], L.dry.chuckTopY, L.dry.center[2]], axis: [0, 1, 0], range: [-1e6, 1e6], unit: "rad", homeNote: "Spindle index = 0 rad (scripted)", freezeInCutaway: true },
 ];
 
 export const CMP_COMPONENTS: ComponentDef<CmpLayout>[] = [
@@ -475,14 +480,14 @@ export const CMP_COMPONENTS: ComponentDef<CmpLayout>[] = [
     name: "Load cup (edge supports)",
     kind: "station",
     assembly: "dry_loading",
-    description: "Head의 load 위치 아래에 있는 wafer 인계 cup. 가장자리 pin으로 face-down wafer를 받친다. Simplified internal transfer가 FOUP에서 가져온 wafer를 여기서 뒤집어(face-down) 놓는 것으로 가정한다.",
+    description: "Head의 load 위치 아래에 있는 wafer 인계 cup. 30/150/270도의 edge pin 세 개가 face-down wafer의 가장자리를 받친다. Wet robot fork는 pin 사이로 들어와 wafer를 놓거나(연마 전) 집어 간다(연마 후).",
     materialRef: "polymer_white",
     materialNote: "Polymer cup with edge pins (가정)",
     selectable: true,
     explode: DOWN(0.1),
     cutaway: "keep",
     dimensions: (L) => [mm("Cup diameter", L.loadCup.r * 2), mm("Cup top height", L.loadCup.topY)],
-    assumptions: ["Loading 자세(face-up, FOUP) → polishing 자세(face-down)의 orientation handling은 alcove 안의 simplified transfer에서 일어난다고 가정한다."],
+    assumptions: ["Face-up(FOUP) → face-down(polish) 전환은 flip station에서, face-down → face-up 복귀는 wet robot이 edge를 clamp한 상태의 roll 동작에서 일어난다.", "Pin 높이 20 mm는 wet robot fork가 cup 위를 지나도록 정한 설계 가정이다."],
   },
   {
     assetId: "wafer_on_cup",
@@ -502,16 +507,15 @@ export const CMP_COMPONENTS: ComponentDef<CmpLayout>[] = [
   {
     assetId: "load_alcove",
     nodeKey: "load.alcove",
-    name: "Dry loading alcove (simplified transfer)",
+    name: "Load cup alcove",
     kind: "enclosure",
     assembly: "dry_loading",
-    description: "Load cup을 둘러싼 enclosure. 생략한 내부 transfer 경로를 숨기기 위해 불투명하게 유지된다. Hatch가 열릴 때만 head가 내려온다.",
+    description: "Load cup을 둘러싼 splash 벽. Wet robot 쪽(+Z) 벽에 side opening이 있고, 위쪽 hatch가 열릴 때만 head가 내려온다.",
     materialRef: "painted_housing",
     materialNote: "Painted enclosure (가정)",
     selectable: true,
     explode: X(-0.3),
     cutaway: "keep",
-    alwaysOpaque: true,
     dimensions: (L) => [mm("Length (x)", L.loadCup.alcove.x1 - L.loadCup.alcove.x0), mm("Width (z)", L.loadCup.alcove.z1 - L.loadCup.alcove.z0)],
   },
   {
@@ -528,153 +532,8 @@ export const CMP_COMPONENTS: ComponentDef<CmpLayout>[] = [
     selectable: true,
     explode: UP(0.25),
     cutaway: "keep",
-    alwaysOpaque: true,
     dimensions: (L) => [mm("Travel", L.loadCup.alcove.hatch_travel)],
   },
-  // ------------------------------------------------------------------ post-CMP clean / dry
-  {
-    assetId: "clean_module",
-    nodeKey: "post.clean",
-    name: "Brush clean / rinse module",
-    kind: "module",
-    assembly: "post_cmp",
-    description: "Slurry가 묻은 wafer를 brush와 rinse로 세정하는 대표 module. Dry 전까지 wafer는 dry FOUP 경로로 돌아가지 않는다.",
-    materialRef: "painted_housing",
-    materialNote: "Polymer / painted enclosure (가정)",
-    selectable: true,
-    explode: Z(0.3),
-    cutaway: "keep",
-    shell: true,
-    dimensions: (L) => [mm("Width", L.clean.size[0]), mm("Height", L.clean.size[1]), mm("Depth", L.clean.size[2])],
-    label: { text: "Clean / rinse", priority: 3 },
-  },
-  {
-    assetId: "brush_rollers",
-    nodeKey: "post.clean.brushes",
-    name: "Brush rollers",
-    kind: "module",
-    assembly: "post_cmp",
-    parentAssetId: "clean_module",
-    description: "Wafer 양면을 스치는 PVA brush roller 한 쌍 (대표, 회전 연출 없음).",
-    materialRef: "polymer_white",
-    materialNote: "PVA brush (가정)",
-    selectable: true,
-    explode: UP(0.15),
-    cutaway: "keep",
-    dimensions: (L) => [mm("Roller diameter", L.clean.rRoller * 2), mm("Roller length", L.clean.rollerLen)],
-  },
-  {
-    assetId: "wafer_in_clean",
-    nodeKey: "post.clean.wafer",
-    name: "Wafer in clean module (face up)",
-    kind: "wafer",
-    assembly: "post_cmp",
-    parentAssetId: "clean_module",
-    description: "Clean module 안 roller 사이의 wafer 표시 (holder = clean_module).",
-    materialRef: "silicon_wafer",
-    materialNote: "Silicon, frontside up (flipped inside the wet transfer)",
-    selectable: true,
-    explode: UP(0.3),
-    cutaway: "keep",
-    dimensions: (L) => [mm("Diameter", L.rWafer * 2)],
-  },
-  {
-    assetId: "dry_module",
-    nodeKey: "post.dry",
-    name: "Spin-dry module",
-    kind: "module",
-    assembly: "post_cmp",
-    description: "Rinse 후 spin dry. Clean module과 별도 asset이며 dry spindle speed/status(C-MP-12)는 여기 속한다.",
-    materialRef: "painted_housing",
-    materialNote: "Polymer / painted enclosure (가정)",
-    selectable: true,
-    explode: Z(0.3),
-    cutaway: "keep",
-    shell: true,
-    dimensions: (L) => [mm("Width", L.dry.size[0]), mm("Height", L.dry.size[1])],
-    label: { text: "Spin dry", priority: 3 },
-  },
-  {
-    assetId: "dry_chuck",
-    nodeKey: "post.dry.chuck",
-    name: "Dry spin chuck",
-    kind: "drive",
-    assembly: "post_cmp",
-    parentAssetId: "dry_module",
-    jointId: "dry_spin",
-    axisXZ: [-1.08, 0.72],
-    description: "Wafer를 잡고 회전시키는 spin chuck.",
-    materialRef: "stainless",
-    materialNote: "Stainless chuck (가정)",
-    selectable: true,
-    explode: UP(0.12),
-    cutaway: "sector",
-    dimensions: (L) => [mm("Chuck diameter", L.dry.rChuck * 2)],
-  },
-  {
-    assetId: "wafer_in_dry",
-    nodeKey: "post.dry.wafer",
-    name: "Wafer in dry module (face up)",
-    kind: "wafer",
-    assembly: "post_cmp",
-    parentAssetId: "dry_module",
-    jointId: "dry_spin",
-    axisXZ: [-1.08, 0.72],
-    description: "Spin chuck 위 wafer 표시 (holder = dry_module).",
-    materialRef: "silicon_wafer",
-    materialNote: "Silicon, frontside up",
-    selectable: true,
-    explode: UP(0.3),
-    cutaway: "sector",
-    dimensions: (L) => [mm("Diameter", L.rWafer * 2)],
-  },
-  // ------------------------------------------------------------------ station interface
-  {
-    assetId: "wet_transfer",
-    nodeKey: "station.wet_transfer",
-    name: "Wet transfer tunnel (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description: "Load cup → clean → dry → EFEM 사이의 wafer 이동 경로를 감싼 불투명 enclosure. 상세 wet robot 없이 holder 전이로만 표현한다.",
-    materialRef: "painted_housing",
-    materialNote: "Painted enclosure (가정)",
-    selectable: true,
-    explode: Z(0.2),
-    cutaway: "keep",
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length (x)", L.cfg.wet_transfer.x1 - L.cfg.wet_transfer.x0)],
-  },
-  {
-    assetId: "efem_enclosure",
-    nodeKey: "station.efem",
-    name: "EFEM / dry loading enclosure (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description: "Load port의 FOUP door와 alcove 사이의 dry wafer handling 영역. Dry-in / dry-out 경계이며 불투명하게 유지된다.",
-    materialRef: "painted_housing",
-    materialNote: "Painted enclosure (가정)",
-    selectable: true,
-    explode: X(-0.5),
-    cutaway: "keep",
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length (x)", L.station.efem.x1 - L.station.efem.x0), mm("Height", L.station.efem.top_y)],
-  },
-  {
-    assetId: "load_port",
-    nodeKey: "station.load_port",
-    name: "Load port (FOUP deck)",
-    kind: "station",
-    assembly: "station_interface",
-    description: "FOUP이 놓이는 deck과 seating reference. Dry wafer만 이 경로로 들어오고 나간다.",
-    materialRef: "stainless",
-    materialNote: "Stainless deck (가정)",
-    selectable: true,
-    explode: X(-0.9),
-    cutaway: "keep",
-    dimensions: (L) => [mm("Deck height above floor", L.station.deckTopY)],
-    label: { text: "Load port", priority: 2 },
-  },
-  // ------------------------------------------------------------------ visualization
   {
     assetId: "slurry_overlay",
     nodeKey: "effect.slurry",
@@ -750,17 +609,8 @@ export const CMP_PORTS: PortDef[] = [
   { portId: "fiber", assetId: "endpoint_module", medium: "optical", role: "bidirectional", name: "Module fiber port" },
   { portId: "footprint", assetId: "optical_path_overlay", medium: "optical", role: "bidirectional", name: "Illustrated footprint" },
   { portId: "pick", assetId: "load_cup", medium: "wafer", role: "bidirectional", name: "Head handoff (face down)" },
-  { portId: "transfer", assetId: "load_cup", medium: "wafer", role: "bidirectional", name: "Simplified transfer side" },
+  { portId: "transfer", assetId: "load_cup", medium: "wafer", role: "bidirectional", name: "Wet robot side (edge pins)" },
   { portId: "cup", assetId: "head_housing", medium: "wafer", role: "bidirectional", name: "Wafer pickup / release" },
-  { portId: "dry", assetId: "wet_transfer", medium: "wafer", role: "bidirectional", name: "Alcove side" },
-  { portId: "clean", assetId: "wet_transfer", medium: "wafer", role: "bidirectional", name: "Clean module side" },
-  { portId: "dryout", assetId: "wet_transfer", medium: "wafer", role: "bidirectional", name: "Dry module → EFEM" },
-  { portId: "in", assetId: "clean_module", medium: "wafer", role: "bidirectional", name: "Wafer in/out" },
-  { portId: "in", assetId: "dry_module", medium: "wafer", role: "bidirectional", name: "Wafer in/out" },
-  { portId: "atm", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "FOUP side" },
-  { portId: "wet", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Wet section side" },
-  { portId: "seat", assetId: "load_port", medium: "carrier", role: "bidirectional", name: "FOUP seating" },
-  { portId: "door", assetId: "load_port", medium: "wafer", role: "bidirectional", name: "FOUP door interface" },
 ];
 
 const c = (connectionId: string, kind: ConnectionDef["kind"], from: [string, string], to: [string, string], description: string): ConnectionDef => ({ connectionId, kind, from: { assetId: from[0], portId: from[1] }, to: { assetId: to[0], portId: to[1] }, description });
@@ -791,40 +641,35 @@ export const CMP_CONNECTIONS: ConnectionDef[] = [
   c("opt.head-rotary", "optical", ["optical_head", "fiber"], ["rotary_optical_interface", "rot"], "Rotating fiber → rotary optical interface"),
   c("opt.rotary-module", "optical", ["rotary_optical_interface", "fixed"], ["endpoint_module", "fiber"], "Stationary fiber → source / detector module (simplified interface)"),
   c("wafer.cup-head", "wafer", ["load_cup", "pick"], ["head_housing", "cup"], "Load cup ↔ head pickup / release (face down)"),
-  c("wafer.cup-transfer", "wafer", ["load_cup", "transfer"], ["wet_transfer", "dry"], "Load cup ↔ wet transfer (simplified)"),
-  c("wafer.transfer-clean", "wafer", ["wet_transfer", "clean"], ["clean_module", "in"], "Wet transfer ↔ clean module"),
-  c("wafer.transfer-dry", "wafer", ["wet_transfer", "dryout"], ["dry_module", "in"], "Wet transfer ↔ dry module"),
-  c("wafer.transfer-efem", "wafer", ["wet_transfer", "dryout"], ["efem_enclosure", "wet"], "Dry module → EFEM (dry-out)"),
-  c("wafer.loadport-efem", "wafer", ["load_port", "door"], ["efem_enclosure", "atm"], "FOUP door ↔ EFEM (dry-in)"),
 ];
 
 export function buildCmpTemplate(L: CmpLayout): EquipmentTemplate<CmpLayout> {
   const polishAxis: [number, number] = [L.head.polishX, 0];
-  const dryAxis: [number, number] = [L.dry.center[0], L.dry.center[2]];
-  const components = CMP_COMPONENTS.map((comp) => {
+  const components = [...CMP_COMPONENTS, ...cmpFrontComponents(L)].map((comp) => {
     if (comp.jointId === "head_spin") return { ...comp, axisXZ: polishAxis };
-    if (comp.jointId === "dry_spin") return { ...comp, axisXZ: dryAxis };
     if (comp.assetId === "conditioner_disc") return { ...comp, axisXZ: [L.conditioner.discCenterRest[0], L.conditioner.discCenterRest[2]] as [number, number] };
     return comp;
   });
   return {
     templateId: CMP_TEMPLATE_ID,
-    templateRevision: "1.0.0",
+    templateRevision: "1.1.0",
     family: "STI_CMP_ROTARY",
     displayName: "Rotary STI CMP",
     title: "Single-platen, single-head rotary oxide (STI) CMP with conditioner, slurry delivery, window-in-pad optical endpoint and post-CMP clean/dry",
     assemblies: CMP_ASSEMBLIES,
     components,
-    ports: CMP_PORTS,
-    connections: CMP_CONNECTIONS,
-    joints: CMP_JOINTS(L),
+    ports: [...CMP_PORTS, ...cmpFrontPorts()],
+    connections: [...CMP_CONNECTIONS, ...cmpFrontConnections()],
+    joints: [...CMP_JOINTS(L), ...cmpFrontJoints(L)],
     facts: [
       { label: "Configuration", value: "1 platen / 1 head (seed)", note: "초기 seed이며 최대 개수나 산업 표준 개수가 아니다" },
       { label: "Wafer orientation (polish)", value: "Frontside down onto the pad", note: "Backside는 head membrane을 향한다" },
       { label: "Pressure zones", value: "3 (membrane) + ring circuit", note: "공압 feedback이며 contact-pressure map이 아니다" },
       { label: "Conditioning", value: "Ex-situ (head retracted)", note: "In-situ를 추가하려면 간섭 없는 경로가 필요하다" },
       { label: "Endpoint", value: "Window-in-pad optical (illustration)", note: "Endpoint detected / PASS 결과를 생성하지 않는다" },
-      { label: "Zones", value: "Dry loading · Wet polish/clean · Dry return", note: "Wet wafer는 Clean/Dry 전에 FOUP으로 돌아가지 않는다" },
+      { label: "Zones", value: "Dry EFEM / wet zone / dry return", note: "Wet wafer는 Clean/Dry 전에 FOUP으로 돌아가지 않는다. Dryer 반입(wet)과 반출(dry)은 다른 robot이 맡는다" },
+      { label: "Orientation handling", value: "Flip station + wet robot roll", note: "두 전환 모두 wafer edge를 clamp한 상태에서만 일어난다" },
+      { label: "Contact separation", value: "Dry fork / wet edge grip + rinse", note: "Wet robot은 dirty-wet 이송 뒤 rinse를 거쳐 clean-ready가 된 다음 clean-wet wafer를 잡는다" },
       { label: "Completion", value: "Visual sequence complete", note: "Solver/measurement 없이 PASS/yield/dishing nm을 표시하지 않는다" },
     ],
     station: {
@@ -834,8 +679,8 @@ export function buildCmpTemplate(L: CmpLayout): EquipmentTemplate<CmpLayout> {
       doorFacingLocal: L.station.doorFacing,
       transferEnclosureAssetId: "efem_enclosure",
       waferPresentationAssetId: "wafer",
-      waferPresentationAssetIds: ["wafer", "wafer_on_cup", "wafer_in_clean", "wafer_in_dry"],
-      noteKo: "FOUP slot → EFEM(dry) → alcove load cup(face-down) → head → pad → load cup → wet transfer → clean → dry → EFEM → FOUP slot. 내부 로봇은 구현하지 않았다.",
+      waferPresentationAssetIds: cmpWaferAssets(),
+      noteKo: "FOUP slot, dry robot, flip station(face-down), wet robot, load cup, head, load cup, wet robot(face-up), cleaner, wet robot(rinse 후), spin dryer, dry robot, FOUP slot 순서로 holder가 바뀐다.",
     },
   };
 }

@@ -1,0 +1,18 @@
+{
+  "$schema_id": "pecvd-twin.fab-environment/1",
+  "revision": "fab-bay-v1.0.0",
+  "note": "Visual-only bay surroundings (generic design assumption): raised floor tiles, operator aisle with floor markings, ceiling grid with FFU panels and light panels, bay walls, rear utility chase with cable tray, process piping, exhaust duct and drops to each tool's facility interface. Nothing here is equipment, a measurement or a DB entity; dimensions are not from a real fab.",
+  "units": "m",
+  "frame": "World X / Z (Babylon left-handed, +Y up). Heights are above the bay floor (bay.floor_y in config/equipment/instances.json).",
+  "floor": { "x0": -5.2, "x1": 3.6, "z0": -6.6, "z1": 7.0, "tile": 0.6, "thickness": 0.03 },
+  "aisle": { "x0": -4.7, "x1": -2.75, "stripe_width": 0.06 },
+  "service": { "x0": 1.6, "x1": 3.6 },
+  "ceiling": { "height": 3.4, "module": [1.2, 0.6], "tbar_width": 0.04, "tbar_depth": 0.05, "ffu_pattern": [1, 1, 0], "light_every": 3 },
+  "walls": { "height": 3.4, "thickness": 0.12, "back_x": 3.6, "front_x": -5.2, "z0": -6.6, "z1": 7.0, "base_height": 0.1 },
+  "utilities": {
+    "tray": { "x": 2.25, "height": 2.85, "width": 0.45, "depth": 0.08 },
+    "duct": { "x": 3.05, "height": 2.95, "radius": 0.16 },
+    "pipes": { "x": [1.85, 1.95, 2.05], "height": 2.7, "radius": 0.014 },
+    "drops": { "lateral": [-0.09, 0.0, 0.09], "radius": [0.022, 0.016, 0.03] }
+  }
+}

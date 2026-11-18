@@ -25,8 +25,8 @@ export const OHT_ASSEMBLIES: AssemblyDef[] = [
 export const OHT_JOINTS: (L: OhtLayout) => JointDef[] = (L) => [
   { jointId: "travel", name: "Rail travel position", kind: "path", origin: [0, L.vehicle.bogieY, L.rail.z0], axis: [0, 0, 1], range: [0, L.rail.length], unit: "m", homeNote: `Rail 시작점(z0) = 0 m; park = ${L.vehicle.parkS.toFixed(2)} m. 경로상 거리이며 world XYZ 실측이 아니다` },
   { jointId: "hoist", name: "Hoist extension", parentJointId: "travel", kind: "prismatic", origin: [0, L.hoist.originY - L.vehicle.bogieY, 0], axis: [0, -1, 0], range: [0, L.hoist.stroke], unit: "m", homeNote: "0 = retracted travel pose (upper limit); 양수 = 아래로 extension" },
-  { jointId: "gripper_a", name: "Gripper finger A", parentJointId: "hoist", kind: "prismatic", origin: [0, 0, 0], axis: [1, 0, 0], range: [0, L.gripper.openHalfGap - L.gripper.closedHalfGap], unit: "m", homeNote: "0 = open; max = closed (finger A slides +X)" },
-  { jointId: "gripper_b", name: "Gripper finger B", parentJointId: "hoist", kind: "prismatic", origin: [0, 0, 0], axis: [-1, 0, 0], range: [0, L.gripper.openHalfGap - L.gripper.closedHalfGap], unit: "m", homeNote: "0 = open; max = closed (finger B slides -X)" },
+  { jointId: "gripper_a", name: "Gripper finger A", parentJointId: "hoist", kind: "prismatic", origin: [0, 0, 0], axis: [-1, 0, 0], range: [0, L.gripper.openHalfGap - L.gripper.closedHalfGap], unit: "m", homeNote: "0 = open; max = closed (finger A sits at +X and slides inward, -X)" },
+  { jointId: "gripper_b", name: "Gripper finger B", parentJointId: "hoist", kind: "prismatic", origin: [0, 0, 0], axis: [1, 0, 0], range: [0, L.gripper.openHalfGap - L.gripper.closedHalfGap], unit: "m", homeNote: "0 = open; max = closed (finger B sits at -X and slides inward, +X)" },
 ];
 
 export const OHT_COMPONENTS: ComponentDef<OhtLayout>[] = [
@@ -237,7 +237,7 @@ export const OHT_CONNECTIONS: ConnectionDef[] = [
 export function buildOhtTemplate(L: OhtLayout): EquipmentTemplate<OhtLayout> {
   return {
     templateId: OHT_TEMPLATE_ID,
-    templateRevision: "1.0.0",
+    templateRevision: "1.1.0",
     family: "OHT",
     displayName: "OHT",
     title: "Overhead hoist transport: straight ceiling rail, one vehicle with belt hoist and gripper serving three load ports",

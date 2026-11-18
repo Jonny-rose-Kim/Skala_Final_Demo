@@ -26,20 +26,17 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
     expect(errors.filter((e) => !e.includes("Outdated Optimize Dep"))).toEqual([]);
   });
 
-  test("switching equipment switches the component tree, inspector facts and standalone scenario", async ({ page }, info) => {
+  test("switching equipment switches the component tree and standalone scenario", async ({ page }, info) => {
     await openApp(page, info.project.name);
     await page.getByTestId("instance-select").selectOption("REMOTE-01");
     await page.waitForTimeout(400);
     await expect(page.getByTestId("tree-item-discharge_tube")).toBeVisible();
     await expect(page.getByTestId("tree-item-induction_coil")).toBeVisible();
-    await expect(page.getByTestId("inspector-empty")).toContainText("ICP (inductive)");
-    await expect(page.getByTestId("inspector-empty")).toContainText("Upstream remote");
     expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe("remote-icp-cycle-v1");
     await page.getByTestId("instance-select").selectOption("CMP-01");
     await page.waitForTimeout(400);
     await expect(page.getByTestId("tree-item-retaining_ring")).toBeVisible();
-    await expect(page.getByTestId("inspector-empty")).toContainText("Frontside down");
-    expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe("sti-cmp-cycle-v1");
+    expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe("sti-cmp-cycle-v2");
     await page.getByTestId("instance-select").selectOption("OHT-01");
     await page.waitForTimeout(400);
     await expect(page.getByTestId("tree-item-gripper_plate")).toBeVisible();
@@ -73,16 +70,22 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
       st.setActiveInstance("CMP-01");
     });
     await page.waitForTimeout(300);
-    await page.evaluate(() => window.__pecvdTwin!.freezeTime(15));
+    // sti-cmp-cycle-v2: the polish segment starts after the front-end handling (25.32 s); bulk polish at +15 s
+    await page.evaluate(() => window.__pecvdTwin!.freezeTime(25.32 + 15));
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
       const inst = window.__pecvdTwin!.host.world.instances.get("CMP-01");
       const L = inst.bundle.layout;
-      const wafer = inst.meshesByAsset.get("wafer")[0];
       const pad = inst.meshesByAsset.get("pad")[0];
-      wafer.computeWorldMatrix(true);
       pad.computeWorldMatrix(true);
-      return { waferMinY: wafer.getBoundingInfo().boundingBox.minimumWorld.y, padMaxY: pad.getBoundingInfo().boundingBox.maximumWorld.y, contact: L.head.liftContact, holder: window.__pecvdTwin!.preview().wafers["W-01"].holder.kind, normal: window.__pecvdTwin!.preview().wafers["W-01"].frontsideNormalLocal };
+      // two-tone wafer: take the lowest point of both halves (the frontside half faces the pad)
+      const waferMinY = Math.min(
+        ...inst.meshesByAsset.get("wafer").map((m: any) => {
+          m.computeWorldMatrix(true);
+          return m.getBoundingInfo().boundingBox.minimumWorld.y as number;
+        }),
+      );
+      return { waferMinY, padMaxY: pad.getBoundingInfo().boundingBox.maximumWorld.y, contact: L.head.liftContact, holder: window.__pecvdTwin!.preview().wafers["W-01"].holder.kind, normal: window.__pecvdTwin!.preview().wafers["W-01"].frontsideNormalLocal };
     });
     expect(Math.abs(r.waferMinY - r.padMaxY)).toBeLessThan(0.0015);
     expect(r.holder).toBe("cmp_head");
@@ -153,9 +156,9 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
 
   test("Route A: rewinding from CMP to before deposition restores slot occupancy, holders and the incoming film state", async ({ page }, info) => {
     await openApp(page, info.project.name);
-    await page.evaluate(() => window.__pecvdTwin!.store.getState().setScenario("route-a-linked-v1"));
+    await page.evaluate(() => window.__pecvdTwin!.store.getState().setScenario("route-a-linked-v2"));
     await page.waitForTimeout(500);
-    expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe("route-a-linked-v1");
+    expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe("route-a-linked-v2");
     const at = async (t: number) => {
       await page.evaluate((t) => window.__pecvdTwin!.freezeTime(t), t);
       await page.waitForTimeout(150);
@@ -165,55 +168,34 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
         return { slot: p.carriers["FOUP-01"].slots["slot-13"], holder: w.holder.kind, overcoat: w.film.layers.find((l: { layerId: string }) => l.layerId === "demo_overcoat").presentFraction, nitride: w.film.nitrideExposed, status: w.film.status, presented: Object.values(p.instances).filter((i: any) => i.presentedWaferId).map((i: any) => i.instanceId) };
       });
     };
-    // route A: deposition segment 0-28 s, OHT 28-66 s, CMP 66-116 s (return to FOUP at 113-116 s), complete 116-119 s
-    const late = await at(118);
+    // route A v2: external 0-2 s, station load 2-27.2 s, CCP process 27.2-45.2 s, unload 45.2-71.6 s,
+    // OHT 71.6-109.6 s, CMP 109.6-224.76 s (polish from +25.32 s), complete 224.76-227.76 s
+    const late = await at(226.5);
     expect(late.holder).toBe("carrier_slot");
     expect(late.slot).toBe("W-01");
     expect(late.overcoat).toBe(0);
     expect(late.nitride).toBe(true);
-    const polishing = await at(82);
+    expect(late.presented).toEqual(["FOUP-01"]);
+    const polishing = await at(149.9);
     expect(polishing.holder).toBe("cmp_head");
     expect(polishing.presented).toEqual(["CMP-01"]);
     expect(polishing.slot).toBeNull();
-    const dep = await at(14);
+    const dep = await at(27.2 + 9);
     expect(dep.holder).toBe("process_stage");
     expect(dep.presented).toEqual(["PECVD-01.CH-A"]);
     expect(dep.overcoat).toBeGreaterThan(0);
     expect(dep.overcoat).toBeLessThan(1);
+    const handling = await at(12);
+    expect(["end_effector", "loadlock_support"]).toContain(handling.holder);
+    expect(handling.presented).toEqual(["PECVD-01.CH-A"]);
+    expect(handling.slot).toBeNull();
     const early = await at(1);
     expect(early.holder).toBe("carrier_slot");
     expect(early.slot).toBe("W-01");
     expect(early.overcoat).toBe(0);
     expect(early.nitride).toBe(false);
     expect(early.status).toBe("incoming");
-    expect(early.presented).toEqual([]);
-    await expect(page.getByTestId("process-inset")).toContainText("Schematic · Exaggerated scale · Illustrative");
-  });
-
-  test("inspector separates instrument body, measurement point and data binding; nothing is bound", async ({ page }, info) => {
-    const requests: string[] = [];
-    page.on("request", (r) => {
-      const u = r.url();
-      if (u.includes("/api/") || u.startsWith("ws://")) requests.push(u);
-    });
-    await openApp(page, info.project.name);
-    await page.evaluate(() => window.__pecvdTwin!.store.getState().setActiveInstance("REMOTE-01"));
-    await page.waitForTimeout(300);
-    await page.getByTestId("tree-item-transport_section").locator("button").first().click();
-    await expect(page.getByTestId("inspector")).toContainText("설치 후보 / Not installed");
-    await page.getByTestId("tree-item-oes_spectrometer").locator("button").first().click();
-    await expect(page.getByTestId("inspector")).toContainText("Data unbound");
-    await expect(page.getByTestId("inspector")).toContainText("Mount: oes_spectrometer");
-    await page.getByTestId("measurement-instrument-remote.oes").click();
-    await page.waitForTimeout(200);
-    expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().selectedMeasurement)).toEqual({ kind: "instrument", id: "remote.oes" });
-    await page.evaluate(() => window.__pecvdTwin!.store.getState().setActiveInstance("OHT-01"));
-    await page.waitForTimeout(300);
-    await page.getByTestId("tree-item-gripper_plate").locator("button").first().click();
-    await expect(page.getByTestId("preview-joint")).toContainText("Hoist extension");
-    await expect(page.getByTestId("inspector")).toContainText("Scripted pose");
-    await expect(page.getByTestId("inspector")).toContainText("Data unbound");
-    expect(requests).toEqual([]);
+    expect(early.presented).toEqual(["FOUP-01"]);
   });
 
   test("two CMP instances: cutaway, hidden parts and markers stay independent", async ({ page }, info) => {
@@ -254,7 +236,7 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
       return [s.meshes.length, s.materials.length, s.textures.length, s.lights.length, s.transformNodes.length];
     });
     const cycle = async () => {
-      for (const [inst, scen] of [["REMOTE-01", "remote-icp-cycle-v1"], ["CMP-01", "sti-cmp-cycle-v1"], ["OHT-01", "oht-transfer-v1"], ["PECVD-01.CH-A", "route-a-linked-v1"]] as const) {
+      for (const [inst, scen] of [["REMOTE-01", "remote-icp-cycle-v1"], ["CMP-01", "sti-cmp-cycle-v2"], ["OHT-01", "oht-transfer-v1"], ["PECVD-01.CH-A", "route-a-linked-v2"]] as const) {
         await page.evaluate(([inst, scen]) => {
           const st = window.__pecvdTwin!.store.getState();
           st.setActiveInstance(inst);

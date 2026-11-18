@@ -5,3 +5,4 @@ export * from "./revolve";
 export * from "./portedShell";
 export * from "./perforatedDisc";
 export * from "./primitives";
+export * from "./sectorClip";

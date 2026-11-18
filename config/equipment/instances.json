@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.equipment-instances/1",
-  "config_revision": "instances-v3",
+  "config_revision": "instances-v4",
   "default": [
     {
       "instanceId": "PECVD-01.CH-A",
@@ -33,7 +33,7 @@
       "templateId": "sti_cmp_rotary_single_platen",
       "displayName": "CMP-01 / Rotary STI CMP",
       "position": [
-        0.163,
+        0.443,
         -0.782,
         3.6
       ],
@@ -46,7 +46,7 @@
       "templateId": "oht_single_vehicle",
       "displayName": "OHT-01 / Overhead hoist transport",
       "position": [
-        -1.297,
+        -1.974,
         -0.782,
         0
       ],
@@ -59,7 +59,7 @@
       "templateId": "foup_carrier_300",
       "displayName": "FOUP-01 / 300 mm carrier",
       "position": [
-        -1.297,
+        -1.974,
         0.118,
         0
       ],
@@ -76,7 +76,7 @@
         "templateId": "ccp_pecvd_single_wafer_300",
         "displayName": "PECVD-01 / Process Chamber A",
         "position": [
-          -0.9,
+          -1.25,
           0,
           0
         ],
@@ -88,7 +88,7 @@
         "templateId": "ccp_pecvd_single_wafer_300",
         "displayName": "PECVD-01 / Process Chamber B",
         "position": [
-          0.9,
+          1.25,
           0,
           0
         ],
@@ -154,8 +154,8 @@
     ]
   },
   "bay": {
-    "note": "World frame: fab floor at y = -0.782 (the CCP chamber frame origin is 0.782 m above it). Load ports face -X toward the aisle; the OHT rail runs along Z above x = -1.297 so every load-port seat lies on the rail line within the lateral tolerance.",
+    "note": "World frame: fab floor at y = -0.782 (the CCP chamber frame origin is 0.782 m above it). Load ports face -X toward the aisle; the OHT rail runs along Z above x = -1.974 so every load-port seat lies on the rail line within the lateral tolerance. instances-v4: the EFEM / load lock front ends moved the seats to x = -1.974 (CCP, CMP) and -1.974 (Remote, instance x -0.035); the CMP instance and the rail moved with them.",
     "floor_y": -0.782,
-    "rail_x": -1.297
+    "rail_x": -1.974
   }
 }

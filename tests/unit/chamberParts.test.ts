@@ -47,7 +47,11 @@ describe("chamber parts", () => {
 
   it("keeps the wafer on the pedestal and under the faceplate", () => {
     const L = CHAMBER_LAYOUT;
-    const wafer = meshDataBounds(parts.find((p) => p.key === "wafer")!.build(full));
+    // two-tone wafer: backside half ("wafer") and frontside half ("wafer_front") share the midplane
+    const back = meshDataBounds(parts.find((p) => p.key === "wafer")!.build(full));
+    const front = meshDataBounds(parts.find((p) => p.key === "wafer_front")!.build(full));
+    const wafer = { min: back.min.map((v, k) => Math.min(v, front.min[k])), max: back.max.map((v, k) => Math.max(v, front.max[k])) };
+    expect(front.min[1]).toBeCloseTo(back.max[1], 9);
     const pedestal = meshDataBounds(parts.find((p) => p.key === "pedestal")!.build(full));
     const faceplate = meshDataBounds(parts.find((p) => p.key === "faceplate")!.build(full));
     expect(wafer.min[1]).toBeCloseTo(pedestal.max[1], 9);

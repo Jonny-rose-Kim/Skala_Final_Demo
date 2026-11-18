@@ -8,10 +8,13 @@ import type { AngularInterval } from "../config/geometry";
 import { DEG, TAU } from "../config/geometry";
 import type { CutawayBehavior, MaterialRef } from "../domain/types";
 import { azimuthKept, toRadialFrame, type PartGeometry } from "./chamberParts";
+import { waferHalfProfiles } from "./waferParts";
 import {
   bellowsProfile,
+  boxSectionCaps,
   chamferProfile,
   chamferedBox,
+  clipToSector,
   circleProfile,
   createMeshData,
   filletProfile,
@@ -25,6 +28,7 @@ import {
   tubeAlongPath,
   type MeshData,
   type RevolveProfile,
+  type SectionBox,
   type ShellPort,
   type Vec2,
   type Vec3,
@@ -40,6 +44,9 @@ export interface SectorOpts {
   jointId?: string;
   axisXZ?: [number, number];
   isGlass?: boolean;
+  lod?: "fine";
+  cover?: boolean;
+  presenceKey?: string;
 }
 
 export interface FixedOpts {
@@ -52,8 +59,13 @@ export interface FixedOpts {
   alwaysOpaque?: boolean;
   jointId?: string;
   axisXZ?: [number, number];
-  stretch?: { baseLength: number; jointId: string };
+  stretch?: PartGeometry["stretch"];
+  cover?: boolean;
+  lod?: "fine";
+  presenceKey?: string;
 }
+
+export type ClippedOpts = Omit<FixedOpts, "cutaway" | "azimuth" | "axisXZ" | "stretch">;
 
 /** Collects parts with the same two idioms as the CCP generator. */
 export class PartSink {
@@ -74,6 +86,9 @@ export class PartSink {
       jointId: opts.jointId,
       axisXZ: opts.axisXZ,
       isGlass: opts.isGlass,
+      lod: opts.lod,
+      cover: opts.cover,
+      presenceKey: opts.presenceKey,
       build: (kept) => revolveProfile(prof, { segments: opts.segments ?? 128, ranges: kept, caps: false, uvScale: 1 }),
     });
   }
@@ -93,6 +108,9 @@ export class PartSink {
       jointId: opts.jointId,
       axisXZ: opts.axisXZ,
       isGlass: opts.isGlass,
+      lod: opts.lod,
+      cover: opts.cover,
+      presenceKey: opts.presenceKey,
       build,
     });
   }
@@ -112,8 +130,38 @@ export class PartSink {
       jointId: opts.jointId,
       axisXZ: opts.axisXZ,
       stretch: opts.stretch,
+      cover: opts.cover,
+      lod: opts.lod,
+      presenceKey: opts.presenceKey,
       sectorDependent: false,
       build: () => md,
+    });
+  }
+
+  /**
+   * Non-revolved part cut by the sector planes through the instance axis (carrier shells, plates).
+   * `caps` lists the axis-aligned boxes that get section caps, or builds the caps itself.
+   */
+  clipped(key: string, assetId: string, materialRef: Mat, md: MeshData, caps: SectionBox[] | ((kept: AngularInterval[]) => MeshData) | null, opts: ClippedOpts = {}): void {
+    this.parts.push({
+      key,
+      assetId,
+      materialRef,
+      pickable: opts.pickable ?? true,
+      cutaway: "sector",
+      // clipped about the instance axis: the authored coordinates are never shifted to a component axis
+      axisXZ: [0, 0],
+      isGlass: opts.isGlass,
+      castShadow: opts.castShadow ?? true,
+      hideWhenExploded: opts.hideWhenExploded,
+      alwaysOpaque: opts.alwaysOpaque,
+      jointId: opts.jointId,
+      cover: opts.cover,
+      lod: opts.lod,
+      presenceKey: opts.presenceKey,
+      sectorDependent: true,
+      build: (kept) => clipToSector(md, kept),
+      capBuild: caps ? (Array.isArray(caps) ? (kept) => boxSectionCaps(caps, kept) : caps) : undefined,
     });
   }
 }
@@ -311,17 +359,24 @@ export interface HeatedStageParams {
   shaft: { r: number; bottomY: number };
   rFloorBore: number;
   bellows: { rIn: number; rOut: number; y0: number; y1: number; convolutions: number };
+  /** Stage lift and lift-pin joints (parts are authored at the process position, pins flush). */
+  joints?: { stage: string; pins: string };
 }
 
 /** Wafer, ceramic edge ring, heated pedestal with heater rings, lift pins, shaft, bellows, TC sheath. */
 export function heatedStageParts(sink: PartSink, p: HeatedStageParams): void {
   const ids = p.ids;
   const pd = p.pedestal;
-  sink.sector("wafer", ids.wafer, "silicon_wafer", rectProfile(0, p.rWafer, pd.topY, pd.topY + p.waferThickness), { segments: 192, castShadow: false });
-  sink.sector("edge_ring", ids.edgeRing, "ceramic", chamfRect(pd.rEdgeRingIn, pd.r, pd.topY, pd.topY + pd.edgeRingThickness, 0.0008), { segments: 192 });
+  // stage lift: pedestal, heater, edge ring, shaft and thermocouple follow `stage`; pins (and the wafer resting on them) follow `pins`
+  const js = p.joints?.stage;
+  const jp = p.joints?.pins;
+  const wh = waferHalfProfiles(p.rWafer, pd.topY, p.waferThickness, false);
+  sink.sector("wafer", ids.wafer, "silicon_wafer", wh.back, { segments: 192, castShadow: false, jointId: jp });
+  sink.sector("wafer_front", ids.wafer, "wafer_front", wh.front, { segments: 192, castShadow: false, jointId: jp });
+  sink.sector("edge_ring", ids.edgeRing, "ceramic", chamfRect(pd.rEdgeRingIn, pd.r, pd.topY, pd.topY + pd.edgeRingThickness, 0.0008), { segments: 192, jointId: js });
   const pedOuter = filletProfile(rectProfile(0, pd.r, pd.bottomY, pd.topY), 0.005, 3, (_, q) => q[0] < 1e-9);
   const cavity = rectProfile(p.heater.rIn, p.heater.rOut, p.heater.y0, p.heater.y1);
-  sink.sector("pedestal", ids.pedestal, "aluminum_machined", { outer: pedOuter, holes: [cavity] }, { segments: 160 });
+  sink.sector("pedestal", ids.pedestal, "aluminum_machined", { outer: pedOuter, holes: [cavity] }, { segments: 160, jointId: js });
   const rings: Vec2[][] = [];
   const h = p.heater;
   const span = h.rOut - h.rIn - 2 * (h.rElement + 0.004);
@@ -329,15 +384,16 @@ export function heatedStageParts(sink: PartSink, p: HeatedStageParams): void {
     const R = h.rIn + h.rElement + 0.004 + (span * k) / Math.max(1, h.turns - 1);
     rings.push(circleProfile(R, (h.y0 + h.y1) / 2, h.rElement, 14));
   }
-  sink.sectorCustom("heater_rings", ids.heater, "nichrome", (kept) => mergeMeshData(rings.map((r) => revolveProfile(r, { segments: 128, ranges: kept, caps: true, smoothAngleDeg: 60 }))), { castShadow: false, capProfile: { outer: rings[0], holes: [] } });
+  sink.sectorCustom("heater_rings", ids.heater, "nichrome", (kept) => mergeMeshData(rings.map((r) => revolveProfile(r, { segments: 128, ranges: kept, caps: true, smoothAngleDeg: 60 }))), { castShadow: false, capProfile: { outer: rings[0], holes: [] }, jointId: js });
+  // lift pins: tops flush with the stage surface at value 0, carried by a hoop just under the stage
   const pinAz = [30 * DEG, 150 * DEG, 270 * DEG];
   for (let i = 0; i < pinAz.length; i++) {
-    const pin = revolveProfile(chamfRect(0, p.liftPins.r, pd.bottomY - 0.036, pd.topY - 0.0015, 0.0008), { segments: 16 });
+    const pin = revolveProfile(chamfRect(0, p.liftPins.r, pd.bottomY - 0.008, pd.topY, 0.0008), { segments: 16 });
     translateMeshData(pin, p.liftPins.radius, 0, 0);
     rotateYMeshData(pin, pinAz[i]);
-    sink.fixed(`lift_pin_${i}`, ids.liftPins, "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false });
+    sink.fixed(`lift_pin_${i}`, ids.liftPins, "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false, jointId: jp });
   }
-  sink.sector("lift_ring", ids.liftPins, "stainless", chamfRect(p.liftPins.radius - 0.014, p.liftPins.radius + 0.014, pd.bottomY - 0.042, pd.bottomY - 0.036, 0.001), { segments: 128 });
+  sink.sector("lift_ring", ids.liftPins, "stainless", chamfRect(p.liftPins.radius - 0.014, p.liftPins.radius + 0.014, pd.bottomY - 0.014, pd.bottomY - 0.008, 0.001), { segments: 128, jointId: jp });
   const shaft: Vec2[] = [
     [0, p.shaft.bottomY],
     [p.shaft.r + 0.03, p.shaft.bottomY],
@@ -346,13 +402,25 @@ export function heatedStageParts(sink: PartSink, p: HeatedStageParams): void {
     [p.shaft.r, pd.bottomY + 0.002],
     [0, pd.bottomY + 0.002],
   ];
-  sink.sector("shaft", ids.shaft, "stainless", chamferProfile(shaft, 0.003, (_, q) => q[0] < 1e-9), { segments: 96 });
+  sink.sector("shaft", ids.shaft, "stainless", chamferProfile(shaft, 0.003, (_, q) => q[0] < 1e-9), { segments: 96, jointId: js });
   const b = p.bellows;
-  sink.sector("bellows", ids.bellows, "stainless", bellowsProfile(b.rIn, b.rOut, b.y0, b.y1, b.convolutions, 0.0015), { segments: 96 });
+  // bellows: top flange fixed to the floor bore; the convolutions stretch about the top as the stage lowers; the bottom flange is clamped to the shaft
+  sink.parts.push({
+    key: "bellows",
+    assetId: ids.bellows,
+    materialRef: "stainless",
+    pickable: true,
+    cutaway: "sector",
+    castShadow: true,
+    sectorDependent: true,
+    capProfile: { outer: bellowsProfile(b.rIn, b.rOut, b.y0, b.y1, b.convolutions, 0.0015) },
+    stretch: js ? { baseLength: b.y1 - b.y0, jointId: js, anchor: [0, b.y1, 0], sign: -1 } : undefined,
+    build: (kept) => revolveProfile(bellowsProfile(b.rIn, b.rOut, b.y0, b.y1, b.convolutions, 0.0015), { segments: 96, ranges: kept, caps: false, uvScale: 1 }),
+  });
   sink.sector("bellows_flange_top", ids.bellows, "stainless", chamfRect(b.rIn - 0.004, p.rFloorBore + 0.03, b.y1 - 0.012, b.y1, 0.002), { segments: 96 });
-  sink.sector("bellows_flange_bottom", ids.bellows, "stainless", chamfRect(p.shaft.r + 0.0005, b.rOut + 0.012, b.y0 - 0.012, b.y0, 0.002), { segments: 96 });
-  sink.sector("thermocouple_sheath", ids.thermocouple, "stainless", rectProfile(0, 0.003, p.shaft.bottomY - 0.06, pd.topY - 0.008), { segments: 16, castShadow: false });
-  sink.sector("thermocouple_connector", ids.thermocouple, "dark_steel", chamfRect(0, 0.011, p.shaft.bottomY - 0.095, p.shaft.bottomY - 0.06, 0.002), { segments: 24, castShadow: false });
+  sink.sector("bellows_flange_bottom", ids.shaft, "stainless", chamfRect(p.shaft.r + 0.0005, b.rOut + 0.012, b.y0 - 0.012, b.y0, 0.002), { segments: 96, jointId: js });
+  sink.sector("thermocouple_sheath", ids.thermocouple, "stainless", rectProfile(0, 0.003, p.shaft.bottomY - 0.06, pd.topY - 0.008), { segments: 16, castShadow: false, jointId: js });
+  sink.sector("thermocouple_connector", ids.thermocouple, "dark_steel", chamfRect(0, 0.011, p.shaft.bottomY - 0.095, p.shaft.bottomY - 0.06, 0.002), { segments: 24, castShadow: false, jointId: js });
 }
 
 export interface ExhaustLineParams {

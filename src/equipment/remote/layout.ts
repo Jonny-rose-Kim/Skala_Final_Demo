@@ -4,7 +4,9 @@
  * Units: meters. Frame: +Y up, origin at the chamber axis on the inner floor top surface.
  */
 import rawConfig from "../../../config/geometry/remote-icp-pecvd-300-v1.json";
-import { DEG, azimuthToXZ, deriveStationLayout, normalizeAngle, type AngularInterval, type PortPlacement, type StationLayout, type Vec3Tuple, type ValidationReport } from "../../config/geometry";
+import { DEG, azimuthToXZ, normalizeAngle, type AngularInterval, type PortPlacement, type StationLayout, type Vec3Tuple, type ValidationReport } from "../../config/geometry";
+import { FOUP_INTERFACE } from "../handling/foupInterface";
+import { deriveHandlingStation, validateHandlingStation, type ChamberHandlingInput, type HandlingStationConfig } from "../handling/stationLayout";
 import type { PlasmaBounds } from "../../plasma/plasmaVolume";
 
 export interface RemoteGeometryConfig {
@@ -42,6 +44,9 @@ export interface RemoteGeometryConfig {
     diameter: number;
     body_height: number;
     top_y: number;
+    /** Stage top at the wafer transfer position (stage lift lowered). */
+    transfer_top_y: number;
+    lift_pin_stroke: number;
     shaft_diameter: number;
     shaft_bottom_y: number;
     heater_cavity_inner_diameter: number;
@@ -92,7 +97,7 @@ export interface RemoteGeometryConfig {
     glow_margin_above_coil: number;
   };
   ports: {
-    slit: { azimuth_deg: number; width: number; height: number; center_y: number; valve_body_size: Vec3Tuple; door_thickness: number };
+    slit: { azimuth_deg: number; width: number; height: number; center_y: number; valve_body_size: Vec3Tuple; door_thickness: number; gate_travel: number };
     viewport: { azimuth_deg: number; center_y: number; bore_diameter: number; flange_diameter: number; flange_thickness: number; tube_length: number; window_diameter: number; window_thickness: number };
     pressure_tap: { azimuth_deg: number; center_y: number; bore_diameter: number; sensor_body_diameter: number; sensor_body_length: number; standoff_length: number };
     exhaust: { azimuth_deg: number; center_y: number; bore_diameter: number; flange_diameter: number; stub_length: number };
@@ -119,19 +124,9 @@ export interface RemoteGeometryConfig {
     frame_leg_radius: number;
     frame_bottom_y: number;
   };
-  station: {
-    note: string;
-    gap_from_slit_valve: number;
-    load_lock_length: number;
-    efem_length: number;
-    enclosure_width: number;
-    enclosure_top_y: number;
-    deck_depth: number;
-    deck_width: number;
-    deck_height_above_floor: number;
-    deck_thickness: number;
-    foup_seat_offset_from_efem_face: number;
-  };
+  process_enclosure: { note: string; x0: number; x1: number; z0: number; z1: number; top_y: number; top_cut_half: number; station_opening: { half_q: number; y0: number; y1: number }; window: { x0: number; x1: number; y0: number; y1: number }; facility: { z: number; y: number } };
+  source_mount: { note: string; half: number; clamp_y: number; top_y: number };
+  station: HandlingStationConfig;
 }
 
 export interface RemoteLayout {
@@ -151,6 +146,8 @@ export interface RemoteLayout {
   waferThickness: number;
   stageTopY: number;
   stageBottomY: number;
+  /** Stage top at the transfer position (stage lift lowered). */
+  stageTransferTopY: number;
   waferTopY: number;
   rStage: number;
   rShaft: number;
@@ -227,7 +224,7 @@ export function deriveRemoteLayout(cfg: RemoteGeometryConfig): RemoteLayout {
   const gp = cfg.peripherals;
   const mfcCenters = (center: Vec3Tuple, size: Vec3Tuple, bsize: Vec3Tuple, pitch: number, count: number, offY: number, sign: number): Vec3Tuple[] =>
     Array.from({ length: count }, (_, i): Vec3Tuple => [center[0] + (i - (count - 1) / 2) * pitch, center[1] + offY, center[2] + sign * (size[2] / 2 + 0.002 + bsize[2] / 2)]);
-  const station = deriveStationLayout(cfg.station, gp.frame_bottom_y, ports.slit.azimuth, cfg.ports.slit.valve_body_size[2], rOuter);
+  const station = deriveHandlingStation(cfg.station, remoteHandlingInput(cfg, ports.slit.azimuth, rOuter), FOUP_INTERFACE);
   return {
     cfg,
     rInner,
@@ -245,6 +242,7 @@ export function deriveRemoteLayout(cfg: RemoteGeometryConfig): RemoteLayout {
     waferThickness: cfg.wafer.thickness,
     stageTopY,
     stageBottomY: stageTopY - st.body_height,
+    stageTransferTopY: st.transfer_top_y,
     waferTopY,
     rStage: st.diameter / 2,
     rShaft: st.shaft_diameter / 2,
@@ -275,6 +273,21 @@ export function deriveRemoteLayout(cfg: RemoteGeometryConfig): RemoteLayout {
     ports,
     extraKeepOuts: [keepOutAt(so.viewport_azimuth_deg, 9), keepOutAt(so.coil_lead_azimuth_deg, 6), keepOutAt(so.coolant_azimuth_deg, 5), keepOutAt(ring.feed_azimuth_deg, 4)],
     station,
+  };
+}
+
+/** Slit and stage kinematics the shared handling station needs from the Remote chamber. */
+export function remoteHandlingInput(cfg: RemoteGeometryConfig, slitAzimuth: number, rOuter: number): ChamberHandlingInput {
+  const st = cfg.stage;
+  return {
+    azimuthRad: slitAzimuth,
+    slitCenterY: cfg.ports.slit.center_y,
+    slitWidth: cfg.ports.slit.width,
+    slitHeight: cfg.ports.slit.height,
+    portFaceR: rOuter + 0.012,
+    valveBodySize: cfg.ports.slit.valve_body_size,
+    floorY: cfg.peripherals.frame_bottom_y - 0.002,
+    stage: { processTopY: st.top_y, transferTopY: st.transfer_top_y, edgeRingThickness: st.edge_ring_thickness, liftPinStroke: st.lift_pin_stroke, radius: st.diameter / 2, liftPinCircleRadius: st.lift_pin_circle_diameter / 2 },
   };
 }
 
@@ -312,14 +325,18 @@ export function validateRemoteConfig(cfg: RemoteGeometryConfig): ValidationRepor
   const slit = cfg.ports.slit;
   must(slit.center_y - slit.height / 2 > L.floorTopY + 0.004, "slit opening must be above the inner floor");
   must(slit.center_y + slit.height / 2 < cfg.chamber.liner_top_y, "slit opening must be inside the liner height");
-  must(L.waferTopY + 0.012 > slit.center_y - slit.height / 2 || true, "transfer plane check (lift not modeled)");
+  must(cfg.stage.transfer_top_y < cfg.stage.top_y, "stage transfer position must be below the process position");
+  must(cfg.stage.transfer_top_y - cfg.stage.body_height > L.floorTopY + 0.004, "lowered stage must stay above the chamber floor");
+  must(cfg.ports.slit.gate_travel >= slit.height + 0.01, "slit valve gate must retreat below the slit opening");
   for (const p of Object.values(L.ports)) {
     const half = p.hole.kind === "circle" ? p.hole.radius : p.hole.height / 2;
     must(p.centerY - half >= L.floorTopY + 0.004 && p.centerY + half <= L.wallTopY - 0.004, `port ${p.id} must stay within the wall height`);
   }
   must(L.rLinerOut + cfg.chamber.liner_clearance <= L.rInner + 1e-9, "liner must fit inside the wall");
   must(L.rShaft < L.rFloorBore && L.bellows.rIn > L.rShaft, "shaft must pass through the floor bore inside the bellows");
-  must(L.station.loadLockR0 > L.rOuter + 0.012 + cfg.ports.slit.valve_body_size[2], "load lock must clear the slit valve body");
+  const stv = validateHandlingStation(L.station, remoteHandlingInput(cfg, L.ports.slit.azimuth, L.rOuter));
+  errors.push(...stv.errors);
+  warnings.push(...stv.warnings);
   return { errors, warnings };
 }
 

@@ -193,7 +193,7 @@ export function buildCmpMeasurementSeed(L: CmpLayout): MeasurementSeed {
 
   return {
     templateId: CMP_TEMPLATE_ID,
-    seedRevision: "cmp-meas-seed-1",
+    seedRevision: "cmp-meas-seed-2",
     instruments,
     installations,
     points,

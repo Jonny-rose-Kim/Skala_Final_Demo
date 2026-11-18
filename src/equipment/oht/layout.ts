@@ -16,7 +16,33 @@ export interface OhtGeometryConfig {
   rail: { z0: number; z1: number; bottom_y: number; height: number; width: number; flange_width: number; flange_thickness: number; hanger_pitch: number; hanger_radius: number; ceiling_y: number; ceiling_pad_size: number };
   vehicle: { body_size: Vec3Tuple; body_top_gap: number; bogie_size: Vec3Tuple; bogie_spacing: number; wheel_radius: number; wheel_width: number; yoke_size: Vec3Tuple; front_sensor_size: Vec3Tuple; travel_reference_z: number; park_position_z: number };
   hoist: { stroke: number; belt_count: number; belt_offsets: [number, number][]; belt_width: number; belt_thickness: number; belt_base_length: number; gripper_plate_size: Vec3Tuple; finger_size: Vec3Tuple; finger_open_gap: number; finger_closed_gap: number; finger_lip: number };
-  foup: { body_size: Vec3Tuple; door_thickness: number; door_inset: number; flange_size: Vec3Tuple; flange_neck_height: number; flange_neck_radius: number; coupling_pad_size: number; coupling_pad_height: number; coupling_pad_positions: [number, number][]; slot_count: number };
+  foup: {
+    note: string;
+    body_size: Vec3Tuple;
+    /** Door outer face position along +X (carrier frame). */
+    door_face_x: number;
+    door_thickness: number;
+    door_inset: number;
+    frame_rim: number;
+    wall_thickness: number;
+    /** Door opening (width z, height y) and its bottom height above the seat. */
+    opening_size: [number, number];
+    opening_bottom_y: number;
+    flange_size: Vec3Tuple;
+    flange_neck_height: number;
+    flange_neck_radius: number;
+    handle_size: Vec3Tuple;
+    coupling_pad_size: number;
+    coupling_pad_height: number;
+    coupling_pad_positions: [number, number][];
+    slot_count: number;
+    slot_pitch: number;
+    /** Wafer bottom height of slot 1 above the seat. */
+    slot1_height: number;
+    slot_rib_depth: number;
+    /** Wafer stack center along +X (carrier frame). */
+    wafer_center_x: number;
+  };
   station: { approach_clearance: number; lateral_tolerance: number };
 }
 

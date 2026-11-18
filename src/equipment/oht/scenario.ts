@@ -135,7 +135,12 @@ export function ohtStandalonePreview(t: number, _seed: number, _animT: number, c
   out.blockedReason = plan.blockedReason;
   out.carriers[DEMO_CARRIER.carrierId] = { carrierId: DEMO_CARRIER.carrierId, holder: st.holder, doorOpen: false, slots: { [DEMO_RESERVED_SLOT.slotId]: DEMO_WAFER.waferId }, docked: st.holder.kind === "station", yawFromStationId: st.yawFromStationId };
   out.wafers[DEMO_WAFER.waferId] = { waferId: DEMO_WAFER.waferId, holder: { kind: "carrier_slot", carrierId: DEMO_CARRIER.carrierId, slotId: DEMO_RESERVED_SLOT.slotId }, reservedSlot: DEMO_RESERVED_SLOT, frontsideNormalLocal: [0, 1, 0], film: incomingFilmState(DEMO_WAFER.waferId) };
-  // the tools present no wafer (it is inside the closed FOUP)
+  // the tools present no wafer: it stays in its slot of the closed FOUP for the whole transfer
+  const foup = out.instances[DEMO_CARRIER.carrierId];
+  if (foup) {
+    foup.presentedWaferId = DEMO_WAFER.waferId;
+    foup.presentedWaferAssetId = "foup_wafer";
+  }
   return out;
 }
 

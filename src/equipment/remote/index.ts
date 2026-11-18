@@ -6,7 +6,8 @@ import type { EquipmentBundle } from "../../domain/registry";
 import type { CameraPreset } from "../../scene/cameraPresets";
 import { REMOTE_CONFIG, REMOTE_LAYOUT, validateRemoteConfig, type RemoteLayout } from "./layout";
 import { buildRemoteMeasurementSeed } from "./measurement";
-import { buildRemoteParts } from "./parts";
+import { buildRemoteParts, remoteEnclosureSpec } from "./parts";
+import { facilityInterfaceOf } from "../handling/stationParts";
 import { buildRemoteTemplate, REMOTE_TEMPLATE_ID } from "./template";
 
 export { REMOTE_TEMPLATE_ID };
@@ -20,6 +21,7 @@ export function remoteCameraPresets(L: RemoteLayout): CameraPreset[] {
     { id: "wafer-closeup", label: "Wafer / stage close-up", labelKo: "Wafer / stage 근접", alpha: 250 * DEG, beta: 80 * DEG, radius: 0.5, target: [0.02, L.waferTopY + 0.03, 0], viewMode: "cutaway", cutaway: { azimuthDeg: 250, sweepDeg: 120 } },
     { id: "exploded", label: "Exploded (source / chamber)", labelKo: "분해 보기", alpha: 235 * DEG, beta: 62 * DEG, radius: 3.4, target: [0, 0.5, 0], viewMode: "exploded" },
     { id: "station", label: "Load port / tool shell", labelKo: "Load port와 tool shell", alpha: 150 * DEG, beta: 68 * DEG, radius: 2.8, target: [st.seat[0] * 0.6, 0.15, st.seat[2] * 0.6] },
+    { id: "efem-robot", label: "EFEM robot / load lock", labelKo: "EFEM robot·load lock", alpha: 70 * DEG, beta: 55 * DEG, radius: 2.0, target: [st.seat[0] * 0.52, 0.25, st.seat[2] * 0.52] },
   ];
 }
 
@@ -31,6 +33,7 @@ export const REMOTE_BUNDLE: EquipmentBundle<RemoteLayout> = {
   cutawayKeepOuts: [...Object.values(REMOTE_LAYOUT.ports).map((p) => p.keepOut), ...REMOTE_LAYOUT.extraKeepOuts],
   cutawayDefault: { azimuthDeg: 250, sweepDeg: 120 },
   cameraPresets: remoteCameraPresets(REMOTE_LAYOUT),
+  facilityInterface: (L) => facilityInterfaceOf(remoteEnclosureSpec(L)),
   overviewPresetId: "overview",
   measurement: buildRemoteMeasurementSeed(REMOTE_LAYOUT),
   validate: () => validateRemoteConfig(REMOTE_CONFIG),

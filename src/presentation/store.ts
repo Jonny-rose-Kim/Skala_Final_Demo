@@ -12,6 +12,17 @@ export type EffectiveQuality = "high" | "balanced";
 export type LightingPreset = "exterior" | "inspection";
 export type RendererBackend = "webgpu" | "webgl2";
 export type AppMode = "visual-inspection" | "simulation" | "replay";
+/** Inspection cover display: auto = removed on the active tool outside the bay overview. Display only, never a door state. */
+export type CoverMode = "auto" | "closed" | "removed";
+
+export interface EnvironmentSettings {
+  /** Fab environment (floor, ceiling grid, walls, utilities) shown. */
+  visible: boolean;
+  /** Ceiling grid / FFU panels (auto-hidden when the camera is above them). */
+  ceiling: boolean;
+  /** Bay walls (auto-hidden when the camera is outside them). */
+  walls: boolean;
+}
 
 export interface PlasmaColorPreset {
   id: string;
@@ -117,8 +128,6 @@ export interface OverlaySettings {
   slurry: boolean;
   /** CMP: optical endpoint path and footprint. */
   opticalPath: boolean;
-  /** Process inset panel (STI cross-section / deposition before-after). */
-  filmInset: boolean;
   /** Measurement markers (instrument body / mount / point / path). */
   markers: boolean;
   /** OHT: rail / hoist reference frames and station regions. */
@@ -161,6 +170,10 @@ export interface PresentationState {
   isolatedAssetId: string | null;
   visual: VisualSettings;
   overlays: OverlaySettings;
+  coverMode: CoverMode;
+  /** FOUP section view: carriers are cut through the seat axis so slots and wafers show (display only, any active tool). */
+  carrierSection: boolean;
+  environment: EnvironmentSettings;
   qualityPreset: QualityPreset;
   effectiveQuality: EffectiveQuality;
   lightingPreset: LightingPreset;
@@ -168,12 +181,13 @@ export interface PresentationState {
   renderer: RendererInfo;
   perf: PerfSample | null;
   timeline: TimelineSnapshot;
-  /** Low-rate snapshot of the scripted preview (poses, holders, film state) for the inspector. */
+  /** Low-rate snapshot of the scripted preview (poses, holders, film state) for the UI (FOUP section inset). */
   preview: PreviewState | null;
   devWarnings: string[];
-  panels: { tree: boolean; inspector: boolean; timeline: boolean };
+  /** `tree: false` folds the component tree into the thin rail on the left edge; `timeline: false` hides the timeline. */
+  panels: { tree: boolean; timeline: boolean };
   /** Monotonic counters consumed by the scene host (one-shot requests). */
-  requests: { resetCamera: number; focusSelected: number; cameraPreset: number; focusInstance: number };
+  requests: { resetCamera: number; focusSelected: number; cameraPreset: number; focusInstance: number; focusCarrier: number };
 
   select(assetId: string | null): void;
   hover(assetId: string | null): void;
@@ -190,6 +204,9 @@ export interface PresentationState {
   setVisual(partial: Partial<VisualSettings>): void;
   resetVisual(): void;
   setOverlay(key: OverlayKey, v: boolean): void;
+  setCoverMode(m: CoverMode): void;
+  setCarrierSection(v: boolean): void;
+  setEnvironment(partial: Partial<EnvironmentSettings>): void;
   setQualityPreset(p: QualityPreset): void;
   reportEffectiveQuality(q: EffectiveQuality): void;
   setLightingPreset(p: LightingPreset): void;
@@ -200,10 +217,13 @@ export interface PresentationState {
   reportPreview(p: PreviewState): void;
   reportInstances(list: LoadedInstanceInfo[]): void;
   setDevWarnings(w: string[]): void;
-  togglePanel(p: "tree" | "inspector" | "timeline"): void;
+  togglePanel(p: "tree" | "timeline"): void;
+  setPanel(p: "tree" | "timeline", open: boolean): void;
   requestResetCamera(): void;
   requestFocusSelected(): void;
   requestFocusInstance(): void;
+  /** Camera to the carrier from the side its section view opens to (active tool unchanged). */
+  requestFocusCarrier(): void;
   setActiveInstance(id: string): void;
   setOverview(v: boolean): void;
   setScenario(id: string): void;
@@ -221,7 +241,6 @@ export const DEFAULT_OVERLAYS: OverlaySettings = {
   afterglow: true,
   slurry: true,
   opticalPath: true,
-  filmInset: true,
   markers: false,
   railFrames: false,
 };
@@ -246,6 +265,9 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   isolatedAssetId: null,
   visual: DEFAULT_VISUAL,
   overlays: DEFAULT_OVERLAYS,
+  coverMode: "auto",
+  carrierSection: false,
+  environment: { visible: true, ceiling: true, walls: true },
   qualityPreset: "auto",
   effectiveQuality: "high",
   lightingPreset: "exterior",
@@ -255,8 +277,8 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "ccp", phaseFocusInstanceId: null },
   preview: null,
   devWarnings: [],
-  panels: { tree: true, inspector: true, timeline: true },
-  requests: { resetCamera: 0, focusSelected: 0, cameraPreset: 0, focusInstance: 0 },
+  panels: { tree: true, timeline: true },
+  requests: { resetCamera: 0, focusSelected: 0, cameraPreset: 0, focusInstance: 0, focusCarrier: 0 },
 
   select: (assetId) => set({ selectedAssetId: assetId, selectedMeasurement: null }),
   hover: (assetId) => set((s) => (s.hoveredAssetId === assetId ? s : { hoveredAssetId: assetId })),
@@ -278,6 +300,9 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   setVisual: (partial) => set((s) => ({ visual: { ...s.visual, ...partial } })),
   resetVisual: () => set({ visual: DEFAULT_VISUAL }),
   setOverlay: (key, v) => set((s) => ({ overlays: { ...s.overlays, [key]: v } })),
+  setCoverMode: (m) => set({ coverMode: m }),
+  setCarrierSection: (v) => set({ carrierSection: v }),
+  setEnvironment: (partial) => set((s) => ({ environment: { ...s.environment, ...partial } })),
   setQualityPreset: (p) => set({ qualityPreset: p }),
   reportEffectiveQuality: (q) => set((s) => (s.effectiveQuality === q ? s : { effectiveQuality: q })),
   setLightingPreset: (p) => set({ lightingPreset: p }),
@@ -289,9 +314,11 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   reportInstances: (list) => set({ instances: list }),
   setDevWarnings: (w) => set({ devWarnings: w }),
   togglePanel: (p) => set((s) => ({ panels: { ...s.panels, [p]: !s.panels[p] } })),
+  setPanel: (p, open) => set((s) => (s.panels[p] === open ? s : { panels: { ...s.panels, [p]: open } })),
   requestResetCamera: () => set((s) => ({ requests: { ...s.requests, resetCamera: s.requests.resetCamera + 1 } })),
   requestFocusSelected: () => set((s) => ({ requests: { ...s.requests, focusSelected: s.requests.focusSelected + 1 } })),
   requestFocusInstance: () => set((s) => ({ requests: { ...s.requests, focusInstance: s.requests.focusInstance + 1 } })),
+  requestFocusCarrier: () => set((s) => ({ requests: { ...s.requests, focusCarrier: s.requests.focusCarrier + 1 } })),
   setActiveInstance: (id) => set((s) => (s.activeInstanceId === id ? s : { activeInstanceId: id, selectedAssetId: null, selectedMeasurement: null, hiddenAssets: [], isolatedAssetId: null })),
   setOverview: (v) => set((s) => ({ overview: v, cameraPresetId: v ? "bay-overview" : s.cameraPresetId, requests: v ? { ...s.requests, cameraPreset: s.requests.cameraPreset + 1 } : s.requests })),
   setScenario: (id) => set({ scenarioId: id }),

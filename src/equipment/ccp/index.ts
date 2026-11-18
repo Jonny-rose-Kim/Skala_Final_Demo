@@ -5,7 +5,8 @@
 import { CHAMBER_LAYOUT, GEOMETRY_CONFIG, validateGeometryConfig, type ChamberLayout } from "../../config/geometry";
 import { CCP_CHAMBER_TEMPLATE } from "../../domain/ccpChamberTemplate";
 import type { EquipmentBundle } from "../../domain/registry";
-import { buildChamberParts } from "../../geometry/chamberParts";
+import { buildChamberParts, ccpEnclosureSpec } from "../../geometry/chamberParts";
+import { facilityInterfaceOf } from "../handling/stationParts";
 import { cameraPresets } from "../../scene/cameraPresets";
 import { buildCcpMeasurementSeed } from "./measurement";
 
@@ -22,5 +23,6 @@ export const CCP_BUNDLE: EquipmentBundle<ChamberLayout> = {
   overviewPresetId: "overview",
   measurement: buildCcpMeasurementSeed(CHAMBER_LAYOUT),
   validate: () => validateGeometryConfig(GEOMETRY_CONFIG),
+  facilityInterface: (L) => facilityInterfaceOf(ccpEnclosureSpec(L)),
   plasmaLitAssets: ["showerhead_faceplate", "wafer", "edge_ring", "pedestal", "chamber_liner", "edge_insulator_ring", "pumping_baffle", "lift_pins"],
 };

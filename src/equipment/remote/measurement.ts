@@ -95,11 +95,12 @@ export function buildRemoteMeasurementSeed(L: RemoteLayout): MeasurementSeed {
   ch({ channelId: "remote.ch.oes.spectrum", instrumentId: "remote.oes", name: "OES spectrum", quantity: "optical_spectrum", canonicalUnit: "counts", dataShape: "spectrum", channelRole: "measurement" }, "remote.mp.source_oes_path");
 
   // R-MP-05: stage sensor pocket -> stage temperature
-  inst({ instrumentId: "remote.stage_tc", name: "Stage thermocouple", type: "thermocouple", principle: "Type-K thermocouple (sheathed)", installationStatus: "installed" }, { mountedOnAssetId: "thermocouple", mountPosition: [0, cfg.stage.shaft_bottom_y - 0.08, 0] });
+  inst({ instrumentId: "remote.stage_tc", name: "Stage thermocouple", type: "thermocouple", principle: "Type-K thermocouple (sheathed)", installationStatus: "installed" }, { mountedOnAssetId: "thermocouple", mountFrameJointId: "stage_z", mountPosition: [0, cfg.stage.shaft_bottom_y - 0.08, 0] });
   points.push({
     pointId: "remote.mp.stage_center",
     name: "Stage center sensor pocket",
     targetAssetId: "stage",
+    frameJointId: "stage_z",
     pointKind: "point",
     geometry: { position: [0, L.stageTopY - 0.008, 0] },
     quantity: "temperature",
@@ -204,7 +205,7 @@ export function buildRemoteMeasurementSeed(L: RemoteLayout): MeasurementSeed {
 
   return {
     templateId: REMOTE_TEMPLATE_ID,
-    seedRevision: "remote-meas-seed-1",
+    seedRevision: "remote-meas-seed-2",
     instruments,
     installations,
     points,

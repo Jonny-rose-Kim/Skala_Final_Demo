@@ -5,9 +5,10 @@
  */
 import { DEG, TAU, azimuthToXZ } from "../../config/geometry";
 import type { PartGeometry } from "../../geometry/chamberParts";
-import { buildStationParts, toRadialFrame } from "../../geometry/chamberParts";
+import { toRadialFrame } from "../../geometry/chamberParts";
+import { buildProcessEnclosureParts, buildSlitGateValve, buildStationParts, type ProcessEnclosureSpec } from "../handling/stationParts";
 import { chamferProfile, chamferedBox, mergeMeshData, rectProfile, revolveProfile, rotateYMeshData, translateMeshData, tubeAlongPath, type MeshData, type ShellPort, type Vec2, type Vec3 } from "../../geometry/meshlib";
-import { PartSink, boltedLidParts, chamfRect, cylinderChamberParts, exhaustLineParts, frameParts, heatedStageParts, helicalCoil, panelParts, pressureGaugeParts, slitPortBlock, slitValveParts, viewportParts } from "../../geometry/sharedParts";
+import { PartSink, boltedLidParts, chamfRect, cylinderChamberParts, exhaustLineParts, frameParts, heatedStageParts, helicalCoil, panelParts, pressureGaugeParts, slitPortBlock, viewportParts } from "../../geometry/sharedParts";
 import type { RemoteLayout } from "./layout";
 
 export function buildRemoteParts(L: RemoteLayout): PartGeometry[] {
@@ -61,6 +62,7 @@ export function buildRemoteParts(L: RemoteLayout): PartGeometry[] {
     shaft: { r: L.rShaft, bottomY: cfg.stage.shaft_bottom_y },
     rFloorBore: L.rFloorBore,
     bellows: L.bellows,
+    joints: { stage: "stage_z", pins: "lift_pins_z" },
   });
 
   // ------------------------------------------------------------------ precursor injection ring (passive)
@@ -263,7 +265,7 @@ export function buildRemoteParts(L: RemoteLayout): PartGeometry[] {
   });
 
   // ------------------------------------------------------------------ access & inspection
-  slitValveParts(sink, { assetId: "slit_valve", azimuth: ports.slit.azimuth, centerY: ports.slit.centerY, rOuter: L.rOuter, width: cfg.ports.slit.width, height: cfg.ports.slit.height, valveBodySize: cfg.ports.slit.valve_body_size, doorThickness: cfg.ports.slit.door_thickness });
+  buildSlitGateValve(sink, L.station, cfg.ports.slit.door_thickness, cfg.ports.slit.gate_travel);
   viewportParts(sink, {
     assetId: "viewport",
     azimuth: ports.viewport.azimuth,
@@ -287,10 +289,38 @@ export function buildRemoteParts(L: RemoteLayout): PartGeometry[] {
     standoffLength: cfg.ports.pressure_tap.standoff_length,
   });
 
-  // ------------------------------------------------------------------ station shell
-  buildStationParts({ station: L.station, slitValveSize: cfg.ports.slit.valve_body_size, slitCenterY: cfg.ports.slit.center_y }, (key, assetId, materialRef, md, opts) => sink.fixed(key, assetId, materialRef, md, opts));
+  // ------------------------------------------------------------------ handling station, process enclosure, source mounting bracket
+  buildStationParts(sink, L.station, { waferThickness: cfg.wafer.thickness });
+  buildProcessEnclosureParts(sink, L.station.floorY, remoteEnclosureSpec(L), { enclosure: "process_enclosure", facility: "facility_interface" });
+  {
+    // source mounting frame on the enclosure top: four posts, a clamp ring around the housing and a top cross
+    const e = cfg.process_enclosure;
+    const sm = cfg.source_mount;
+    const posts: MeshData[] = [];
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) posts.push(chamferedBox([0.03, sm.top_y - e.top_y, 0.03], 0.003, [sx * sm.half, (sm.top_y + e.top_y) / 2, sz * sm.half]));
+    for (const y of [sm.clamp_y, sm.top_y - 0.015]) {
+      for (const sz of [-1, 1]) posts.push(chamferedBox([2 * sm.half + 0.03, 0.03, 0.03], 0.003, [0, y, sz * sm.half]));
+      for (const sx of [-1, 1]) posts.push(chamferedBox([0.03, 0.03, 2 * sm.half + 0.03], 0.003, [sx * sm.half, y, 0]));
+    }
+    const ring = revolveProfile(chamfRect(L.housing.rOut + 0.002, L.housing.rOut + 0.018, sm.clamp_y - 0.02, sm.clamp_y + 0.02, 0.003), { segments: 64 });
+    const arms: MeshData[] = [];
+    for (const az of [45, 135, 225, 315]) {
+      const a = (az * Math.PI) / 180;
+      const r0 = L.housing.rOut + 0.018;
+      const r1 = sm.half * Math.SQRT2;
+      arms.push(tubeAlongPath([[r0 * Math.cos(a), sm.clamp_y, r0 * Math.sin(a)], [r1 * Math.cos(a), sm.clamp_y, r1 * Math.sin(a)]], 0.01, { segments: 10 }));
+    }
+    sink.fixed("source_mount_frame", "source_mount", "aluminum_anodized", mergeMeshData([...posts, ...arms]), { cutaway: "keep" });
+    sink.fixed("source_mount_ring", "source_mount", "stainless", ring, { cutaway: "keep" });
+  }
 
   return sink.parts;
+}
+
+/** Remote process enclosure box (instance frame) from the config; the source passes through the top cut-out. */
+export function remoteEnclosureSpec(L: RemoteLayout): ProcessEnclosureSpec {
+  const e = L.cfg.process_enclosure;
+  return { x0: e.x0, x1: e.x1, z0: e.z0, z1: e.z1, topY: e.top_y, stationOpening: { halfQ: e.station_opening.half_q, y0: e.station_opening.y0, y1: e.station_opening.y1 }, topCutHalf: e.top_cut_half, window: e.window, facility: e.facility };
 }
 
 /** Profile helpers re-exported for tests. */

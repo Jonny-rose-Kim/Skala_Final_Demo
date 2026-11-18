@@ -7,6 +7,8 @@ import { DEG, TAU } from "../../config/geometry";
 import type { PartGeometry } from "../../geometry/chamberParts";
 import { chamferProfile, chamferedBox, createMeshData, mergeMeshData, rectProfile, revolveProfile, rotateYMeshData, translateMeshData, tubeAlongPath, type MeshData, type Vec2, type Vec3 } from "../../geometry/meshlib";
 import { PartSink, chamfRect } from "../../geometry/sharedParts";
+import { waferHalfMeshes, waferHalfProfiles } from "../../geometry/waferParts";
+import { buildCmpFrontParts } from "./frontEnd";
 import type { CmpLayout } from "./layout";
 
 function groovedPadProfile(L: CmpLayout): Vec2[] {
@@ -148,7 +150,10 @@ export function buildCmpParts(L: CmpLayout): PartGeometry[] {
     sink.sector("zone_top", "membrane_backing", "aluminum_anodized", rectProfile(0, h.rRingIn, cavityTop - 0.001, cavityTop + 0.004), { segments: 160, axisXZ: headAxis, jointId: "head_spin", pickable: false });
     sink.sector("membrane", "membrane", "rubber_membrane", rectProfile(0, h.rMembrane, h.membraneBottomY, h.membraneTopY), { segments: 192, axisXZ: headAxis, jointId: "head_spin", castShadow: false });
     sink.sector("retaining_ring", "retaining_ring", "polymer_white", chamfRect(h.rRingIn, h.rRingOut, h.ringBottomY, h.ringTopY, 0.0015), { segments: 192, axisXZ: headAxis, jointId: "head_spin" });
-    sink.sector("wafer", "wafer", "silicon_wafer", rectProfile(0, L.rWafer, h.waferFrontY, h.waferBackY), { segments: 192, axisXZ: headAxis, jointId: "head_spin", castShadow: false });
+    // face down under the head: the tinted frontside half is the lower half (toward the pad)
+    const wh = waferHalfProfiles(L.rWafer, h.waferFrontY, L.waferThickness, true);
+    sink.sector("wafer", "wafer", "silicon_wafer", wh.back, { segments: 192, axisXZ: headAxis, jointId: "head_spin", castShadow: false });
+    sink.sector("wafer_front", "wafer", "wafer_front", wh.front, { segments: 192, axisXZ: headAxis, jointId: "head_spin", castShadow: false });
   }
 
   // ------------------------------------------------------------------ load cup, alcove, hatch
@@ -157,7 +162,7 @@ export function buildCmpParts(L: CmpLayout): PartGeometry[] {
     const cup = revolveProfile(chamfRect(0, lc.r, lc.topY - 0.04, lc.topY, 0.004), { segments: 96 });
     const ped = revolveProfile(rectProfile(0, 0.05, L.deckTopY, lc.topY - 0.04), { segments: 32 });
     const pins: MeshData[] = [];
-    for (const azDeg of [90, 210, 330]) {
+    for (const azDeg of cfg.load_cup.edge_pin_azimuths_deg) {
       const pin = revolveProfile(chamfRect(0, 0.006, lc.topY, lc.pinTopY, 0.001), { segments: 16 });
       translateMeshData(pin, L.rWafer - 0.006, 0, 0);
       pins.push(rotateYMeshData(pin, azDeg * DEG));
@@ -168,21 +173,27 @@ export function buildCmpParts(L: CmpLayout): PartGeometry[] {
     translateMeshData(pinsAll, lc.x, 0, lc.z);
     sink.fixed("load_cup", "load_cup", "polymer_white", cupAll, { cutaway: "keep" });
     sink.fixed("load_cup_pins", "load_cup", "stainless", pinsAll, { cutaway: "keep", pickable: false, castShadow: false });
-    const wcup = revolveProfile(rectProfile(0, L.rWafer, lc.waferFrontY, lc.waferFrontY + L.waferThickness), { segments: 128 });
-    translateMeshData(wcup, lc.x, 0, lc.z);
-    sink.fixed("wafer_on_cup", "wafer_on_cup", "silicon_wafer", wcup, { cutaway: "keep", castShadow: false });
+    const wcup = waferHalfMeshes(L.rWafer, lc.waferFrontY, L.waferThickness, true, lc.x, lc.z);
+    sink.fixed("wafer_on_cup", "wafer_on_cup", "silicon_wafer", wcup.back, { cutaway: "keep", castShadow: false });
+    sink.fixed("wafer_on_cup_front", "wafer_on_cup", "wafer_front", wcup.front, { cutaway: "keep", castShadow: false });
     const a = lc.alcove;
     const t = 0.01;
+    // +Z wall carries the side opening for the wet robot fork
+    const so = a.side_opening;
+    const bx = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => chamferedBox([x1 - x0, y1 - y0, z1 - z0], 0.002, [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]);
     const walls = mergeMeshData([
-      chamferedBox([a.x1 - a.x0, a.y1 - a.y0, t], 0.002, [(a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2, a.z0 + t / 2]),
-      chamferedBox([a.x1 - a.x0, a.y1 - a.y0, t], 0.002, [(a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2, a.z1 - t / 2]),
-      chamferedBox([t, a.y1 - a.y0, a.z1 - a.z0], 0.002, [a.x0 + t / 2, (a.y0 + a.y1) / 2, 0]),
-      chamferedBox([t, a.y1 - a.y0, a.z1 - a.z0], 0.002, [a.x1 - t / 2, (a.y0 + a.y1) / 2, 0]),
+      bx(a.x0, a.x1, a.y0, a.y1, a.z0, a.z0 + t),
+      bx(a.x0, a.x1, a.y0, so.y0, a.z1 - t, a.z1),
+      bx(a.x0, a.x1, so.y1, a.y1, a.z1 - t, a.z1),
+      bx(a.x0, so.x0, so.y0, so.y1, a.z1 - t, a.z1),
+      bx(so.x1, a.x1, so.y0, so.y1, a.z1 - t, a.z1),
+      bx(a.x0, a.x0 + t, a.y0, a.y1, a.z0, a.z1),
+      bx(a.x1 - t, a.x1, a.y0, a.y1, a.z0, a.z1),
     ]);
-    sink.fixed("alcove_walls", "load_alcove", "painted_housing", walls, { cutaway: "keep", alwaysOpaque: true });
+    sink.fixed("alcove_walls", "load_alcove", "polymer_gray", walls, { cutaway: "keep" });
     const hatch = chamferedBox([a.x1 - a.x0 + 0.02, 0.01, a.z1 - a.z0 + 0.02], 0.002, [(a.x0 + a.x1) / 2, a.y1 + 0.005, 0]);
     const handle = chamferedBox([0.08, 0.012, 0.012], 0.002, [(a.x0 + a.x1) / 2, a.y1 + 0.02, 0.1]);
-    sink.fixed("hatch", "load_hatch", "painted_housing", mergeMeshData([hatch, handle]), { cutaway: "keep", alwaysOpaque: true, jointId: "load_hatch" });
+    sink.fixed("hatch", "load_hatch", "polymer_gray", mergeMeshData([hatch, handle]), { cutaway: "keep", jointId: "load_hatch" });
   }
 
   // ------------------------------------------------------------------ conditioner
@@ -260,70 +271,8 @@ export function buildCmpParts(L: CmpLayout): PartGeometry[] {
     sink.fixed("drain", "drain", "polymer_white", mergeMeshData([tubeAlongPath(drainPath, d.pipe_radius, { segments: 16, cornerRadius: 0.05 }), drainCup]), { cutaway: "keep" });
   }
 
-  // ------------------------------------------------------------------ clean / dry modules
-  {
-    const cm = L.clean;
-    const box = chamferedBox(cm.size, 0.006, cm.center);
-    const lidSeam = chamferedBox([cm.size[0] - 0.04, 0.004, cm.size[2] - 0.04], 0.001, [cm.center[0], cm.baseY + cm.size[1] + 0.002, cm.center[2]]);
-    sink.fixed("clean_module", "clean_module", "painted_housing", mergeMeshData([box, lidSeam]), { cutaway: "keep" });
-    const rollers: MeshData[] = [];
-    for (const dy of [-(cm.rRoller + 0.001 + L.waferThickness / 2), cm.rRoller + 0.001 + L.waferThickness / 2]) {
-      const y = cm.waferY + dy;
-      rollers.push(tubeAlongPath([[cm.center[0] - cm.rollerLen / 2, y, cm.center[2]], [cm.center[0] + cm.rollerLen / 2, y, cm.center[2]]], cm.rRoller, { segments: 24 }));
-    }
-    sink.fixed("brush_rollers", "brush_rollers", "polymer_white", mergeMeshData(rollers), { cutaway: "keep", castShadow: false });
-    const rinse = revolveProfile(chamfRect(0, 0.006, cm.waferY + cm.rRoller * 2 + 0.03, cm.baseY + cm.size[1] - 0.02, 0.001), { segments: 12 });
-    translateMeshData(rinse, cm.center[0] + 0.1, 0, cm.center[2]);
-    sink.fixed("rinse_nozzle", "clean_module", "stainless", rinse, { cutaway: "keep", pickable: false, castShadow: false });
-    const wc = revolveProfile(rectProfile(0, L.rWafer, cm.waferY - L.waferThickness / 2, cm.waferY + L.waferThickness / 2), { segments: 128 });
-    translateMeshData(wc, cm.center[0], 0, cm.center[2]);
-    sink.fixed("wafer_in_clean", "wafer_in_clean", "silicon_wafer", wc, { cutaway: "keep", castShadow: false });
-    const dm = L.dry;
-    const dbox = chamferedBox(dm.size, 0.006, dm.center);
-    const dseam = chamferedBox([dm.size[0] - 0.04, 0.004, dm.size[2] - 0.04], 0.001, [dm.center[0], dm.baseY + dm.size[1] + 0.002, dm.center[2]]);
-    const bowl = revolveProfile(chamfRect(dm.rBowl - 0.006, dm.rBowl, dm.baseY + 0.04, dm.waferY + 0.04, 0.001), { segments: 96 });
-    translateMeshData(bowl, dm.center[0], 0, dm.center[2]);
-    sink.fixed("dry_module", "dry_module", "painted_housing", mergeMeshData([dbox, dseam]), { cutaway: "keep" });
-    sink.fixed("dry_bowl", "dry_module", "polymer_white", bowl, { cutaway: "keep", pickable: false, castShadow: false });
-    const dryAxis: [number, number] = [dm.center[0], dm.center[2]];
-    sink.sector("dry_chuck", "dry_chuck", "stainless", chamfRect(0, dm.rChuck, dm.chuckTopY - 0.025, dm.chuckTopY, 0.002), { segments: 64, axisXZ: dryAxis, jointId: "dry_spin" });
-    sink.sector("dry_chuck_shaft", "dry_chuck", "stainless", rectProfile(0, 0.015, dm.baseY + 0.02, dm.chuckTopY - 0.025), { segments: 24, axisXZ: dryAxis, jointId: "dry_spin", pickable: false });
-    sink.sector("wafer_in_dry", "wafer_in_dry", "silicon_wafer", rectProfile(0, L.rWafer, dm.chuckTopY, dm.chuckTopY + L.waferThickness), { segments: 128, axisXZ: dryAxis, jointId: "dry_spin", castShadow: false });
-  }
-
-  // ------------------------------------------------------------------ station: wet transfer, EFEM, load port deck
-  {
-    const wt = cfg.wet_transfer;
-    sink.fixed("wet_transfer", "wet_transfer", "painted_housing", chamferedBox([wt.x1 - wt.x0, wt.y1 - wt.y0, wt.z1 - wt.z0], 0.004, [(wt.x0 + wt.x1) / 2, (wt.y0 + wt.y1) / 2, (wt.z0 + wt.z1) / 2]), { cutaway: "keep", alwaysOpaque: true });
-    const ef = L.station.efem;
-    const efem = chamferedBox([ef.x1 - ef.x0, ef.top_y, ef.z1 - ef.z0], 0.008, [(ef.x0 + ef.x1) / 2, ef.top_y / 2, 0]);
-    const panel = chamferedBox([0.006, ef.top_y - 0.12, ef.z1 - ef.z0 - 0.12], 0.001, [ef.x0 - 0.003, ef.top_y / 2, 0]);
-    const lightBar = chamferedBox([0.012, 0.03, ef.z1 - ef.z0 - 0.3], 0.002, [ef.x0 - 0.006, ef.top_y - 0.06, 0]);
-    sink.fixed("efem_box", "efem_enclosure", "painted_housing", mergeMeshData([efem, panel]), { cutaway: "keep", alwaysOpaque: true });
-    sink.fixed("efem_light_bar", "efem_enclosure", "safety_marking", lightBar, { cutaway: "keep", pickable: false, castShadow: false, alwaysOpaque: true });
-    const st = L.station;
-    const deck = chamferedBox([st.deckX1 - st.deckX0, st.deckThickness, st.deckWidth], 0.004, [(st.deckX0 + st.deckX1) / 2, st.deckTopY - st.deckThickness / 2, 0]);
-    const ped = chamferedBox([st.deckX1 - st.deckX0 - 0.08, st.deckTopY - st.deckThickness, st.deckWidth - 0.1], 0.006, [(st.deckX0 + st.deckX1) / 2, (st.deckTopY - st.deckThickness) / 2, 0]);
-    const doorFrame = mergeMeshData([
-      chamferedBox([0.014, 0.42, 0.03], 0.002, [ef.x0 - 0.007, st.deckTopY + 0.25, 0.2]),
-      chamferedBox([0.014, 0.42, 0.03], 0.002, [ef.x0 - 0.007, st.deckTopY + 0.25, -0.2]),
-      chamferedBox([0.014, 0.03, 0.43], 0.002, [ef.x0 - 0.007, st.deckTopY + 0.46, 0]),
-    ]);
-    const pins: MeshData[] = [];
-    for (const [dx, dz] of [
-      [0.0, 0.09],
-      [0.0, -0.09],
-      [-0.09, 0.0],
-    ] as const) {
-      const pin = revolveProfile(chamferProfile(rectProfile(0, 0.008, st.deckTopY, st.deckTopY + 0.012), 0.002), { segments: 20 });
-      translateMeshData(pin, st.seat[0] + dx, 0, dz);
-      pins.push(pin);
-    }
-    sink.fixed("deck", "load_port", "stainless", deck, { cutaway: "keep" });
-    sink.fixed("deck_pedestal", "load_port", "painted_housing", ped, { cutaway: "keep" });
-    sink.fixed("door_frame", "load_port", "dark_steel", doorFrame, { cutaway: "keep", pickable: false });
-    sink.fixed("seat_pins", "load_port", "stainless", mergeMeshData(pins), { cutaway: "keep", pickable: false, castShadow: false });
-  }
+  // ------------------------------------------------------------------ dry-in / dry-out front end and wet zone
+  buildCmpFrontParts(sink, L);
 
   return sink.parts;
 }

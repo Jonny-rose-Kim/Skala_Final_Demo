@@ -25,12 +25,15 @@ test.describe("Visual Inspection V1", () => {
     expect(stats.meshes).toBeGreaterThan(80);
     expect(stats.activeMeshes).toBeGreaterThan(30);
     await expect(page.getByTestId("topbar")).toContainText("Visual Inspection");
-    // no fabricated live data: inspector empty state shows illustrative/assumed sources
-    await expect(page.getByTestId("inspector-empty")).toContainText("illustrative");
+    // no fabricated live data: the viewport is labelled as an illustrative demo
+    await expect(page.getByTestId("viewport")).toContainText("Illustrative");
+    // the right panel (inspector, visual controls) and the process inset were removed on purpose
+    await expect(page.getByTestId("right-panel")).toHaveCount(0);
+    await expect(page.getByTestId("process-inset")).toHaveCount(0);
     expect(errors.filter((e) => !e.includes("Outdated Optimize Dep"))).toEqual([]);
   });
 
-  test("3D pick, tree and inspector point to the same asset; hidden parts do not block picks", async ({ page }, info) => {
+  test("3D pick and tree point to the same asset; hidden parts do not block picks", async ({ page }, info) => {
     await openApp(page, info.project.name);
     await page.evaluate(() => {
       const api = window.__pecvdTwin!;
@@ -61,7 +64,6 @@ test.describe("Visual Inspection V1", () => {
     await page.mouse.click(cx, cy);
     await page.waitForTimeout(300);
     expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().selectedAssetId)).toBe("lid");
-    await expect(page.getByTestId("inspector-name")).toHaveText("Chamber lid");
     await expect(page.getByTestId("tree-item-lid")).toHaveAttribute("data-selected", "true");
     // hide the lid: the same click must now hit something else (hidden mesh is not a pick barrier)
     await page.evaluate(() => window.__pecvdTwin!.store.getState().setHidden("lid", true));
@@ -74,8 +76,7 @@ test.describe("Visual Inspection V1", () => {
     await page.evaluate(() => window.__pecvdTwin!.store.getState().showAll());
     await page.getByTestId("tree-item-showerhead_faceplate").locator("button").first().click();
     expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().selectedAssetId)).toBe("showerhead_faceplate");
-    await expect(page.getByTestId("inspector")).toContainText("Electrode gap");
-    await expect(page.getByTestId("inspector")).toContainText("assumed");
+    await expect(page.getByTestId("tree-item-showerhead_faceplate")).toHaveAttribute("data-selected", "true");
   });
 
   test("view modes switch and restore; plasma is hidden in exploded view", async ({ page }, info) => {
@@ -88,7 +89,6 @@ test.describe("Visual Inspection V1", () => {
     const cut = await page.evaluate(() => (window.__pecvdTwin!.stats() as { cutaway: { enabled: boolean; effectiveSweepDeg: number } }).cutaway);
     expect(cut.enabled).toBe(true);
     expect(cut.effectiveSweepDeg).toBeGreaterThan(30);
-    await expect(page.getByTestId("cutaway-effective")).toContainText("적용");
     expect(await plasmaOn()).toBe(true);
     await page.getByTestId("viewmode-exploded").click();
     await page.waitForTimeout(300);
@@ -198,7 +198,7 @@ test.describe("Visual Inspection V1", () => {
     });
     await page.waitForTimeout(600);
     await page.getByTestId("tree-item-pressure_sensor").locator("button").first().click();
-    await expect(page.getByTestId("inspector")).toContainText("Data unbound");
+    expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().selectedAssetId)).toBe("pressure_sensor");
     expect(requests).toEqual([]);
     const state = await page.evaluate(() => window.__pecvdTwin!.store.getState());
     expect(state.appMode).toBe("visual-inspection");

@@ -6,7 +6,7 @@
 
 ## 좌표계
 
-- 내부 단위는 미터이고, 화면에는 mm로 표시한다(`mmText`).
+- 내부 단위는 미터다.
 - +Y가 위쪽이고 왼손 좌표계를 쓴다(Babylon 기본값, `scene.useRightHandedSystem = false`).
 - 원점은 챔버 중심축과 바닥 안쪽 윗면이 만나는 점(y = 0)이다.
 - 방위각 φ(도)는 +X에서 +Z 방향으로 잰다. 위치는 (r cos φ, y, r sin φ)이고, `ArcRotateCamera.alpha`도 같은 기준을 쓴다.
@@ -35,7 +35,7 @@
 | 챔버 몸체 | 내경 Ø520, 벽 두께 35 mm, 내부 높이 240 mm, 바닥 두께 40 mm, 상부 플랜지 Ø660 × 40 mm |
 | 리드 | Ø670 × 50 mm, Ø630 원주에 볼트 24개, O링 홈 Ø600 |
 | 라이너 | 아노다이징 알루미늄 4 mm, 벽과 간격 6 mm, y 82–232 mm |
-| 페데스탈 | Ø340 × 45 mm, 공정 위치 윗면 y = 150 mm, 반송 위치 윗면 y = 100 mm, 샤프트 Ø70, 히터 공간 Ø70–300 × 16 mm(링형 발열체 7개), 리프트 핀 3개(Ø210 원주, 행정 12 mm) |
+| 페데스탈 | Ø340 × 45 mm, 공정 위치 윗면 y = 150 mm, 반송 위치 윗면 y = 70 mm(v1.3.0, 이전 100 mm), 샤프트 Ø70, 히터 공간 Ø70–300 × 16 mm(링형 발열체 7개), 리프트 핀 3개(Ø210 원주, 행정 44 mm, 이전 12 mm) |
 | 에지 링(세라믹) | Ø302/Ø340 × 3 mm |
 | 펌핑 배플 | Ø350/Ø498, 두께 4 mm, y = 75 mm, 슬롯 36개(개구율 42%) |
 | 슬릿 | 360 × 50 mm, 중심 y = 112 mm, 방위각 180° (반송 중인 웨이퍼 높이 y = 112.8 mm가 슬릿 안을 지남) |
@@ -72,6 +72,29 @@
 
 `node --import tsx scripts/export-geometry-obj.ts`를 실행하면 조립 상태의 모든 부품을 OBJ 파일과 매니페스트로 내보낸다. 형상을 확인하거나 Blender에서 다듬을 때 쓸 수 있다. 검증 환경에 Blender가 없어서 Blender로 만든 에셋은 없고, 앱에서 쓰는 형상은 모두 코드로 생성한 것이다.
 
-## 2026-11-12 추가: station 블록 (geometry revision v1.2.0)
+## 2026-11-12: station 블록 (geometry revision v1.2.0, v1.3.0에서 대체)
 
 Chamber 자체 치수는 바꾸지 않았다. `station` 블록이 slit valve 바깥의 tool shell을 정의한다: slit valve와의 간격 20 mm, load lock 길이 200 mm, EFEM 길이 460 mm, enclosure 폭 900 mm와 높이(y 0.40 m), load port deck 깊이 440 mm, 폭 520 mm, 높이 900 mm(바닥 기준), FOUP seat는 EFEM 전면에서 220 mm. `deriveStationLayout`이 slit 방위를 따라 radial 거리로 배치하고 validation이 slit valve와의 간섭, deck 위 seat 위치를 검사한다. 내부 로봇과 load lock 내부는 모델링하지 않았다(simplified internal transfer).
+
+## 2026-11-16: 상세 station (geometry revision v1.3.0)
+
+v1.2.0의 200 mm load lock block은 300 mm wafer, blade, support pin, door gate 후퇴 공간이 들어가지 않아서 내부가 있는 station으로 바꿨다. 값은 `station` 블록에 있고 `deriveStationLayout`(`src/equipment/handling/stationLayout.ts`)이 slit 방위를 따라 radial 거리 r로 배치한다. 아래 r은 chamber 축에서 잰 거리다.
+
+| 구간 | 값 |
+| --- | --- |
+| Load lock 외곽 | r 0.417 ~ 0.857 m, 내부 0.442 ~ 0.832 m, 폭 500 mm, wafer 중심 r 0.632 m |
+| Support pin | 4개, r 방향 ±70 mm, 옆 방향 ±55 mm, 지름 6 mm, 평면 위 16 mm까지 올라옴 |
+| 대기 door | r 0.857 ~ 0.887 m, opening 340 × 40 mm, gate 후퇴 60 mm |
+| 진공 blade | 2단, 두께 3 mm, 폭 80 mm. 1단 stroke 0.354 m, 2단 0.278 m |
+| EFEM | r 0.887 ~ 1.727 m, 폭 1.1 m, 높이 2.0 m와 FFU 180 mm |
+| 대기 robot | 축 r 1.267 m, link 280 mm 두 개, end effector 310 mm, Z stroke 380 mm |
+| Load port | deck 높이 900 mm, FOUP seat r 1.974 m(dock 상태 1.944 m) |
+| Pedestal 반송 위치 | 윗면 70 mm, lift pin stroke 44 mm |
+
+Validation(`validateGeometryConfig`, Remote는 `validateRemoteConfig`)은 load lock 안의 wafer, blade, pin, gate 여유, robot reach와 swing 반지름, door opening 통과, blade가 stage에 닿지 않는지, robot Z stroke가 slot과 load lock 높이를 모두 덮는지 확인한다. Remote도 같은 블록을 쓰고 seat는 r 1.939 m다(instance x -0.035 m라서 world x는 CCP와 같다).
+
+CMP front end는 `sti-cmp-rotary-300-v1.json`의 `front_end` 블록이다. Dry EFEM, transfer tower(spin dryer와 flip station), overhead wet robot(지붕 beam 위 Z housing), brush cleaner, end-effector rinse station, wet deck의 위치와 크기가 있고 `validateCmpConfig`가 reach, wrist가 station housing 밖에 있는지, swing이 tower와 cleaner와 alcove와 rinse station을 피하는지, load cup pin 사이로 fork가 지나는지, alcove 옆 opening, dryer bowl 높이, robot Z stroke를 확인한다.
+
+Bay 배치(`config/equipment/instances.json`, instances-v4)는 seat가 바깥으로 나온 만큼 rail을 x = -1.974 m로, CMP instance를 x = 0.443 m로 옮겼다. `npm run validate:config`가 세 load port 모두 lateral 0.0 mm, hoist extension 1.093 m로 닿는 것을 출력한다.
+
+Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-bay-v1.json`에 있고 시각용이다. 바닥 높이는 instances의 `bay.floor_y`를 쓴다.

@@ -14,6 +14,10 @@ declare global {
       scenario(): string | null;
       stations(): Record<string, any>;
       logs(): string[];
+      evaluateAt(t: number): any;
+      waferMeshes(): { instanceId: string; assetId: string; center: [number, number, number] }[];
+      covers(): Record<string, boolean | null>;
+      cuts(): Record<string, { startDeg: number; sweepDeg: number }[] | null>;
       store: { getState(): Record<string, any> };
       host: any;
     };

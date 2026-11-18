@@ -8,6 +8,8 @@
  * inner floor top surface. Azimuth phi (deg) runs from +X toward +Z.
  */
 import rawConfig from "../../config/geometry/ccp-pecvd-300-v1.json";
+import { FOUP_INTERFACE } from "../equipment/handling/foupInterface";
+import { deriveHandlingStation, validateHandlingStation, type ChamberHandlingInput, type HandlingStationConfig, type HandlingStationLayout } from "../equipment/handling/stationLayout";
 
 export type Vec3Tuple = [number, number, number];
 
@@ -89,7 +91,7 @@ export interface GeometryConfig {
     bellows_convolutions: number;
   };
   ports: {
-    slit: { azimuth_deg: number; width: number; height: number; center_y: number; valve_body_size: Vec3Tuple; door_thickness: number };
+    slit: { azimuth_deg: number; width: number; height: number; center_y: number; valve_body_size: Vec3Tuple; door_thickness: number; gate_travel: number };
     viewport: {
       azimuth_deg: number;
       center_y: number;
@@ -144,49 +146,27 @@ export interface GeometryConfig {
     frame_leg_radius: number;
     frame_bottom_y: number;
   };
-  /** Lightweight tool shell (load lock, EFEM, load port) for carrier transport; internal robots are not modeled. */
-  station: StationConfigBlock;
+  /** Process module panel enclosure (instance frame) with a viewing window and the facility interface. */
+  process_enclosure: ProcessEnclosureConfig;
+  /** Wafer-handling station (load port, EFEM robot, load lock, vacuum blade) along the slit azimuth. */
+  station: HandlingStationConfig;
 }
 
-/** Station (tool shell) config block shared by the chamber-type templates. */
-export interface StationConfigBlock {
+export interface ProcessEnclosureConfig {
   note: string;
-  gap_from_slit_valve: number;
-  load_lock_length: number;
-  efem_length: number;
-  enclosure_width: number;
-  enclosure_top_y: number;
-  deck_depth: number;
-  deck_width: number;
-  deck_height_above_floor: number;
-  deck_thickness: number;
-  foup_seat_offset_from_efem_face: number;
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+  top_y: number;
+  station_opening: { half_q: number; y0: number; y1: number };
+  window: { x0: number; x1: number; y0: number; y1: number };
+  facility: { z: number; y: number };
 }
 
-/** Derived station (tool shell) placement along the slit valve direction. */
-export interface StationLayout {
-  /** Fab floor top in the instance frame (ground mesh top). */
-  floorY: number;
-  azimuth: number;
-  enclosureWidth: number;
-  enclosureTop: number;
-  loadLockLength: number;
-  efemLength: number;
-  /** Radial distances from the chamber axis along the slit direction. */
-  loadLockR0: number;
-  loadLockR1: number;
-  efemR1: number;
-  deckR0: number;
-  deckR1: number;
-  deckTopY: number;
-  deckDepth: number;
-  deckWidth: number;
-  deckThickness: number;
-  /** FOUP bottom seating reference in the instance frame. */
-  seat: Vec3Tuple;
-  /** Unit vector the FOUP door faces (toward the EFEM). */
-  doorFacing: Vec3Tuple;
-}
+/** Station config / layout of the chamber-type tools (shared handling module). */
+export type StationConfigBlock = HandlingStationConfig;
+export type StationLayout = HandlingStationLayout;
 
 export const DEG = Math.PI / 180;
 export const TAU = Math.PI * 2;
@@ -287,38 +267,6 @@ export interface ChamberLayout {
 /** Ground (fab floor) top relative to the chamber frame: just under the support frame feet. */
 export function floorTopY(cfg: GeometryConfig): number {
   return cfg.peripherals.frame_bottom_y - 0.002;
-}
-
-export function deriveStationLayout(st: StationConfigBlock, frameBottomY: number, slitAzimuth: number, slitValveDepth: number, rOuter: number): StationLayout {
-  const valveOuter = rOuter + 0.012 + slitValveDepth;
-  const loadLockR0 = valveOuter + st.gap_from_slit_valve;
-  const loadLockR1 = loadLockR0 + st.load_lock_length;
-  const efemR1 = loadLockR1 + st.efem_length;
-  const deckR0 = efemR1;
-  const deckR1 = efemR1 + st.deck_depth;
-  const floorY = frameBottomY - 0.002;
-  const deckTopY = floorY + st.deck_height_above_floor;
-  const seatR = efemR1 + st.foup_seat_offset_from_efem_face;
-  const dir = azimuthToXZ(slitAzimuth, 1);
-  return {
-    floorY,
-    azimuth: slitAzimuth,
-    enclosureWidth: st.enclosure_width,
-    enclosureTop: st.enclosure_top_y,
-    loadLockLength: st.load_lock_length,
-    efemLength: st.efem_length,
-    loadLockR0,
-    loadLockR1,
-    efemR1,
-    deckR0,
-    deckR1,
-    deckTopY,
-    deckDepth: st.deck_depth,
-    deckWidth: st.deck_width,
-    deckThickness: st.deck_thickness,
-    seat: [dir.x * seatR, deckTopY, dir.z * seatR],
-    doorFacing: [-dir.x, 0, -dir.z],
-  };
 }
 
 export function loadGeometryConfig(): GeometryConfig {
@@ -472,7 +420,22 @@ export function deriveChamberLayout(cfg: GeometryConfig): ChamberLayout {
       center: [0, (waferTopY + faceplateBottomY) / 2, 0],
     },
     ports,
-    station: deriveStationLayout(cfg.station, cfg.peripherals.frame_bottom_y, ports.slit.azimuth, cfg.ports.slit.valve_body_size[2], rOuter),
+    station: deriveHandlingStation(cfg.station, chamberHandlingInput(cfg, ports.slit.azimuth, rOuter), FOUP_INTERFACE),
+  };
+}
+
+/** Slit and stage kinematics the shared handling station needs from the CCP chamber. */
+export function chamberHandlingInput(cfg: GeometryConfig, slitAzimuth: number, rOuter: number): ChamberHandlingInput {
+  const p = cfg.pedestal;
+  return {
+    azimuthRad: slitAzimuth,
+    slitCenterY: cfg.ports.slit.center_y,
+    slitWidth: cfg.ports.slit.width,
+    slitHeight: cfg.ports.slit.height,
+    portFaceR: rOuter + 0.012,
+    valveBodySize: cfg.ports.slit.valve_body_size,
+    floorY: floorTopY(cfg),
+    stage: { processTopY: p.process_top_y, transferTopY: p.transfer_top_y, edgeRingThickness: p.edge_ring_thickness, liftPinStroke: p.lift_pin_stroke, radius: p.diameter / 2, liftPinCircleRadius: p.lift_pin_circle_diameter / 2 },
   };
 }
 
@@ -573,15 +536,11 @@ export function validateGeometryConfig(cfg: GeometryConfig): ValidationReport {
   must((gp.mfc_block_count - 1) * gp.mfc_block_pitch + gp.mfc_block_size[0] <= gp.gas_panel_size[0], "MFC blocks must fit within the gas panel width");
   must(Math.abs(gp.mfc_block_offset_y) + gp.mfc_block_size[1] / 2 <= gp.gas_panel_size[1] / 2, "MFC blocks must fit within the gas panel height");
 
-  // Station (tool shell): must clear the slit valve, the deck must sit beyond the EFEM face and the seat must be on the deck
-  const stn = L.station;
-  must(stn.loadLockR0 > L.rOuter + 0.012 + cfg.ports.slit.valve_body_size[2], "load lock must clear the slit valve body");
-  must(stn.deckR1 > stn.deckR0 && stn.deckDepth > 0.2, "load port deck needs a usable depth");
-  const seatR = Math.hypot(stn.seat[0], stn.seat[2]);
-  must(seatR > stn.deckR0 + 0.1 && seatR < stn.deckR1 - 0.1, "FOUP seat must lie on the load port deck with clearance");
-  must(stn.enclosureWidth > cfg.ports.slit.valve_body_size[0], "station enclosure must be wider than the slit valve body");
-  must(stn.enclosureTop > cfg.ports.slit.center_y + cfg.ports.slit.valve_body_size[1] / 2, "station enclosure must cover the slit valve height");
-  must(stn.deckTopY > stn.floorY + 0.5 && stn.deckTopY < stn.enclosureTop, "deck height must be between floor and enclosure top");
+  // Wafer-handling station: load lock capacity, blade / pin / gate clearances, robot reach (shared module)
+  const st = validateHandlingStation(L.station, chamberHandlingInput(cfg, L.ports.slit.azimuth, L.rOuter));
+  errors.push(...st.errors);
+  warnings.push(...st.warnings);
+  must(cfg.ports.slit.gate_travel >= slit.height + 0.01, "slit valve gate must retreat below the slit opening");
 
   return { errors, warnings };
 }

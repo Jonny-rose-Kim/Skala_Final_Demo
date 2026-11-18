@@ -2,6 +2,8 @@
 
 2026-11-12 기준으로 저장소에 실제로 들어간 내용을 정리한 문서다. 원래 CCP V1은 그대로 두고, 같은 Scene과 같은 presentation clock 위에 세 장비와 FOUP carrier를 추가했다.
 
+2026-11-16에 상세 장비 모델 작업이 이어졌다. 불투명 transfer enclosure 대신 EFEM robot, load lock, 진공 blade(CCP, Remote)와 dry robot, flip station, overhead wet robot, cleaner, spin dryer(CMP)가 실제로 wafer를 옮긴다. 바뀐 내용은 `docs/equipment-assumptions.md`, `docs/scenarios.md`, `docs/status.md`에 있고, 이 문서의 시나리오 ID와 테스트 개수는 11-12 당시 값이다.
+
 ## 범위
 
 - CCP PECVD (`PECVD-01.CH-A`): 기존 asset ID, plasma, 선택, 단면, 투시, 분해, 타임라인 유지. 반송 연결용 tool shell(load lock, EFEM, load port)만 추가했다.
@@ -42,7 +44,7 @@ Containment는 template assembly와 parentAssetId로, Connection은 포트와 Co
 
 Joint는 템플릿에 선언하고(`JointDef`), 값은 PreviewState가 준다. 부품은 rest pose의 instance 좌표로 만들고 scene instance가 joint 원점으로 옮긴다. 회전 부품의 sector cutaway는 각 부품의 축(`axisXZ`) 기준으로 같은 방위를 제거하며, cutaway 중에는 자전 표시를 0으로 고정한다(sector가 부품과 함께 돌지 않도록). Exploded는 display offset이며 joint 값을 고정한다.
 
-Station interface(`template.station`)는 load port seat frame, door 방향, 불투명 transfer enclosure, wafer 표시 asset을 정의한다. Scene host는 instance pose로 station world frame을 만들고 OHT 시나리오와 FOUP 배치가 이를 쓴다.
+Station interface(`template.station`)는 load port seat frame, door 방향, EFEM enclosure, wafer 표시 asset을 정의한다(11-12 당시에는 불투명 transfer enclosure였다). Scene host는 instance pose로 station world frame을 만들고 OHT 시나리오와 FOUP 배치가 이를 쓴다.
 
 ## 계측 데이터 계약
 

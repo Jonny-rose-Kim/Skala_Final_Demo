@@ -26,5 +26,7 @@ export function cameraPresets(L: ChamberLayout): CameraPreset[] {
     { id: "showerhead-underside", label: "Showerhead underside", labelKo: "Showerhead 하면 (분해 상태)", alpha: 262 * DEG, beta: 140 * DEG, radius: 0.12, target: [0.0, L.faceplateBottomY + 0.2, 0], viewMode: "exploded" },
     { id: "exploded", label: "Exploded", labelKo: "분해 보기", alpha: 235 * DEG, beta: 64 * DEG, radius: 2.6, target: [0, 0.25, 0], viewMode: "exploded" },
     { id: "station", label: "Load port / tool shell", labelKo: "Load port와 tool shell", alpha: 150 * DEG, beta: 68 * DEG, radius: 2.6, target: [st.seat[0] * 0.6, 0.1, st.seat[2] * 0.6] },
+    { id: "efem-robot", label: "EFEM robot / FOUP handoff", labelKo: "EFEM robot·FOUP 인계", alpha: 95 * DEG, beta: 66 * DEG, radius: 2.0, target: [st.seat[0] * 0.81, 0.35, st.seat[2] * 0.81] },
+    { id: "load-lock", label: "Load lock / vacuum blade", labelKo: "Load lock·진공 blade", alpha: 70 * DEG, beta: 55 * DEG, radius: 1.6, target: [st.seat[0] * 0.4, 0.2, st.seat[2] * 0.4] },
   ];
 }

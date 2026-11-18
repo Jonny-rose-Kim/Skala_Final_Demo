@@ -37,8 +37,8 @@ metallic-roughness 방식 PBR 재질을 씬 전체에서 공유한다.
 - 밀도: 반지름 방향으로 부드럽게 옅어지고(edge softness), 축 방향으로는 양쪽 전극 근처에 어두운 쉬스 띠가 있다(`sheathFraction`, 개발자 설정). 가장자리를 약간 밝게 하고, 3D value noise `f(position, time, seed)`로 변화를 준다.
 - 단면: 계산된 제거 구간을 샘플마다 `atan2`로 판정하므로 형상의 단면 캡과 정확히 맞는다.
 - GLSL(WebGL2)과 WGSL(WebGPU) 코드는 uniform 의미가 같다. WGSL을 직접 작성했기 때문에 twgsl WASM을 내려받지 않아도 된다. 두 백엔드에서 결과가 같다는 것은 QA 스크린샷으로 확인했다.
-- 사용자 패널에서 조절하는 값: 표시 여부, glow 세기, 불투명도, 색 프리셋(겉모습으로 이름 붙임), edge softness, 공간 변화, 애니메이션 속도, 시드, 플라즈마 조명 켜기/끄기. 개발자 설정으로 sheath fraction과 halo margin이 있다. 물리량 이름을 붙인 파라미터는 없다.
-- `render_source = "illustrative"`이고, Inspector의 플라즈마 항목에 이 사실과 연출 시퀀스 출처를 보여준다.
+- 시각 설정 값: 표시 여부, glow 세기, 불투명도, 색 프리셋(겉모습으로 이름 붙임), edge softness, 공간 변화, 애니메이션 속도, 시드, 플라즈마 조명 켜기/끄기. 화면에서 바꾸는 패널은 없고 기본값으로 그린다. 개발자 설정으로 sheath fraction과 halo margin이 있다. 물리량 이름을 붙인 파라미터는 없다.
+- `render_source = "illustrative"`다. 뷰포트 오른쪽 위의 VISUAL DEMO · Illustrative 표시가 이 점을 알린다.
 
 ## 시나리오 (`config/visual/illustrative-cycle-v1.json`)
 
@@ -59,10 +59,11 @@ metallic-roughness 방식 PBR 재질을 씬 전체에서 공유한다.
 | 모드 | 구현 |
 | --- | --- |
 | 조립 (Assembled) | 외피는 불투명하다. 내부는 뷰포트 창으로 보이고, 플라즈마는 깊이 텍스처 덕분에 가려야 할 곳에서 가려진다 |
-| 단면 (Cutaway) | 구간 형상 재생성과 단면 캡(90ms 디바운스), 방위각 기준 숨김, 플라즈마 셰이더의 같은 구간 잘라내기. 방위각과 각도 폭을 조절할 수 있고 포트 위치에 맞춰 경계를 보정한다 |
-| 투시 (X-ray) | 외피 부품을 인스턴스별 투명 재질로 바꾼다. 내부와 플라즈마가 보이고 불투명도를 조절할 수 있다 |
-| 분해 (Exploded) | 부품별 transform node에 표시용 오프셋을 준다(분해 정도 0–1). 플라즈마, 가스 배관, RF 스트랩, 동축 케이블은 숨긴다. 0으로 돌리면 정확히 원래 위치로 돌아온다 |
-| 부품 관찰 | Focus(부품 범위로 카메라 이동), 단독 표시, 숨기기/보이기, 하이라이트(플라즈마와 보조 표시는 stencil에서 제외) |
+| 단면 (Cutaway) | 구간 형상 재생성과 단면 캡(90ms 디바운스), 방위각 기준 숨김, 플라즈마 셰이더의 같은 구간 잘라내기. 방위각과 각도 폭은 장비 기본값이나 카메라 preset이 정하고, 포트 위치에 맞춰 경계를 보정한다 |
+| 투시 (X-ray) | 외피 부품을 인스턴스별 투명 재질(불투명도 0.18)로 바꾼다. 내부와 플라즈마가 보인다 |
+| FOUP 단면 (FOUP section) | FOUP만 seat 축을 지나는 평면으로 뒤쪽 절반을 자르고 단면 캡을 붙인다. 선택한 장비, 보기 모드와 상관없이 켜고 끄며, 켜져 있는 동안 뷰포트 왼쪽 위에 웨이퍼 수와 slot map을 띄운다 |
+| 분해 (Exploded) | 부품별 transform node에 표시용 오프셋을 준다. 플라즈마, 가스 배관, RF 스트랩, 동축 케이블은 숨긴다. 0으로 돌리면 정확히 원래 위치로 돌아온다 |
+| 부품 관찰 | Focus(부품 범위로 카메라 이동), component tree에서 숨기기/보이기, 하이라이트(플라즈마와 보조 표시는 stencil에서 제외) |
 
 카메라 프리셋은 전체 보기, 측면 단면, 웨이퍼 근접, 샤워헤드 아랫면(분해 상태에서 들어 올린 페이스플레이트 아래에 카메라를 둠), 분해 보기가 있다.
 
@@ -90,3 +91,13 @@ Auto 모드는 프레임 시간 이동 평균(EMA)이 2.5초 동안 26ms를 넘�
 - 계측 marker: instrument body는 호박색 구, measurement point는 청록색 diamond, optical path는 초록 선. marker는 센서 형상이 아니다.
 - 단면: 회전 부품은 각자 축 기준으로 같은 방위의 sector를 제거한다. 단면 중에는 자전 표시를 멈춘다.
 - Bay overview는 장비 윤곽과 라벨을 우선하고 비활성 장비는 plasma step 수를 줄인다.
+
+## 2026-11-16: 상세 장비 모델
+
+- 거리별 보기: bay 전체에서는 tool 외장, load port, OHT와 rail, 통로, 서비스 영역이 보이고(cover 닫힘), 장비를 고르면 그 장비의 cover가 떨어져 robot, load lock, wet zone, 배관이 보인다. 가까이 가면 joint, end effector, gate, sensor bracket, flange, 이음판 같은 fine 부품이 보인다. Fine 부품은 카메라가 4.5 m보다 멀고 비활성인 장비에서 숨긴다(`lod: "fine"`).
+- Cover: panel 부품에 `cover` 표시가 있다. Auto는 선택한 장비만 열고, Closed와 Removed는 전체에 적용한다. Cover 제거는 보기 전용이며 door와 gate, shutter 열림은 시나리오의 scripted 값으로만 바뀐다.
+- 재질 추가: painted_offwhite(장비 외장), polymer_gray(PVC shutter, splash shield, wet deck 부품), wafer_front(wafer frontside 반쪽). 내부는 machined aluminum, stainless, ceramic, quartz, polymer, rubber가 서로 다르게 보이도록 기존 preset을 나눠 썼다. Bloom은 계속 꺼 둔다.
+- Wafer는 두 겹이다. Frontside 반쪽은 wafer_front, backside 반쪽은 silicon_wafer이고 두 반쪽은 내부 면만 공유해서 z-fighting이 없다. Face up과 face down이 화면에서 구분된다.
+- 움직이는 부품과 고정 부품: robot link와 end effector는 흰 계열 도장이나 ceramic, base와 beam은 어두운 강재, shutter와 gate는 회색 polymer로 나눴다.
+- 환경(`src/scene/fabEnvironment.ts`, `config/environment/fab-bay-v1.json`): raised floor 타일(통로와 서비스 영역은 막힌 타일, 장비 영역은 타공 타일), 통로 노란 선, 천장 T-bar grid와 FFU, 조명 panel, 벽, 후면 cable tray와 배관과 배기 duct, 장비 facility interface로 내려가는 drop. 장비나 계측 대상이 아니며 선택되지 않는다. 카메라가 천장보다 높으면 천장을, 벽 바깥이면 그 벽을 숨긴다. QA 캡처에서는 `qa/shoot.mjs`의 `env` 옵션으로 끈다.
+- 장비 좌표는 그대로 m, +Y 위, Babylon 왼손 좌표계다. 바닥 높이와 장비 위치는 config에서 온다.

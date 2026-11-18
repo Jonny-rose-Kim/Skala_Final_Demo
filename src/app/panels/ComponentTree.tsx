@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Eye, EyeOff, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsLeft, Eye, EyeOff, Search } from "lucide-react";
 import { getBundle } from "../../domain/registry";
 import { usePresentationStore } from "../../presentation/store";
 
@@ -13,6 +13,7 @@ export function ComponentTree() {
   const isolated = usePresentationStore((s) => s.isolatedAssetId);
   const activeInstanceId = usePresentationStore((s) => s.activeInstanceId);
   const instances = usePresentationStore((s) => s.instances);
+  const setPanel = usePresentationStore((s) => s.setPanel);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const info = instances.find((i) => i.instanceId === activeInstanceId);
@@ -33,9 +34,14 @@ export function ComponentTree() {
   }, [query, bundle]);
 
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col border-r border-slate-800 bg-slate-950/70" data-testid="component-tree">
+    <aside id="component-tree" className="flex h-full w-full flex-col border-r border-slate-800 bg-slate-950/70" data-testid="component-tree">
       <div className="border-b border-slate-800 px-3 py-2">
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Component tree</div>
+        <div className="mb-1 flex items-center justify-between gap-1">
+          <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-slate-400">Component tree</span>
+          <button type="button" className="shrink-0 rounded p-0.5 text-slate-500 hover:bg-slate-800 hover:text-slate-200" onClick={() => setPanel("tree", false)} title="왼쪽 가장자리로 접기" aria-label="Component tree 접기" data-testid="fold-tree">
+            <ChevronsLeft className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </div>
         <div className="mb-1.5 truncate text-[11px] text-slate-500" title={activeInstanceId}>
           {activeInstanceId}
           {bundle ? <span className="text-slate-600"> · {bundle.template.displayName}</span> : null}
@@ -76,7 +82,7 @@ export function ComponentTree() {
                       data-testid={`tree-item-${c.assetId}`}
                       data-selected={isSel ? "true" : "false"}
                     >
-                      <button type="button" className={`flex-1 truncate py-1 text-left text-[12px] ${isHidden ? "text-slate-500 line-through" : ""}`} onClick={() => select(c.assetId)} title={c.description}>
+                      <button type="button" className={`flex-1 truncate py-1 text-left text-[12px] ${isHidden ? "text-slate-500 line-through" : ""}`} onClick={() => select(c.assetId)} title={`${c.name}\n${c.description}`}>
                         {c.name}
                       </button>
                       {!isEffect && (

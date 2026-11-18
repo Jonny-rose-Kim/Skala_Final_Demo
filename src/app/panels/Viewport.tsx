@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { usePresentationStore } from "../../presentation/store";
 import { SceneHost } from "../../scene/sceneHost";
-import { ProcessInset } from "./ProcessInset";
+import { CarrierInset } from "./CarrierContents";
 
 export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -59,26 +59,28 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
           </div>
         </div>
       )}
-      {devWarnings.length > 0 && showWarnings && (
-        <div className="absolute left-2 top-2 max-w-md rounded border border-amber-700/60 bg-slate-900/90 p-2 text-[11px] text-amber-200" data-testid="dev-warnings">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold">Configuration warnings ({devWarnings.length})</span>
-            <button type="button" className="text-slate-400 hover:text-slate-100" onClick={() => setShowWarnings(false)} aria-label="Dismiss warnings">
-              ×
-            </button>
+      <div className="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-2">
+        {devWarnings.length > 0 && showWarnings && (
+          <div className="pointer-events-auto max-w-md rounded border border-amber-700/60 bg-slate-900/90 p-2 text-[11px] text-amber-200" data-testid="dev-warnings">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold">Configuration warnings ({devWarnings.length})</span>
+              <button type="button" className="text-slate-400 hover:text-slate-100" onClick={() => setShowWarnings(false)} aria-label="Dismiss warnings">
+                ×
+              </button>
+            </div>
+            <ul className="mt-1 list-disc pl-4">
+              {devWarnings.slice(0, 6).map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-1 list-disc pl-4">
-            {devWarnings.slice(0, 6).map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        )}
+        <CarrierInset />
+      </div>
       <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-slate-400">
         Orbit: 좌클릭 드래그 · Pan: 우클릭/Ctrl 드래그 · Zoom: 휠 · 클릭: 부품 선택
       </div>
       <div className="pointer-events-none absolute right-2 top-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-amber-200/80">VISUAL DEMO · Illustrative</div>
-      <ProcessInset />
     </div>
   );
 }

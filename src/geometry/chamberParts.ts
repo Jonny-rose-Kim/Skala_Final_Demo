@@ -4,7 +4,7 @@
  * chamber axis are regenerated for the cutaway sector and expose a planar cap profile; parts attached
  * at an azimuth are hidden when their azimuth falls inside the removed sector.
  */
-import type { AngularInterval, ChamberLayout, StationLayout } from "../config/geometry";
+import type { AngularInterval, ChamberLayout } from "../config/geometry";
 import { DEG, TAU, normalizeAngle } from "../config/geometry";
 import type { CutawayBehavior, MaterialRef } from "../domain/types";
 import {
@@ -31,6 +31,9 @@ import {
   type Vec2,
   type Vec3,
 } from "./meshlib";
+import { PartSink } from "./sharedParts";
+import { waferHalfProfiles } from "./waferParts";
+import { buildProcessEnclosureParts, buildSlitGateValve, buildStationParts as buildHandlingStationParts, type ProcessEnclosureSpec } from "../equipment/handling/stationParts";
 
 export interface PartGeometry {
   key: string;
@@ -47,17 +50,26 @@ export interface PartGeometry {
   jointId?: string;
   /** Local (x, z) of the revolve axis for sector parts off the instance axis. */
   axisXZ?: [number, number];
-  /** Never swapped to the x-ray material (simplified internal transfer enclosures). */
+  /** Never swapped to the x-ray material. */
   alwaysOpaque?: boolean;
   /**
-   * Stretchable part (OHT belts): authored from y = 0 down to y = -baseLength under its joint origin;
-   * the scene scales it to (baseLength + joint value) / baseLength instead of regenerating the mesh.
+   * Stretchable part (OHT belts, shaft bellows): authored from the anchor down to anchor.y - baseLength
+   * (anchor defaults to the rest origin of `jointId`); the scene scales it to
+   * (baseLength + sign * joint value) / baseLength about the anchor instead of regenerating the mesh.
    */
-  stretch?: { baseLength: number; jointId: string };
+  stretch?: { baseLength: number; jointId: string; anchor?: [number, number, number]; sign?: 1 | -1 };
+  /** Removable cover panel: hidden while the instance's covers are removed for inspection (display only, not a door). */
+  cover?: boolean;
+  /** Fine detail (fasteners, labels, cable ties): hidden when the camera is far from the instance. */
+  lod?: "fine";
   /** Build the surface mesh for the kept angular ranges (ignored for non-sector parts). */
   build: (kept: AngularInterval[]) => MeshData;
   /** Planar section profile for separate cap meshes (sector parts only). */
   capProfile?: RevolveProfile;
+  /** Section caps for the kept ranges of a clipped (non-revolved) sector part; used instead of `capProfile`. */
+  capBuild?: (kept: AngularInterval[]) => MeshData;
+  /** Shown only while the instance presents this key (a carrier slot wafer is shown while its slot is occupied). */
+  presenceKey?: string;
   sectorDependent: boolean;
 }
 
@@ -120,7 +132,7 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
   const shellPorts: ShellPort[] = Object.values(ports).map((p) => ({ id: p.id, azimuth: p.azimuth, centerY: p.centerY, hole: p.hole }));
   const linerPorts = shellPorts.filter((p) => ports[p.id as keyof typeof ports].throughLiner);
 
-  const sector = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, profile: RevolveProfile | Vec2[], opts: { segments?: number; pickable?: boolean; capProfile?: RevolveProfile | Vec2[]; castShadow?: boolean } = {}) => {
+  const sector = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, profile: RevolveProfile | Vec2[], opts: { segments?: number; pickable?: boolean; capProfile?: RevolveProfile | Vec2[]; castShadow?: boolean; jointId?: string; lod?: "fine" } = {}) => {
     const prof: RevolveProfile = Array.isArray(profile) ? { outer: profile } : profile;
     const capP = opts.capProfile ? (Array.isArray(opts.capProfile) ? { outer: opts.capProfile } : opts.capProfile) : prof;
     parts.push({
@@ -132,10 +144,12 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       castShadow: opts.castShadow ?? true,
       sectorDependent: true,
       capProfile: capP,
+      jointId: opts.jointId,
+      lod: opts.lod,
       build: (kept) => revolveProfile(prof, { segments: opts.segments ?? 128, ranges: kept, caps: false, uvScale: 1 }),
     });
   };
-  const fixed = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: { cutaway: CutawayBehavior; azimuth?: number; pickable?: boolean; isGlass?: boolean; castShadow?: boolean; hideWhenExploded?: boolean; alwaysOpaque?: boolean }) => {
+  const fixed = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: FixedPartOpts) => {
     parts.push({
       key,
       assetId,
@@ -147,6 +161,10 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       castShadow: opts.castShadow ?? true,
       hideWhenExploded: opts.hideWhenExploded,
       alwaysOpaque: opts.alwaysOpaque,
+      jointId: opts.jointId,
+      stretch: opts.stretch,
+      cover: opts.cover,
+      lod: opts.lod,
       sectorDependent: false,
       build: () => md,
     });
@@ -492,12 +510,18 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
   }
 
   // ------------------------------------------------------------------ wafer support
+  // Authored at the process position. The stage lift (pedestal_z) carries pedestal, heater, edge ring, shaft and
+  // thermocouple; the lift pins (lift_pins_z, child of pedestal_z) are flush at 0 and carry the wafer resting on them.
   {
-    sector("wafer", "wafer", "silicon_wafer", rectProfile(0, L.rWafer, L.waferBottomY, L.waferTopY), { segments: 192, castShadow: false });
-    sector("edge_ring", "edge_ring", "ceramic", chamfRect(L.rEdgeRingIn, L.rEdgeRingOut, L.pedestalTopY, L.edgeRingTopY, 0.0008), { segments: 192 });
+    const JS = "pedestal_z";
+    const JP = "lift_pins_z";
+    const wh = waferHalfProfiles(L.rWafer, L.waferBottomY, L.waferThickness, false);
+    sector("wafer", "wafer", "silicon_wafer", wh.back, { segments: 192, castShadow: false, jointId: JP });
+    sector("wafer_front", "wafer", "wafer_front", wh.front, { segments: 192, castShadow: false, jointId: JP });
+    sector("edge_ring", "edge_ring", "ceramic", chamfRect(L.rEdgeRingIn, L.rEdgeRingOut, L.pedestalTopY, L.edgeRingTopY, 0.0008), { segments: 192, jointId: JS });
     const pedOuter = filletProfile(rectProfile(0, L.rPedestal, L.pedestalBottomY, L.pedestalTopY), 0.005, 3, (_, p) => p[0] < 1e-9);
     const cavity = rectProfile(L.heater.rIn, L.heater.rOut, L.heater.y0, L.heater.y1);
-    sector("pedestal", "pedestal", "aluminum_machined", { outer: pedOuter, holes: [cavity] }, { segments: 160 });
+    sector("pedestal", "pedestal", "aluminum_machined", { outer: pedOuter, holes: [cavity] }, { segments: 160, jointId: JS });
     // heater rings
     const rings: Vec2[][] = [];
     const h = L.heater;
@@ -515,18 +539,19 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       castShadow: false,
       sectorDependent: true,
       capProfile: { outer: rings[0], holes: [] },
+      jointId: JS,
       build: (kept) => mergeMeshData(rings.map((r) => revolveProfile(r, { segments: 128, ranges: kept, caps: true, smoothAngleDeg: 60 }))),
     });
-    // lift pins (3) + lift ring
+    // lift pins (3, flush with the pedestal top at 0) + lift hoop just under the pedestal
     const pinR = cfg.pedestal.lift_pin_diameter / 2;
     const pinAz = [30 * DEG, 150 * DEG, 270 * DEG];
     for (let i = 0; i < pinAz.length; i++) {
-      const pin = revolveProfile(chamfRect(0, pinR, L.pedestalBottomY - 0.036, L.pedestalTopY - 0.0015, 0.0008), { segments: 16 });
+      const pin = revolveProfile(chamfRect(0, pinR, L.pedestalBottomY - 0.008, L.pedestalTopY, 0.0008), { segments: 16 });
       translateMeshData(pin, L.liftPinRadius, 0, 0);
       rotateYMeshData(pin, pinAz[i]);
-      fixed(`lift_pin_${i}`, "lift_pins", "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false });
+      fixed(`lift_pin_${i}`, "lift_pins", "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false, jointId: JP });
     }
-    sector("lift_ring", "lift_pins", "stainless", chamfRect(L.liftPinRadius - 0.014, L.liftPinRadius + 0.014, L.pedestalBottomY - 0.042, L.pedestalBottomY - 0.036, 0.001), { segments: 128 });
+    sector("lift_ring", "lift_pins", "stainless", chamfRect(L.liftPinRadius - 0.014, L.liftPinRadius + 0.014, L.pedestalBottomY - 0.014, L.pedestalBottomY - 0.008, 0.001), { segments: 128, jointId: JP });
     const shaft: Vec2[] = [
       [0, L.shaftBottomY],
       [L.rShaft + 0.03, L.shaftBottomY],
@@ -535,13 +560,30 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       [L.rShaft, L.pedestalBottomY + 0.002],
       [0, L.pedestalBottomY + 0.002],
     ];
-    sector("shaft", "pedestal_shaft", "stainless", chamferProfile(shaft, 0.003, (_, p) => p[0] < 1e-9), { segments: 96 });
+    sector("shaft", "pedestal_shaft", "stainless", chamferProfile(shaft, 0.003, (_, p) => p[0] < 1e-9), { segments: 96, jointId: JS });
     const b = L.bellows;
-    sector("bellows", "bellows", "stainless", bellowsProfile(b.rIn, b.rOut, b.y0, b.y1, b.convolutions, 0.0015), { segments: 96 });
+    // bellows: top flange fixed at the floor bore, convolutions stretch about the top while the pedestal lowers,
+    // the bottom flange is clamped to the shaft (moves with it)
+    const bellowsProf = bellowsProfile(b.rIn, b.rOut, b.y0, b.y1, b.convolutions, 0.0015);
+    parts.push({
+      key: "bellows",
+      assetId: "bellows",
+      materialRef: "stainless",
+      pickable: true,
+      cutaway: "sector",
+      castShadow: true,
+      sectorDependent: true,
+      capProfile: { outer: bellowsProf },
+      stretch: { baseLength: b.y1 - b.y0, jointId: JS, anchor: [0, b.y1, 0], sign: -1 },
+      build: (kept) => revolveProfile(bellowsProf, { segments: 96, ranges: kept, caps: false, uvScale: 1 }),
+    });
     sector("bellows_flange_top", "bellows", "stainless", chamfRect(b.rIn - 0.004, L.rFloorBore + 0.03, b.y1 - 0.012, b.y1, 0.002), { segments: 96 });
-    sector("bellows_flange_bottom", "bellows", "stainless", chamfRect(L.rShaft + 0.0005, b.rOut + 0.012, b.y0 - 0.012, b.y0, 0.002), { segments: 96 });
-    sector("thermocouple_sheath", "thermocouple", "stainless", rectProfile(0, 0.003, L.shaftBottomY - 0.06, L.pedestalTopY - 0.008), { segments: 16, castShadow: false });
-    sector("thermocouple_connector", "thermocouple", "dark_steel", chamfRect(0, 0.011, L.shaftBottomY - 0.095, L.shaftBottomY - 0.06, 0.002), { segments: 24, castShadow: false });
+    sector("bellows_flange_bottom", "pedestal_shaft", "stainless", chamfRect(L.rShaft + 0.0005, b.rOut + 0.012, b.y0 - 0.012, b.y0, 0.002), { segments: 96, jointId: JS });
+    sector("thermocouple_sheath", "thermocouple", "stainless", rectProfile(0, 0.003, L.shaftBottomY - 0.06, L.pedestalTopY - 0.008), { segments: 16, castShadow: false, jointId: JS });
+    sector("thermocouple_connector", "thermocouple", "dark_steel", chamfRect(0, 0.011, L.shaftBottomY - 0.095, L.shaftBottomY - 0.06, 0.002), { segments: 24, castShadow: false, jointId: JS });
+    // thermocouple cable leaving the connector (sensor body: connector + cable)
+    const tcCable = tubeAlongPath([[0, L.shaftBottomY - 0.095, 0], [0, L.shaftBottomY - 0.14, 0], [0.08, L.shaftBottomY - 0.17, 0]], 0.0035, { segments: 8, cornerRadius: 0.03 });
+    fixed("thermocouple_cable", "thermocouple", "dark_steel", tcCable, { cutaway: "keep", castShadow: false, jointId: JS, pickable: false, lod: "fine" });
   }
 
   // ------------------------------------------------------------------ vacuum / exhaust
@@ -623,29 +665,6 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
 
   // ------------------------------------------------------------------ access & inspection
   {
-    const slit = ports.slit;
-    const sc = cfg.ports.slit;
-    const [vw, vh, vd] = sc.valve_body_size;
-    const faceS = L.rOuter + 0.012;
-    const body = chamferedBox([vw, vh, vd], 0.006, [0, slit.centerY, faceS + vd / 2]);
-    const doorPlate = chamferedBox([sc.width + 0.04, sc.height + 0.03, sc.door_thickness], 0.002, [0, slit.centerY, faceS + 0.012]);
-    const actuator = revolveProfile(chamfRect(0, 0.028, slit.centerY - vh / 2 - 0.16, slit.centerY - vh / 2 + 0.002, 0.003), { segments: 32 });
-    translateMeshData(actuator, 0, 0, faceS + vd / 2);
-    const actuatorRod = revolveProfile(rectProfile(0, 0.01, slit.centerY - vh / 2 - 0.2, slit.centerY - vh / 2 - 0.16), { segments: 16 });
-    translateMeshData(actuatorRod, 0, 0, faceS + vd / 2);
-    // bolt pattern on the valve body face (decor)
-    const bolts: MeshData[] = [];
-    for (let i = 0; i < 6; i++) {
-      const b = revolveProfile(chamfRect(0, 0.006, 0, 0.006, 0.001), { segments: 16 });
-      toRadialFrame(b, Math.PI / 2, slit.centerY + (i % 2 === 0 ? vh / 2 - 0.02 : -vh / 2 + 0.02));
-      translateMeshData(b, -vw / 2 + 0.03 + Math.floor(i / 2) * ((vw - 0.06) / 2), 0, faceS + vd);
-      bolts.push(b);
-    }
-    const rot = slit.azimuth - Math.PI / 2;
-    fixed("slit_valve_body", "slit_valve", "aluminum_machined", rotateYMeshData(mergeMeshData([body, doorPlate]), rot), { cutaway: "hide-in-sector", azimuth: slit.azimuth });
-    fixed("slit_valve_actuator", "slit_valve", "stainless", rotateYMeshData(mergeMeshData([actuator, actuatorRod]), rot), { cutaway: "hide-in-sector", azimuth: slit.azimuth, pickable: true });
-    fixed("slit_valve_bolts", "slit_valve", "dark_steel", rotateYMeshData(mergeMeshData(bolts), rot), { cutaway: "hide-in-sector", azimuth: slit.azimuth, pickable: false, castShadow: false });
-
     const vp = ports.viewport;
     const vc = cfg.ports.viewport;
     const rBore = vc.bore_diameter / 2;
@@ -676,79 +695,39 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
     fixed("pressure_sensor_cable", "pressure_sensor", "dark_steel", toRadialFrame(sensorCable, pt.azimuth, pt.centerY), { cutaway: "hide-in-sector", azimuth: pt.azimuth, pickable: false, castShadow: false });
   }
 
-  // ------------------------------------------------------------------ station interface (tool shell)
-  buildStationParts({ station: L.station, slitValveSize: cfg.ports.slit.valve_body_size, slitCenterY: cfg.ports.slit.center_y }, fixed);
+  // ------------------------------------------------------------------ slit gate valve, handling station, process enclosure
+  {
+    const sink = new PartSink();
+    buildSlitGateValve(sink, L.station, cfg.ports.slit.door_thickness, cfg.ports.slit.gate_travel);
+    buildHandlingStationParts(sink, L.station, { waferThickness: cfg.wafer.thickness });
+    buildProcessEnclosureParts(sink, L.station.floorY, ccpEnclosureSpec(L), { enclosure: "process_enclosure", facility: "facility_interface" });
+    parts.push(...sink.parts);
+  }
 
   return parts;
 }
 
-export type FixedFn = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: { cutaway: CutawayBehavior; azimuth?: number; pickable?: boolean; isGlass?: boolean; castShadow?: boolean; hideWhenExploded?: boolean; alwaysOpaque?: boolean }) => void;
-
-/** What the station shell generator needs from a chamber-type layout. */
-export interface StationHost {
-  station: StationLayout;
-  slitValveSize: Vec3;
-  slitCenterY: number;
+/** CCP process enclosure box (instance frame) from the config. */
+export function ccpEnclosureSpec(L: ChamberLayout): ProcessEnclosureSpec {
+  const e = L.cfg.process_enclosure;
+  return { x0: e.x0, x1: e.x1, z0: e.z0, z1: e.z1, topY: e.top_y, stationOpening: { halfQ: e.station_opening.half_q, y0: e.station_opening.y0, y1: e.station_opening.y1 }, window: e.window, facility: e.facility };
 }
 
-/**
- * Lightweight tool shell along the slit valve direction: simplified load lock, EFEM enclosure and the
- * load port deck with FOUP seating pins. The enclosures stay opaque on purpose (simplified internal transfer).
- */
-export function buildStationParts(L: StationHost, fixed: FixedFn): void {
-  const st = L.station;
-  const push = fixed;
-  const w = st.enclosureWidth;
-  const h = st.enclosureTop - st.floorY;
-  const yc = (st.enclosureTop + st.floorY) / 2;
-  // authored along +X then rotated to the slit azimuth
-  const rot = st.azimuth;
-  const box = (r0: number, r1: number, yMid: number, height: number, width: number, chamfer = 0.008) => rotateYMeshData(chamferedBox([r1 - r0, height, width], chamfer, [(r0 + r1) / 2, yMid, 0]), rot);
-  // load lock: slightly narrower box with a flange ring toward the slit valve
-  const llW = Math.min(w - 0.1, L.slitValveSize[0] + 0.2);
-  const llH = L.slitValveSize[1] + 0.26;
-  const llY = L.slitCenterY;
-  const loadLock = box(st.loadLockR0, st.loadLockR1, llY, llH, llW);
-  const llFlange = rotateYMeshData(chamferedBox([0.02, llH + 0.04, llW + 0.04], 0.003, [st.loadLockR0 + 0.01, llY, 0]), rot);
-  const llLegs = mergeMeshData(
-    [-1, 1].map((sgn) => rotateYMeshData(chamferedBox([0.04, llY - llH / 2 - st.floorY, 0.04], 0.002, [(st.loadLockR0 + st.loadLockR1) / 2, (llY - llH / 2 + st.floorY) / 2, sgn * (llW / 2 - 0.05)]), rot)),
-  );
-  push("load_lock_box", "load_lock", "painted_housing", mergeMeshData([loadLock, llFlange]), { cutaway: "keep", alwaysOpaque: true });
-  push("load_lock_legs", "load_lock", "dark_steel", llLegs, { cutaway: "keep", pickable: false, alwaysOpaque: true });
-  // EFEM enclosure: full height box with a recessed front panel and a status light bar
-  const efem = box(st.loadLockR1, st.efemR1, yc, h, w);
-  const panel = rotateYMeshData(chamferedBox([0.006, h - 0.12, w - 0.12], 0.001, [st.efemR1 + 0.003, yc, 0]), rot);
-  const lightBar = rotateYMeshData(chamferedBox([0.012, 0.03, w - 0.3], 0.002, [st.efemR1 + 0.006, st.enclosureTop - 0.06, 0]), rot);
-  push("efem_box", "efem_enclosure", "painted_housing", mergeMeshData([efem, panel]), { cutaway: "keep", alwaysOpaque: true });
-  push("efem_light_bar", "efem_enclosure", "safety_marking", lightBar, { cutaway: "keep", pickable: false, castShadow: false, alwaysOpaque: true });
-  // load port: deck plate on a pedestal frame, door frame opening on the EFEM face, three kinematic pins
-  const deckY0 = st.deckTopY - st.deckThickness;
-  const deck = rotateYMeshData(chamferedBox([st.deckDepth, st.deckThickness, st.deckWidth], 0.004, [(st.deckR0 + st.deckR1) / 2, st.deckTopY - st.deckThickness / 2, 0]), rot);
-  const pedestal = rotateYMeshData(chamferedBox([st.deckDepth - 0.08, deckY0 - st.floorY, st.deckWidth - 0.1], 0.006, [(st.deckR0 + st.deckR1) / 2, (deckY0 + st.floorY) / 2, 0]), rot);
-  const doorFrame = rotateYMeshData(
-    mergeMeshData([
-      chamferedBox([0.014, 0.42, 0.03], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.25, 0.2]),
-      chamferedBox([0.014, 0.42, 0.03], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.25, -0.2]),
-      chamferedBox([0.014, 0.03, 0.43], 0.002, [st.efemR1 + 0.007, st.deckTopY + 0.46, 0]),
-    ]),
-    rot,
-  );
-  const seatR = Math.hypot(st.seat[0], st.seat[2]);
-  const pins: MeshData[] = [];
-  for (const [dr, dz] of [
-    [0.0, 0.09],
-    [0.0, -0.09],
-    [-0.09, 0.0],
-  ] as const) {
-    const pin = revolveProfile(chamferProfile(rectProfile(0, 0.008, st.deckTopY, st.deckTopY + 0.012), 0.002), { segments: 20 });
-    translateMeshData(pin, seatR + dr, 0, dz);
-    pins.push(rotateYMeshData(pin, rot));
-  }
-  push("deck", "load_port", "stainless", deck, { cutaway: "keep" });
-  push("deck_pedestal", "load_port", "painted_housing", pedestal, { cutaway: "keep" });
-  push("door_frame", "load_port", "dark_steel", doorFrame, { cutaway: "keep", pickable: false });
-  push("seat_pins", "load_port", "stainless", mergeMeshData(pins), { cutaway: "keep", pickable: false, castShadow: false });
+export interface FixedPartOpts {
+  cutaway: CutawayBehavior;
+  azimuth?: number;
+  pickable?: boolean;
+  isGlass?: boolean;
+  castShadow?: boolean;
+  hideWhenExploded?: boolean;
+  alwaysOpaque?: boolean;
+  jointId?: string;
+  stretch?: PartGeometry["stretch"];
+  cover?: boolean;
+  lod?: "fine";
 }
+
+export type FixedFn = (key: string, assetId: string, materialRef: Exclude<MaterialRef, "none">, md: MeshData, opts: FixedPartOpts) => void;
 
 /** Plasma proxy cylinder (slightly larger than the volume for the soft halo). */
 export function plasmaProxyMesh(L: ChamberLayout, haloMargin: number): MeshData {

@@ -4,7 +4,8 @@
  * live here; geometry comes from the versioned geometry config.
  */
 import { CHAMBER_LAYOUT, type ChamberLayout } from "../config/geometry";
-import type { AssemblyDef, ComponentDef, ConnectionDef, EquipmentTemplate, PortDef } from "./types";
+import { stationAssemblies, stationComponents, stationConnections, stationJoints, stationPorts, stationWaferAssets } from "../equipment/handling/stationTemplate";
+import type { AssemblyDef, ComponentDef, ConnectionDef, EquipmentTemplate, JointDef, PortDef } from "./types";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
 
@@ -16,7 +17,7 @@ export const ASSEMBLIES: AssemblyDef[] = [
   { id: "vacuum_exhaust", name: "Vacuum / exhaust", description: "Pumping baffle, exhaust port, throttle/isolation valve, foreline, pump", order: 5 },
   { id: "access_inspection", name: "Access & inspection", description: "Slit valve, viewport, pressure/temperature sensing 위치", order: 6 },
   { id: "visualization", name: "Visualization (illustrative)", description: "센서·물리 계산과 무관한 설명용 시각 효과", order: 7 },
-  { id: "station_interface", name: "Tool interface (station)", description: "OHT 반송을 위한 경량 tool shell: load port, 단순화한 EFEM/load lock 경계. 상세 로봇은 V1 범위가 아니다", order: 8 },
+  ...stationAssemblies(8),
 ];
 
 const UP = (d: number) => ({ dir: [0, 1, 0] as [number, number, number], distance: d });
@@ -319,6 +320,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: UP(0.1),
     cutaway: "sector",
+    jointId: "lift_pins_z",
     dimensions: (L) => [mm("Diameter", L.rWafer * 2), mm("Thickness", L.waferThickness)],
   },
   {
@@ -333,6 +335,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: UP(0.14),
     cutaway: "sector",
+    jointId: "pedestal_z",
     dimensions: (L) => [mm("Inner diameter", L.rEdgeRingIn * 2), mm("Outer diameter", L.rEdgeRingOut * 2), mm("Thickness", L.cfg.pedestal.edge_ring_thickness)],
   },
   {
@@ -347,6 +350,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: NONE,
     cutaway: "sector",
+    jointId: "pedestal_z",
     dimensions: (L) => [mm("Diameter", L.rPedestal * 2), mm("Body height", L.pedestalTopY - L.pedestalBottomY), mm("Process position (top)", L.pedestalTopY), mm("Transfer position (top)", L.cfg.pedestal.transfer_top_y)],
     assumptions: ["하부 RF bias를 두지 않는 구성을 설계 가정으로 채택했다.", "Heater와 lift pin 내부 구조는 대표 설계 가정이다."],
   },
@@ -363,6 +367,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: DOWN(0.08),
     cutaway: "sector",
+    jointId: "pedestal_z",
     dimensions: (L) => [mm("Element diameter", L.heater.rElement * 2), mm("Cavity height", L.heater.y1 - L.heater.y0)],
   },
   {
@@ -372,12 +377,13 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     kind: "support",
     assembly: "wafer_support",
     parentAssetId: "pedestal",
-    description: "Transfer 위치에서 wafer를 pedestal 위로 띄워 robot blade가 들어올 공간을 만드는 3개의 세라믹 pin. 공정 위치에서는 pedestal 표면 아래로 들어간다.",
+    description: "Pedestal을 관통하는 3개의 세라믹 pin과 그 아래 lift hoop. Pedestal이 transfer 위치로 내려온 뒤 pin이 올라가 vacuum blade에서 wafer를 받고, 내려가며 wafer를 pedestal에 놓는다. Pin은 0에서 pedestal 표면과 같은 높이다.",
     materialRef: "ceramic",
     materialNote: "Alumina ceramic pins (가정)",
     selectable: true,
     explode: DOWN(0.16),
     cutaway: "hide-in-sector",
+    jointId: "lift_pins_z",
     dimensions: (L) => [mm("Pin diameter", L.cfg.pedestal.lift_pin_diameter), mm("Pin circle diameter", L.liftPinRadius * 2), mm("Stroke", L.cfg.pedestal.lift_pin_stroke)],
   },
   {
@@ -393,6 +399,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: DOWN(0.22),
     cutaway: "sector",
+    jointId: "pedestal_z",
     dimensions: (L) => [mm("Diameter", L.rShaft * 2), mm("Length", L.pedestalBottomY - L.shaftBottomY)],
   },
   {
@@ -423,6 +430,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     selectable: true,
     explode: DOWN(0.4),
     cutaway: "sector",
+    jointId: "pedestal_z",
     dimensions: () => [],
   },
 
@@ -521,7 +529,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     name: "Slit valve (wafer transfer gate)",
     kind: "access",
     assembly: "access_inspection",
-    description: "Wafer transfer 높이에 맞춘 측면 slit 개구부와 외부 gate valve. Robot blade가 pedestal의 transfer 위치에서 wafer를 집어 통과한다. 공정 중에는 door가 개구부를 닫는다.",
+    description: "Chamber 측면 slit 개구부의 gate valve body. Blade가 지나가는 관통 opening, 아래쪽 bonnet과 pneumatic actuator, gate 상태 limit switch body를 포함한다. 움직이는 gate plate는 별도 부품(slit_valve_gate)이다.",
     materialRef: "aluminum_machined",
     materialNote: "Aluminum valve body, pneumatic actuator (가정)",
     selectable: true,
@@ -579,59 +587,12 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
   },
 ];
 
-export const STATION_COMPONENTS: ComponentDef<ChamberLayout>[] = [
-  {
-    assetId: "load_lock",
-    nodeKey: "station.load_lock",
-    name: "Load lock / gate boundary (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description:
-      "Slit valve 바깥쪽의 단순화한 load lock 구간. Atmospheric side(EFEM)와 Vacuum process side(chamber)를 구분하는 경계이며, 내부 wafer handling은 V1에서 'Simplified internal transfer'로 표현한다. 불투명하게 유지되어 생략한 경로가 열린 공간에서 보이지 않는다.",
-    materialRef: "painted_housing",
-    materialNote: "Painted enclosure (가정), 내부 미구현",
-    selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.25 },
-    cutaway: "keep",
-    shell: false,
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length (x)", L.station.loadLockLength), mm("Width (z)", L.station.enclosureWidth), mm("Height", L.station.enclosureTop - L.station.floorY)],
-    assumptions: ["Load lock 내부(pump/vent, 로봇)는 구현하지 않았다. 경계와 상태 전이만 설명한다."],
-  },
-  {
-    assetId: "efem_enclosure",
-    nodeKey: "station.efem",
-    name: "EFEM / transfer enclosure (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description: "Load port의 FOUP door와 load lock 사이의 대기측 wafer handling 영역. 상세 로봇 없이 닫힌 enclosure로 표현하며, wafer는 FOUP slot ↔ process stage 사이에서 'internal transfer' holder를 거친다.",
-    materialRef: "painted_housing",
-    materialNote: "Painted sheet-metal enclosure (가정)",
-    selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.55 },
-    cutaway: "keep",
-    shell: false,
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length (x)", L.station.efemLength), mm("Width (z)", L.station.enclosureWidth), mm("Height", L.station.enclosureTop - L.station.floorY)],
-    assumptions: ["EFEM 로봇, aligner, FOUP door opener는 구현하지 않았다. Simplified internal transfer 구간이다."],
-  },
-  {
-    assetId: "load_port",
-    nodeKey: "station.load_port",
-    name: "Load port (FOUP deck)",
-    kind: "station",
-    assembly: "station_interface",
-    description: "FOUP이 놓이는 load port deck과 seating reference. OHT는 이 deck 위의 FOUP만 다루며 chamber gate에 직접 도킹하지 않는다. Deck 높이는 대표 가정값이다.",
-    materialRef: "stainless",
-    materialNote: "Stainless deck, kinematic coupling pins (가정)",
-    selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.9 },
-    cutaway: "keep",
-    shell: false,
-    dimensions: (L) => [mm("Deck height above floor", L.station.deckTopY - L.station.floorY), mm("Deck depth (x)", L.station.deckDepth), mm("Deck width (z)", L.station.deckWidth)],
-    assumptions: ["Deck 높이 900 mm는 흔한 load port 높이 범위의 대표값이며 특정 규격 인증을 뜻하지 않는다."],
-    label: { text: "Load port", priority: 2 },
-  },
+export const STATION_COMPONENTS: ComponentDef<ChamberLayout>[] = stationComponents<ChamberLayout>((L) => L.station, CHAMBER_LAYOUT.station, { enclosure: "process_enclosure", facility: "facility_interface" });
+
+/** Stage lift and lift pins (process position = 0; parts authored there). */
+export const CCP_CHAMBER_JOINTS: JointDef[] = [
+  { jointId: "pedestal_z", name: "Pedestal lift", kind: "prismatic", origin: [0, CHAMBER_LAYOUT.pedestalTopY, 0], axis: [0, 1, 0], range: [CHAMBER_LAYOUT.cfg.pedestal.transfer_top_y - CHAMBER_LAYOUT.cfg.pedestal.process_top_y, 0], unit: "m", homeNote: "0 = process 위치(상면 150 mm), 음수 = transfer 위치로 하강. Scripted pose이며 위치 feedback이 아니다" },
+  { jointId: "lift_pins_z", name: "Lift pins", parentJointId: "pedestal_z", kind: "prismatic", origin: [0, 0, 0], axis: [0, 1, 0], range: [0, CHAMBER_LAYOUT.cfg.pedestal.lift_pin_stroke], unit: "m", homeNote: "0 = pin top이 pedestal 표면과 같은 높이, 양수 = pedestal 위로 돌출" },
 ];
 
 export const PORTS: PortDef[] = [
@@ -677,12 +638,10 @@ export const PORTS: PortDef[] = [
   { portId: "transfer", assetId: "pedestal", medium: "wafer", role: "bidirectional", name: "Lift pin handoff" },
   { portId: "tap", assetId: "pressure_sensor", medium: "vacuum", role: "inlet", name: "Pressure tap" },
   { portId: "pressure_tap", assetId: "chamber_body", medium: "vacuum", role: "outlet", name: "Pressure tap bore" },
-  { portId: "seat", assetId: "load_port", medium: "carrier", role: "bidirectional", name: "FOUP seating (bottom reference)" },
-  { portId: "door", assetId: "load_port", medium: "wafer", role: "bidirectional", name: "FOUP door interface" },
-  { portId: "atm", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Atmospheric transfer" },
-  { portId: "vac", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Load lock side" },
-  { portId: "atm", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Atmospheric side" },
-  { portId: "vac", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Vacuum side (slit)" },
+  { portId: "supply", assetId: "gas_panel", medium: "gas", role: "inlet", name: "Facility gas supply" },
+  { portId: "ac_in", assetId: "rf_generator", medium: "electrical", role: "inlet", name: "AC power" },
+  { portId: "exhaust", assetId: "vacuum_pump", medium: "vacuum", role: "outlet", name: "Pump exhaust" },
+  ...stationPorts({ enclosure: "process_enclosure", facility: "facility_interface" }),
 ];
 
 export const CONNECTIONS: ConnectionDef[] = [
@@ -706,11 +665,11 @@ export const CONNECTIONS: ConnectionDef[] = [
   { connectionId: "thermal.heater-pedestal", kind: "thermal", from: { assetId: "pedestal_heater", portId: "heat_out" }, to: { assetId: "pedestal", portId: "heat_in" }, description: "Heater element → pedestal body" },
   { connectionId: "thermal.pedestal-wafer", kind: "thermal", from: { assetId: "pedestal", portId: "heat_out" }, to: { assetId: "wafer", portId: "heat_in" }, description: "Pedestal → wafer backside" },
   { connectionId: "mech.shaft-pedestal", kind: "mechanical", from: { assetId: "pedestal_shaft", portId: "mount" }, to: { assetId: "pedestal", portId: "mount" }, description: "Shaft supports and moves the pedestal" },
-  { connectionId: "wafer.slit-pedestal", kind: "wafer", from: { assetId: "slit_valve", portId: "transfer" }, to: { assetId: "pedestal", portId: "transfer" }, description: "Transfer path: slit opening ↔ lift pins at transfer height" },
   { connectionId: "vac.tap-sensor", kind: "vacuum", from: { assetId: "chamber_body", portId: "pressure_tap" }, to: { assetId: "pressure_sensor", portId: "tap" }, description: "Pressure tap bore → manometer standoff" },
-  { connectionId: "wafer.loadport-efem", kind: "wafer", from: { assetId: "load_port", portId: "door" }, to: { assetId: "efem_enclosure", portId: "atm" }, description: "FOUP door ↔ EFEM (simplified internal transfer)" },
-  { connectionId: "wafer.efem-loadlock", kind: "wafer", from: { assetId: "efem_enclosure", portId: "vac" }, to: { assetId: "load_lock", portId: "atm" }, description: "EFEM ↔ load lock (atmospheric/vacuum boundary)" },
-  { connectionId: "wafer.loadlock-slit", kind: "wafer", from: { assetId: "load_lock", portId: "vac" }, to: { assetId: "slit_valve", portId: "transfer" }, description: "Load lock ↔ slit valve (vacuum side)" },
+  { connectionId: "facility.gas-panel", kind: "gas", from: { assetId: "facility_interface", portId: "gas" }, to: { assetId: "gas_panel", portId: "supply" }, description: "Facility gas bulkhead → gas panel supply" },
+  { connectionId: "facility.power-rf", kind: "electrical", from: { assetId: "facility_interface", portId: "power" }, to: { assetId: "rf_generator", portId: "ac_in" }, description: "Facility AC power → RF generator" },
+  { connectionId: "facility.pump-exhaust", kind: "vacuum", from: { assetId: "vacuum_pump", portId: "exhaust" }, to: { assetId: "facility_interface", portId: "exhaust" }, description: "Dry pump exhaust → house exhaust duct" },
+  ...stationConnections("pedestal"),
 ];
 
 /** Assets treated as "shell" (housings) by the x-ray mode. */
@@ -750,7 +709,7 @@ const ALL_COMPONENTS: ComponentDef<ChamberLayout>[] = [...COMPONENTS.map((c) => 
 
 export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate<ChamberLayout> = {
   templateId: "ccp_pecvd_single_wafer_300",
-  templateRevision: "1.2.0",
+  templateRevision: "1.3.0",
   family: "CCP_PECVD",
   displayName: "CCP PECVD",
   title: "Single-wafer direct parallel-plate (CCP) PECVD process chamber",
@@ -758,13 +717,14 @@ export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate<ChamberLayout> = {
   components: ALL_COMPONENTS,
   ports: PORTS,
   connections: CONNECTIONS,
-  joints: [],
+  joints: [...CCP_CHAMBER_JOINTS, ...stationJoints(CHAMBER_LAYOUT.station, CHAMBER_LAYOUT.cfg.ports.slit.gate_travel)],
   facts: [
     { label: "Source coupling", value: "Capacitive (CCP)", note: "RF-powered upper showerhead electrode, grounded heated pedestal" },
     { label: "Plasma location", value: "Direct, between the electrodes", note: "주 방전 영역은 faceplate와 wafer 사이 전극 간격 안" },
     { label: "Lower RF bias", value: "None in this template", note: "하부 전극은 ground return (기존 대표 구성 유지)" },
     { label: "Process mode", value: "PECVD deposition", note: "Cleaning용 remote source는 이 template에 없음" },
-    { label: "Atmospheric / vacuum boundary", value: "Slit valve + simplified load lock", note: "Load port → EFEM → load lock → slit valve" },
+    { label: "Atmospheric / vacuum boundary", value: "Load lock (atmospheric door + slit gate valve)", note: "두 gate는 동시에 열리지 않는다(scripted interlock)" },
+    { label: "Wafer handling", value: "EFEM SCARA robot + 2-stage vacuum blade", note: "FOUP slot, load-lock pin, blade, lift pin 사이 Z 인계. Generic design assumption" },
   ],
   station: {
     stationId: "LP.PECVD",
@@ -773,7 +733,8 @@ export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate<ChamberLayout> = {
     doorFacingLocal: CHAMBER_LAYOUT.station.doorFacing,
     transferEnclosureAssetId: "efem_enclosure",
     waferPresentationAssetId: "wafer",
-    noteKo: "FOUP slot ↔ EFEM(simplified internal transfer) ↔ load lock ↔ slit valve ↔ pedestal. 내부 로봇은 구현하지 않았다.",
+    waferPresentationAssetIds: stationWaferAssets("wafer"),
+    noteKo: "FOUP slot, EFEM robot fork, load-lock support pin, vacuum blade, chamber lift pin, pedestal 순서로 wafer holder가 바뀐다. 각 인계는 두 지지면이 같은 높이를 지나는 순간에 일어난다.",
   },
 };
 

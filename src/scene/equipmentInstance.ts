@@ -79,6 +79,12 @@ interface BuiltPart {
   /** Translation applied to authored coordinates (joint re-base + axis offset for sector parts). */
   rebase: Vec3Tuple;
   stretchAnchor: Vec3Tuple | null;
+  /** Removed by the cutaway sector (hide-in-sector parts). */
+  sectorRemoved: boolean;
+  /** Clipped part with nothing left inside the kept sector. */
+  empty: boolean;
+  /** Section cap built for the current cutaway (shown together with its part). */
+  capActive: boolean;
 }
 
 function add(a: Vec3Tuple, b: Vec3Tuple): Vec3Tuple {
@@ -109,6 +115,13 @@ export class EquipmentInstance {
   private isolated: string | null = null;
   private exploded = false;
   private frozenJoints: Record<string, number> | null = null;
+  /** Inspection: removable cover panels hidden (display only; never a scripted door state). */
+  private coversRemoved = false;
+  /** Distance LOD: fine details (fasteners, labels, cable ties) shown. */
+  private fineVisible = true;
+  /** Presence keys currently presented (e.g. occupied carrier slots); keyed parts outside it stay hidden. */
+  private presentKeys = new Set<string>();
+  readonly hasCovers: boolean;
 
   constructor(
     readonly scene: Scene,
@@ -169,7 +182,7 @@ export class EquipmentInstance {
       const rebase: Vec3Tuple = [axis[0] - restOrigin[0], -restOrigin[1], axis[1] - restOrigin[2]];
       let stretchAnchor: Vec3Tuple | null = null;
       if (part.stretch) {
-        const so = this.jointRestOrigin.get(part.stretch.jointId) ?? [0, 0, 0];
+        const so = part.stretch.anchor ?? this.jointRestOrigin.get(part.stretch.jointId) ?? [0, 0, 0];
         stretchAnchor = [so[0] - restOrigin[0], so[1] - restOrigin[1], so[2] - restOrigin[2]];
       }
       const mesh = new Mesh(`${def.instanceId}::${part.assetId}::${part.key}`, scene);
@@ -185,7 +198,7 @@ export class EquipmentInstance {
       if (shadow && part.castShadow && !part.isGlass) shadow.addShadowCaster(mesh, false);
       let cap: Mesh | null = null;
       let capMaterial: Material | null = null;
-      if (part.capProfile) {
+      if (part.capProfile || part.capBuild) {
         cap = new Mesh(`${def.instanceId}::${part.assetId}::${part.key}::cap`, scene);
         cap.parent = node;
         capMaterial = part.materialRef === "quartz" ? materials.glass() : materials.sectionCap(part.materialRef);
@@ -195,12 +208,13 @@ export class EquipmentInstance {
         cap.metadata = { ...meta, isCap: true } as InstanceMeshMetadata;
         cap.setEnabled(false);
       }
-      this.built.push({ part, mesh, cap, baseMaterial: material, capBaseMaterial: capMaterial, rebase, stretchAnchor });
+      this.built.push({ part, mesh, cap, baseMaterial: material, capBaseMaterial: capMaterial, rebase, stretchAnchor, sectorRemoved: false, empty: false, capActive: false });
       this.meshesByAsset.get(part.assetId)!.push(mesh);
       if (cap) this.meshesByAsset.get(part.assetId)!.push(cap);
       this.allMeshes.push(mesh);
       if (cap) this.allMeshes.push(cap);
     }
+    this.hasCovers = this.built.some((b) => b.part.cover);
   }
 
   private rebased(md: MeshData, part: PartGeometry, rebase: Vec3Tuple, stretchAnchor: Vec3Tuple | null): MeshData {
@@ -224,19 +238,22 @@ export class EquipmentInstance {
     for (const b of this.built) {
       const p = b.part;
       if (p.cutaway === "sector") {
-        if (p.sectorDependent) applyMeshData(b.mesh, this.rebased(p.build(cut.kept), p, b.rebase, b.stretchAnchor));
-        if (b.cap) {
-          if (cut.enabled && p.capProfile) {
-            applyMeshData(b.cap, this.rebased(revolveCaps(p.capProfile, cut.kept), p, b.rebase, b.stretchAnchor));
-            b.cap.setEnabled(true);
-          } else {
-            b.cap.setEnabled(false);
+        if (p.sectorDependent) {
+          const md = this.rebased(p.build(cut.kept), p, b.rebase, b.stretchAnchor);
+          // a clipped part can lie completely inside the removed sector: keep its last mesh, disabled
+          b.empty = md.indices.length === 0;
+          if (!b.empty) applyMeshData(b.mesh, md);
+        }
+        b.capActive = false;
+        if (b.cap && cut.enabled && (p.capBuild || p.capProfile)) {
+          const md = this.rebased(p.capBuild ? p.capBuild(cut.kept) : revolveCaps(p.capProfile!, cut.kept), p, b.rebase, b.stretchAnchor);
+          if (md.indices.length > 0) {
+            applyMeshData(b.cap, md);
+            b.capActive = true;
           }
         }
-        b.mesh.setEnabled(true);
       } else if (p.cutaway === "hide-in-sector") {
-        const removed = p.azimuth !== undefined && isAzimuthRemoved(p.azimuth, cut);
-        b.mesh.setEnabled(!removed);
+        b.sectorRemoved = p.azimuth !== undefined && isAzimuthRemoved(p.azimuth, cut);
       }
     }
     this.refreshVisibility();
@@ -246,6 +263,15 @@ export class EquipmentInstance {
     this.hidden = hidden;
     this.isolated = isolated;
     this.exploded = exploded;
+    this.refreshVisibility();
+  }
+
+  /** Presence-keyed parts to show (e.g. the occupied slots of a carrier); every other keyed part is hidden. */
+  setPresentKeys(keys: Set<string>): void {
+    let same = keys.size === this.presentKeys.size;
+    if (same) for (const k of keys) if (!this.presentKeys.has(k)) { same = false; break; }
+    if (same) return;
+    this.presentKeys = keys;
     this.refreshVisibility();
   }
 
@@ -267,11 +293,35 @@ export class EquipmentInstance {
       if (node.isEnabled() !== visible) node.setEnabled(visible);
     }
     for (const b of this.built) {
-      if (!b.part.hideWhenExploded) continue;
-      const removedBySector = b.part.cutaway === "hide-in-sector" && b.part.azimuth !== undefined && !b.mesh.isEnabled() && !this.exploded;
-      if (removedBySector) continue;
-      b.mesh.setEnabled(!this.exploded);
+      const p = b.part;
+      let on = !b.sectorRemoved && !b.empty;
+      if (p.hideWhenExploded && this.exploded) on = false;
+      if (p.cover && this.coversRemoved) on = false;
+      if (p.lod === "fine" && !this.fineVisible) on = false;
+      if (p.presenceKey && !this.presentKeys.has(p.presenceKey)) on = false;
+      if (b.mesh.isEnabled() !== on) b.mesh.setEnabled(on);
+      // a section cap belongs to its part: hidden with it (covers, LOD, empty slots)
+      const capOn = on && b.capActive;
+      if (b.cap && b.cap.isEnabled() !== capOn) b.cap.setEnabled(capOn);
     }
+  }
+
+  /** Inspection cover removal (display only): hides parts flagged as removable covers. */
+  setCoversRemoved(removed: boolean): void {
+    if (removed === this.coversRemoved) return;
+    this.coversRemoved = removed;
+    this.refreshVisibility();
+  }
+
+  get coversAreRemoved(): boolean {
+    return this.coversRemoved;
+  }
+
+  /** Distance LOD for fine details; geometry is never regenerated. */
+  setFineDetailVisible(visible: boolean): void {
+    if (visible === this.fineVisible) return;
+    this.fineVisible = visible;
+    this.refreshVisibility();
   }
 
   /** Display-only explode offsets; the geometry itself is unchanged. Joint poses freeze while exploded. */
@@ -316,7 +366,7 @@ export class EquipmentInstance {
     for (const b of this.built) {
       if (!b.part.stretch) continue;
       const ext = use[b.part.stretch.jointId] ?? 0;
-      const k = Math.max(0.001, (b.part.stretch.baseLength + ext) / b.part.stretch.baseLength);
+      const k = Math.max(0.001, (b.part.stretch.baseLength + (b.part.stretch.sign ?? 1) * ext) / b.part.stretch.baseLength);
       if (Math.abs(b.mesh.scaling.y - k) > 1e-6) b.mesh.scaling.y = k;
     }
   }

@@ -69,11 +69,15 @@ export type MaterialRef =
   | "foup_polymer"
   | "safety_marking"
   | "belt_fabric"
+  // added for the detailed equipment shells, robots and wet zone
+  | "painted_offwhite"
+  | "polymer_gray"
+  | "wafer_front"
   | "none";
 
 /** How the cutaway sector treats a component. */
 export type CutawayBehavior =
-  /** Revolved around an axis (instance axis or `axisXZ`): real sector geometry with section caps. */
+  /** Revolved around an axis (instance axis or `axisXZ`), or clipped by the sector planes through the instance axis: real sector geometry with section caps. */
   | "sector"
   /** Attached at an azimuth: hidden when its azimuth lies inside the removed sector. */
   | "hide-in-sector"
@@ -140,11 +144,11 @@ export interface ComponentDef<L = unknown> {
   axisXZ?: [number, number];
   /** Included in the x-ray "shell" set (made transparent). */
   shell?: boolean;
-  /** Never made transparent: hides a simplified internal transfer path on purpose. */
+  /** Never made transparent in the x-ray view (kept opaque on purpose). */
   alwaysOpaque?: boolean;
   /** Method syntax on purpose: keeps ComponentDef<Layout> assignable to ComponentDef<unknown> in registries. */
   dimensions(layout: L): DimensionEntry[];
-  /** Design assumption notes shown in the inspector (Korean). */
+  /** Design assumption notes (Korean). */
   assumptions?: string[];
   /** Structural basis (which reference structure this follows) shown separately from assumptions. */
   structuralBasis?: string;
@@ -177,7 +181,7 @@ export interface ConnectionDef {
   description: string;
 }
 
-/** Equipment-level facts shown in the inspector (e.g. Source coupling = ICP). */
+/** Equipment-level facts (e.g. Source coupling = ICP). */
 export interface TemplateFact {
   label: string;
   value: string;
@@ -185,8 +189,8 @@ export interface TemplateFact {
 }
 
 /**
- * Representative external interface of a process tool for carrier transport: load-port deck and the
- * simplified internal transfer boundary (closed enclosure; no detailed robot in V1).
+ * Representative external interface of a process tool for carrier transport: load-port deck, the FOUP
+ * seat frame and the presentation assets the wafer is shown on while the tool handles it.
  */
 export interface StationInterfaceDef {
   stationId: string;
@@ -195,7 +199,7 @@ export interface StationInterfaceDef {
   seatLocal: Vec3Tuple;
   /** Direction the FOUP front door faces in the instance frame (unit vector, XZ plane). */
   doorFacingLocal: Vec3Tuple;
-  /** Opaque enclosure representing the simplified internal transfer path. */
+  /** EFEM / front-end enclosure of the station (its panels are removable inspection covers). */
   transferEnclosureAssetId: AssetId;
   /** Asset that presents the wafer while it is on the process stage / head. */
   waferPresentationAssetId: AssetId;
@@ -208,7 +212,7 @@ export interface EquipmentTemplate<L = unknown> {
   templateId: string;
   templateRevision: string;
   family: EquipmentFamily;
-  /** User-facing name (lists, tree, inspector, scenario selector). */
+  /** User-facing name (lists, tree, scenario selector). */
   displayName: string;
   title: string;
   assemblies: AssemblyDef[];
@@ -218,6 +222,8 @@ export interface EquipmentTemplate<L = unknown> {
   joints: JointDef[];
   facts: TemplateFact[];
   station?: StationInterfaceDef;
+  /** Wafer presentation assets of templates without a station (e.g. the FOUP slot wafer). */
+  waferPresentationAssetIds?: AssetId[];
 }
 
 /** Instrument installed on the equipment (legacy V1 shape; kept for the CCP compatibility mapping). */

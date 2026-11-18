@@ -31,7 +31,7 @@ export interface IncomingStackLayer {
   layerId: string;
   material: string;
   role: FilmLayerRole;
-  /** Schematic thickness (nm) used only by the magnified inset; never used for collision or clearance. */
+  /** Schematic thickness (nm), descriptive metadata only; never used for collision or clearance. */
   schematicThicknessNm: number;
   originStep: string;
   originStatus: StackStepStatus;
@@ -51,7 +51,7 @@ export interface IncomingStackDef {
 export const STI_INCOMING_STACK: IncomingStackDef = {
   stackId: "sti-prepared-v1",
   title: "Prepared STI wafer (incoming)",
-  noteKo: "상류 Lithography/Etch/Liner/Trench-fill은 외부 공정(External step)으로 완료된 상태다. 층 두께는 inset 전용 schematic 값이며 실측이 아니다.",
+  noteKo: "상류 Lithography/Etch/Liner/Trench-fill은 외부 공정(External step)으로 완료된 상태다. 층 두께는 설명용 schematic 값이며 실측이 아니다.",
   pattern: { trenchWidthNm: 120, trenchDepthNm: 300, activeWidthNm: 160, note: "Mask는 pattern geometry metadata다. 이미 제거된 photoresist를 잔존층으로 추가하지 않는다." },
   layers: [
     { layerId: "substrate", material: "Si substrate", role: "substrate", schematicThicknessNm: 400, originStep: "incoming", originStatus: "incoming" },
@@ -199,9 +199,9 @@ export const ROUTES: RouteDef[] = [
     steps: [
       { stepId: "a.ext", kind: "external", labelKo: "외부 준비 공정 (prepared STI input)" },
       { stepId: "a.dep", kind: "process", instanceId: "PECVD-01.CH-A", recipeId: "rcp.ccp.oxide_overcoat_demo", labelKo: "CCP oxide-overcoat illustration" },
-      { stepId: "a.ret1", kind: "return", instanceId: "PECVD-01.CH-A", labelKo: "FOUP 복귀 (simplified internal transfer)" },
+      { stepId: "a.ret1", kind: "return", instanceId: "PECVD-01.CH-A", labelKo: "FOUP 복귀 (EFEM robot · load lock · vacuum blade)" },
       { stepId: "a.oht", kind: "transport", instanceId: "OHT-01", recipeId: "rcp.oht.foup_transfer_demo", labelKo: "OHT transfer" },
-      { stepId: "a.cmp", kind: "process", instanceId: "CMP-01", recipeId: "rcp.cmp.sti_oxide_clearing_demo", labelKo: "STI CMP + Clean/Rinse/Dry" },
+      { stepId: "a.cmp", kind: "process", instanceId: "CMP-01", recipeId: "rcp.cmp.sti_oxide_clearing_demo", labelKo: "STI CMP (dry robot, flip, wet robot) + Clean/Rinse/Dry" },
       { stepId: "a.ret2", kind: "return", instanceId: "CMP-01", labelKo: "FOUP 복귀" },
     ],
     noteKo: "독립 demonstration scenario. 시작 시 FOUP-01/W-01은 PECVD-01 load port에 있고 CMP-01 load port는 비어 있다. 모든 STI 공정에 추가 overcoat가 필요하다는 주장이 아니다.",
@@ -220,9 +220,9 @@ export const ROUTES: RouteDef[] = [
     steps: [
       { stepId: "b.ext", kind: "external", labelKo: "외부 준비 공정 (prepared STI input)" },
       { stepId: "b.dep", kind: "process", instanceId: "REMOTE-01", recipeId: "rcp.remote.oxide_overcoat_demo", labelKo: "Remote ICP PECVD oxide-overcoat illustration" },
-      { stepId: "b.ret1", kind: "return", instanceId: "REMOTE-01", labelKo: "FOUP 복귀 (simplified internal transfer)" },
+      { stepId: "b.ret1", kind: "return", instanceId: "REMOTE-01", labelKo: "FOUP 복귀 (EFEM robot · load lock · vacuum blade)" },
       { stepId: "b.oht", kind: "transport", instanceId: "OHT-01", recipeId: "rcp.oht.foup_transfer_demo", labelKo: "OHT transfer" },
-      { stepId: "b.cmp", kind: "process", instanceId: "CMP-01", recipeId: "rcp.cmp.sti_oxide_clearing_demo", labelKo: "STI CMP + Clean/Rinse/Dry" },
+      { stepId: "b.cmp", kind: "process", instanceId: "CMP-01", recipeId: "rcp.cmp.sti_oxide_clearing_demo", labelKo: "STI CMP (dry robot, flip, wet robot) + Clean/Rinse/Dry" },
       { stepId: "b.ret2", kind: "return", instanceId: "CMP-01", labelKo: "FOUP 복귀" },
     ],
     noteKo: "Route A의 대안이며 한 wafer에 두 증착을 강제하지 않는다. Illustrative / Not process-qualified.",

@@ -5,6 +5,8 @@
  * "Remote" names where the discharge is; "ICP" names how energy is coupled: they are not synonyms.
  */
 import type { AssemblyDef, ComponentDef, ConnectionDef, EquipmentTemplate, PortDef } from "../../domain/types";
+import { stationAssemblies, stationComponents, stationConnections, stationJoints, stationPorts, stationWaferAssets } from "../handling/stationTemplate";
+import { REMOTE_LAYOUT } from "./layout";
 import type { RemoteLayout } from "./layout";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
@@ -26,7 +28,7 @@ export const REMOTE_ASSEMBLIES: AssemblyDef[] = [
   { id: "vacuum_exhaust", name: "Vacuum / exhaust", description: "Exhaust port, throttle/isolation valve, foreline, pump", order: 8 },
   { id: "access_inspection", name: "Access & inspection", description: "Slit valve, chamber viewport, chamber pressure gauge", order: 9 },
   { id: "visualization", name: "Visualization (illustrative)", description: "Source glow와 afterglow 설명용 체적. 계산된 emissivity가 아니다", order: 10 },
-  { id: "station_interface", name: "Tool interface (station)", description: "Load port, 단순화한 EFEM/load lock 경계", order: 11 },
+  ...stationAssemblies(11),
 ];
 
 export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
@@ -404,6 +406,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: UP(0.05),
     cutaway: "sector",
+    jointId: "lift_pins_z",
     dimensions: (L) => [mm("Diameter", L.rWafer * 2), mm("Thickness", L.waferThickness)],
     label: { text: "Wafer 300 mm", priority: 9 },
   },
@@ -419,6 +422,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: UP(0.03),
     cutaway: "sector",
+    jointId: "stage_z",
     dimensions: (L) => [mm("Inner diameter", L.cfg.stage.edge_ring_inner_diameter)],
   },
   {
@@ -433,6 +437,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: NONE,
     cutaway: "sector",
+    jointId: "stage_z",
     dimensions: (L) => [mm("Diameter", L.rStage * 2), mm("Body height", L.stageTopY - L.stageBottomY)],
     label: { text: "Heated stage", priority: 8 },
   },
@@ -449,6 +454,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: NONE,
     cutaway: "sector",
+    jointId: "stage_z",
     dimensions: (L) => [{ label: "Turns (count)", valueM: L.heater.turns }],
   },
   {
@@ -463,6 +469,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: DOWN(0.06),
     cutaway: "hide-in-sector",
+    jointId: "lift_pins_z",
     dimensions: (L) => [mm("Pin circle diameter", L.cfg.stage.lift_pin_circle_diameter)],
   },
   {
@@ -477,6 +484,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: DOWN(0.14),
     cutaway: "sector",
+    jointId: "stage_z",
     dimensions: (L) => [mm("Diameter", L.rShaft * 2)],
   },
   {
@@ -505,6 +513,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     selectable: true,
     explode: DOWN(0.2),
     cutaway: "sector",
+    jointId: "stage_z",
     dimensions: () => [],
   },
   // ------------------------------------------------------------------ vacuum
@@ -666,52 +675,23 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     cutaway: "sector",
     dimensions: (L) => [mm("Volume radius", L.afterglow.radius), mm("Volume height", L.afterglow.topY - L.afterglow.bottomY)],
   },
-  // ------------------------------------------------------------------ station
+  // ------------------------------------------------------------------ source mounting bracket + shared handling station / enclosure
   {
-    assetId: "load_lock",
-    nodeKey: "station.load_lock",
-    name: "Load lock / gate boundary (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description: "Slit valve 바깥쪽의 단순화한 load lock. Atmospheric/vacuum 경계이며 내부 handling은 Simplified internal transfer로 표현한다(불투명 유지).",
-    materialRef: "painted_housing",
-    materialNote: "Painted enclosure (가정)",
+    assetId: "source_mount",
+    nodeKey: "source.mount_frame",
+    name: "Source mounting frame",
+    kind: "frame",
+    assembly: "remote_source",
+    parentAssetId: "source_housing",
+    description: "Process enclosure 상판 위의 네 기둥 frame과 housing clamp ring. Source housing, source gas panel, matching network를 지지한다. 구조 가정이며 하중 계산은 없다.",
+    materialRef: "aluminum_anodized",
+    materialNote: "Anodized aluminum profiles (가정)",
     selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.25 },
+    explode: { dir: [0, 1, 0], distance: 0.3 },
     cutaway: "keep",
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length", L.station.loadLockLength)],
+    dimensions: (L) => [mm("Frame half width", L.cfg.source_mount.half), mm("Clamp height", L.cfg.source_mount.clamp_y)],
   },
-  {
-    assetId: "efem_enclosure",
-    nodeKey: "station.efem",
-    name: "EFEM / transfer enclosure (simplified)",
-    kind: "enclosure",
-    assembly: "station_interface",
-    description: "Load port FOUP door와 load lock 사이의 대기측 handling 영역. 상세 로봇 없이 닫힌 enclosure로 표현한다.",
-    materialRef: "painted_housing",
-    materialNote: "Painted enclosure (가정)",
-    selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.55 },
-    cutaway: "keep",
-    alwaysOpaque: true,
-    dimensions: (L) => [mm("Length", L.station.efemLength)],
-  },
-  {
-    assetId: "load_port",
-    nodeKey: "station.load_port",
-    name: "Load port (FOUP deck)",
-    kind: "station",
-    assembly: "station_interface",
-    description: "FOUP이 놓이는 deck과 seating reference. OHT는 이 deck 위의 FOUP만 다룬다.",
-    materialRef: "stainless",
-    materialNote: "Stainless deck (가정)",
-    selectable: true,
-    explode: { dir: [-1, 0, 0], distance: 0.9 },
-    cutaway: "keep",
-    dimensions: (L) => [mm("Deck height above floor", L.station.deckTopY - L.station.floorY)],
-    label: { text: "Load port", priority: 2 },
-  },
+  ...stationComponents<RemoteLayout>((L) => L.station, REMOTE_LAYOUT.station, { enclosure: "process_enclosure", facility: "facility_interface" }),
 ];
 
 export const REMOTE_PORTS: PortDef[] = [
@@ -773,12 +753,11 @@ export const REMOTE_PORTS: PortDef[] = [
   { portId: "transfer", assetId: "stage", medium: "wafer", role: "bidirectional", name: "Lift pin handoff" },
   { portId: "tap", assetId: "pressure_sensor", medium: "vacuum", role: "inlet", name: "Pressure tap" },
   { portId: "pressure_tap", assetId: "chamber_body", medium: "vacuum", role: "outlet", name: "Pressure tap bore" },
-  { portId: "seat", assetId: "load_port", medium: "carrier", role: "bidirectional", name: "FOUP seating" },
-  { portId: "door", assetId: "load_port", medium: "wafer", role: "bidirectional", name: "FOUP door interface" },
-  { portId: "atm", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Atmospheric transfer" },
-  { portId: "vac", assetId: "efem_enclosure", medium: "wafer", role: "bidirectional", name: "Load lock side" },
-  { portId: "atm", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Atmospheric side" },
-  { portId: "vac", assetId: "load_lock", medium: "wafer", role: "bidirectional", name: "Vacuum side (slit)" },
+  { portId: "supply", assetId: "source_gas_panel", medium: "gas", role: "inlet", name: "Facility gas supply" },
+  { portId: "supply", assetId: "precursor_panel", medium: "gas", role: "inlet", name: "Facility precursor supply" },
+  { portId: "ac_in", assetId: "source_rf_generator", medium: "electrical", role: "inlet", name: "AC power" },
+  { portId: "exhaust", assetId: "vacuum_pump", medium: "vacuum", role: "outlet", name: "Pump exhaust" },
+  ...stationPorts({ enclosure: "process_enclosure", facility: "facility_interface" }),
 ];
 
 const c = (connectionId: string, kind: ConnectionDef["kind"], from: [string, string], to: [string, string], description: string): ConnectionDef => ({
@@ -820,17 +799,18 @@ export const REMOTE_CONNECTIONS: ConnectionDef[] = [
   c("cool.supply-coil", "coolant", ["coolant_fittings", "supply"], ["induction_coil", "coolant"], "Coolant supply → coil passage"),
   c("cool.coil-return", "coolant", ["induction_coil", "coolant"], ["coolant_fittings", "return"], "Coil passage → coolant return (R-MP-08 reference)"),
   c("opt.viewport-oes", "optical", ["source_viewport", "los"], ["oes_spectrometer", "in"], "Viewport line of sight → spectrometer fiber"),
-  c("wafer.slit-stage", "wafer", ["slit_valve", "transfer"], ["stage", "transfer"], "Transfer path: slit ↔ lift pins"),
   c("vac.tap-gauge", "vacuum", ["chamber_body", "pressure_tap"], ["pressure_sensor", "tap"], "Pressure tap bore → gauge standoff"),
-  c("wafer.loadport-efem", "wafer", ["load_port", "door"], ["efem_enclosure", "atm"], "FOUP door ↔ EFEM (simplified)"),
-  c("wafer.efem-loadlock", "wafer", ["efem_enclosure", "vac"], ["load_lock", "atm"], "EFEM ↔ load lock"),
-  c("wafer.loadlock-slit", "wafer", ["load_lock", "vac"], ["slit_valve", "transfer"], "Load lock ↔ slit valve"),
+  c("facility.gas-source", "gas", ["facility_interface", "gas"], ["source_gas_panel", "supply"], "Facility gas bulkhead → source gas panel"),
+  c("facility.gas-precursor", "gas", ["facility_interface", "gas"], ["precursor_panel", "supply"], "Facility gas bulkhead → precursor panel"),
+  c("facility.power-rf", "electrical", ["facility_interface", "power"], ["source_rf_generator", "ac_in"], "Facility AC power → source RF generator"),
+  c("facility.pump-exhaust", "vacuum", ["vacuum_pump", "exhaust"], ["facility_interface", "exhaust"], "Dry pump exhaust → house exhaust duct"),
+  ...stationConnections("stage"),
 ];
 
 export function buildRemoteTemplate(L: RemoteLayout): EquipmentTemplate<RemoteLayout> {
   return {
     templateId: REMOTE_TEMPLATE_ID,
-    templateRevision: "1.0.0",
+    templateRevision: "1.1.0",
     family: "REMOTE_PECVD",
     displayName: "Remote ICP PECVD",
     title: "Remote ICP PECVD: upstream dielectric discharge tube with external induction coil, downstream precursor injection, heated wafer stage",
@@ -838,7 +818,11 @@ export function buildRemoteTemplate(L: RemoteLayout): EquipmentTemplate<RemoteLa
     components: REMOTE_COMPONENTS,
     ports: REMOTE_PORTS,
     connections: REMOTE_CONNECTIONS,
-    joints: [],
+    joints: [
+      { jointId: "stage_z", name: "Stage lift", kind: "prismatic", origin: [0, L.stageTopY, 0], axis: [0, 1, 0], range: [L.stageTransferTopY - L.stageTopY, 0], unit: "m", homeNote: "0 = process 위치(상면 105 mm), 음수 = transfer 위치로 하강. Scripted pose" },
+      { jointId: "lift_pins_z", name: "Lift pins", parentJointId: "stage_z", kind: "prismatic", origin: [0, 0, 0], axis: [0, 1, 0], range: [0, L.cfg.stage.lift_pin_stroke], unit: "m", homeNote: "0 = pin top이 stage 표면과 같은 높이, 양수 = 돌출" },
+      ...stationJoints(L.station, L.cfg.ports.slit.gate_travel),
+    ],
     facts: [
       { label: "Source coupling", value: "ICP (inductive)", note: "외부 induction coil이 dielectric tube 안의 gas에 에너지를 결합한다. Remote와 ICP는 동의어가 아니다" },
       { label: "Plasma location", value: "Upstream remote (discharge tube)", note: "주 발광은 tube 안 coil 영역에만 있고 wafer 위에는 밝은 discharge slab이 없다" },
@@ -855,7 +839,8 @@ export function buildRemoteTemplate(L: RemoteLayout): EquipmentTemplate<RemoteLa
       doorFacingLocal: L.station.doorFacing,
       transferEnclosureAssetId: "efem_enclosure",
       waferPresentationAssetId: "wafer",
-      noteKo: "FOUP slot ↔ EFEM(simplified internal transfer) ↔ load lock ↔ slit valve ↔ heated stage. 내부 로봇은 구현하지 않았다.",
+      waferPresentationAssetIds: stationWaferAssets("wafer"),
+      noteKo: "CCP와 같은 handling module: FOUP slot, EFEM robot fork, load-lock support pin, vacuum blade, lift pin, heated stage 순서로 holder가 바뀐다.",
     },
   };
 }

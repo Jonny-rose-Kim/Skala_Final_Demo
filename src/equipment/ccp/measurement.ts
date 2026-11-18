@@ -65,6 +65,8 @@ export function buildCcpMeasurementSeed(L: ChamberLayout): MeasurementSeed {
     pointId: p.pointId,
     name: p.name,
     targetAssetId: p.targetAssetId,
+    // the pedestal moves with the stage lift (geometry v1.3.0): its temperature point follows that frame
+    frameJointId: p.pointId === "mp.pedestal_center" ? "pedestal_z" : undefined,
     pointKind: p.pointId === "mp.chamber_pressure" ? "region" : p.pointId === "mp.throttle" ? "axis_reference" : "point",
     geometry: p.pointId === "mp.chamber_pressure" ? { position: p.position, radius: 0.05 } : p.pointId === "mp.throttle" ? { position: p.position, axis: [0, 1, 0] } : { position: p.position },
     quantity: LEGACY_QUANTITY[p.quantity],
@@ -83,14 +85,17 @@ export function buildCcpMeasurementSeed(L: ChamberLayout): MeasurementSeed {
   }));
   for (const s of SENSORS) {
     instruments.push({ instrumentId: s.sensorId, name: s.name, type: INSTRUMENT_TYPE[s.sensorId] ?? "integrated_instrument", principle: s.principle, installationStatus: "installed" });
+    const movesWithStage = s.sensorId === "sensor.pedestal_tc";
     installations.push({
       installationId: `inst.${s.sensorId}`,
       instrumentId: s.sensorId,
       mountedOnAssetId: s.mountAssetId,
+      // thermocouple connector sits at the shaft bottom and rides the pedestal lift (install-rev-2)
+      mountFrameJointId: movesWithStage ? "pedestal_z" : undefined,
       mountPosition: legacyMountPosition(s.sensorId, L),
       installationStatus: "installed",
       placementBasis: "design_assumption",
-      revision: "install-rev-1",
+      revision: movesWithStage ? "install-rev-2" : "install-rev-1",
     });
     for (const ch of s.channels) {
       channels.push({ channelId: ch.channelId, instrumentId: s.sensorId, name: ch.name, quantity: LEGACY_QUANTITY[ch.quantity], canonicalUnit: ch.unit, dataShape: ch.payloadType === "scalar" ? "scalar" : ch.payloadType, channelRole: "measurement" });
@@ -147,7 +152,7 @@ export function buildCcpMeasurementSeed(L: ChamberLayout): MeasurementSeed {
   });
   return {
     templateId: "ccp_pecvd_single_wafer_300",
-    seedRevision: "ccp-meas-seed-2",
+    seedRevision: "ccp-meas-seed-3",
     instruments,
     installations,
     points,

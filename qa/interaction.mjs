@@ -1,4 +1,4 @@
-// Interaction QA: click-to-select, tree/inspector sync, overlays, timeline controls, hidden parts not blocking picks.
+// Interaction QA: click-to-select, tree sync, overlays, timeline controls, hidden parts not blocking picks.
 import { chromium } from "playwright";
 import fs from "node:fs";
 const mode = process.argv[2] ?? "webgl2";
@@ -45,8 +45,6 @@ await page.mouse.click(cx, cy);
 await page.waitForTimeout(300);
 let sel = await page.evaluate(() => window.__pecvdTwin.store.getState().selectedAssetId);
 check("click lid selects lid", sel === "lid", `(got ${sel})`);
-const inspectorName = await page.locator('[data-testid="inspector-name"]').textContent().catch(() => null);
-check("inspector shows lid", inspectorName?.includes("lid") || inspectorName?.includes("Lid"), `(got ${inspectorName})`);
 const treeSel = await page.locator('[data-testid="tree-item-lid"]').getAttribute("data-selected");
 check("tree highlights lid", treeSel === "true");
 await page.screenshot({ path: `${outDir}/11_selection_lid.png` });

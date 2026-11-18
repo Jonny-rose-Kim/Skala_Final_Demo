@@ -41,6 +41,12 @@ export const MATERIAL_PRESETS: Record<Exclude<MaterialRef, "none" | "quartz">, M
   foup_polymer: { albedo: [0.42, 0.47, 0.53], metallic: 0, roughness: 0.42, normal: "machinedNormal", normalStrength: 0.08, uvScale: 4, environmentIntensity: 0.9 },
   safety_marking: { albedo: [0.95, 0.74, 0.12], metallic: 0, roughness: 0.6, uvScale: 4 },
   belt_fabric: { albedo: [0.18, 0.18, 0.2], metallic: 0, roughness: 0.95, normal: "ceramicNormal", normalStrength: 0.3, uvScale: 30 },
+  // exterior painted sheet metal of the tools (off-white powder coat) and robot covers
+  painted_offwhite: { albedo: [0.8, 0.81, 0.79], metallic: 0, roughness: 0.46, normal: "machinedNormal", normalStrength: 0.06, uvScale: 2, environmentIntensity: 0.85 },
+  // gray PVC / PP of wet-zone parts (splash shields, drip trays, drain lines)
+  polymer_gray: { albedo: [0.46, 0.48, 0.5], metallic: 0, roughness: 0.55, normal: "ceramicNormal", normalStrength: 0.12, uvScale: 6 },
+  // patterned wafer frontside (oxide film over the STI pattern reads blue-violet); makes face up / face down visible
+  wafer_front: { albedo: [0.2, 0.22, 0.46], metallic: 0.35, roughness: 0.16, specularAA: true, environmentIntensity: 0.45 },
 };
 
 export type SharedMaterialKey = Exclude<MaterialRef, "none"> | `${Exclude<MaterialRef, "none" | "quartz">}_cap`;

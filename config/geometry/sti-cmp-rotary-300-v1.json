@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.cmp-geometry-config/1",
-  "geometry_revision": "sti-cmp-rotary-300-v1.0.0",
+  "geometry_revision": "sti-cmp-rotary-300-v1.1.0",
   "template_id": "sti_cmp_rotary_single_platen",
   "title": "Representative single-platen, single-head rotary oxide (STI) CMP module with conditioner, slurry delivery, window-in-pad optical endpoint and post-CMP clean/dry, 300 mm",
   "source": {
@@ -93,7 +93,7 @@
     "z": 0.0,
     "radius": 0.17,
     "top_y": 0.9,
-    "edge_pin_height": 0.01,
+    "edge_pin_height": 0.02,
     "alcove": {
       "x0": -0.86,
       "x1": -0.42,
@@ -101,8 +101,10 @@
       "z1": 0.26,
       "y0": 0.85,
       "y1": 0.99,
-      "hatch_travel": 0.46
-    }
+      "hatch_travel": 0.46,
+      "side_opening": { "x0": -0.82, "x1": -0.46, "y0": 0.878, "y1": 0.968 }
+    },
+    "edge_pin_azimuths_deg": [30, 150, 270]
   },
   "conditioner": {
     "pivot_x": 0.45,
@@ -170,51 +172,118 @@
       0.14
     ]
   },
-  "efem": {
-    "x0": -1.24,
-    "x1": -0.86,
-    "z0": -0.45,
-    "z1": 0.45,
-    "top_y": 1.15,
-    "deck_depth": 0.44,
-    "deck_width": 0.52,
-    "deck_height_above_floor": 0.9,
-    "deck_thickness": 0.025,
-    "foup_seat_offset_from_face": 0.22
-  },
-  "wet_transfer": {
-    "x0": -1.15,
-    "x1": -0.42,
-    "z0": 0.26,
-    "z1": 0.47,
-    "y0": 0.85,
-    "y1": 0.99
-  },
-  "clean_module": {
-    "center_x": -0.64,
-    "center_z": 0.72,
-    "size": [
-      0.4,
-      0.34,
-      0.46
-    ],
-    "base_y": 0.85,
-    "roller_radius": 0.035,
-    "roller_length": 0.34,
-    "roller_gap": 0.012,
-    "wafer_y_offset": 0.16
-  },
-  "dry_module": {
-    "center_x": -1.08,
-    "center_z": 0.72,
-    "size": [
-      0.4,
-      0.34,
-      0.46
-    ],
-    "base_y": 0.85,
-    "chuck_radius": 0.08,
-    "bowl_radius": 0.185,
-    "wafer_y_offset": 0.15
+  "front_end": {
+    "note": "Dry-in / dry-out front end and wet zone (generic design assumption): dry EFEM with a backside-fork SCARA robot, a transfer tower at the EFEM back wall (spin dryer below, flip station above, both pass-through), an overhead-mounted wet robot (Z housing on two roof beams) with an edge-grip end effector and a roll axis, a brush cleaner and an end-effector rinse station. Replaces the opaque wet-transfer tunnel and the simplified alcove transfer of v1.0.0.",
+    "revision_note": "v1.1.0: the 380 mm deep EFEM could not hold a wafer robot and the wafer jumped from the FOUP slot to the load cup. The front end was rebuilt (FOUP seat moved outward; bay layout follows), the load cup pins were rotated to 30/150/270 deg and raised to 20 mm so the wet robot fork passes between them, and the clean / dry modules moved to their reachable positions.",
+    "efem": {
+      "x_back": -1.33,
+      "depth": 0.84,
+      "center_z": 0.7,
+      "width": 1.1,
+      "height_above_floor": 2.0,
+      "ffu_height": 0.18,
+      "panel_thickness": 0.012,
+      "frame_size": 0.04,
+      "door_zone_depth": 0.08
+    },
+    "load_port": {
+      "deck_depth": 0.44,
+      "deck_width": 0.52,
+      "deck_height_above_floor": 0.9,
+      "deck_thickness": 0.025,
+      "dock_stroke": 0.03,
+      "door_gap": 0.002,
+      "opening_width": 0.36,
+      "opening_height": 0.3,
+      "opening_bottom_above_deck": 0.035,
+      "door_pull": 0.06,
+      "door_lower": 0.34,
+      "door_plate_thickness": 0.02
+    },
+    "dry_robot": {
+      "axis_x": -1.71,
+      "axis_z": 0.7,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.44,
+      "z_margin_below": 0.012,
+      "link_length": 0.28,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.31,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [0.088, 0.118],
+      "tip_beyond_center": 0.12
+    },
+    "wet_robot": {
+      "axis_x": -0.6,
+      "axis_z": 0.7,
+      "mount": "overhead",
+      "beam_gap": 0.16,
+      "roll_axis_height": 1.15,
+      "transit_height": 1.07,
+      "base_radius": 0.12,
+      "column_radius": 0.07,
+      "z_stroke": 0.48,
+      "z_margin_below": 0.012,
+      "link_length": 0.26,
+      "link_width": 0.08,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.32,
+      "drop": 0.18,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "grip_stroke": 0.008,
+      "tine_q": [0.02, 0.05],
+      "approach_clearance": 0.004
+    },
+    "tower": {
+      "x": -1.24,
+      "z": 0.7,
+      "half_size": 0.21,
+      "dryer_plane_y": 1.0,
+      "dryer_spin_drop": 0.06,
+      "chuck_radius": 0.08,
+      "bowl_radius": 0.185,
+      "bowl_rim_y": 0.975,
+      "dryer_top_y": 1.13,
+      "flip_plane_y": 1.32,
+      "flip_jaw_travel": 0.03,
+      "flip_top_y": 1.53,
+      "shutter_height": 0.065,
+      "shutter_travel": 0.075
+    },
+    "cleaner": {
+      "x": -0.64,
+      "z": 1.36,
+      "size": [0.48, 0.34, 0.44],
+      "base_y": 0.85,
+      "plane_y": 1.01,
+      "roller_radius": 0.035,
+      "roller_length": 0.34,
+      "brush_travel": 0.03,
+      "edge_roller_radius": 0.014,
+      "edge_roller_travel": 0.012,
+      "shutter_height": 0.065,
+      "shutter_travel": 0.075
+    },
+    "rinse_station": { "azimuth_from_wet_robot_deg": 45, "distance": 0.56, "plane_y": 1.06, "size": [0.2, 0.12, 0.16] },
+    "wet_deck": { "x0": -1.33, "x1": 0.1, "z0": 0.64, "z1": 1.62, "strip_x1": -0.86, "strip_z0": 0.36 },
+    "enclosure": {
+      "x0": -1.33,
+      "x1": 0.72,
+      "z0": -0.72,
+      "z1": 1.64,
+      "top_y": 1.75,
+      "window": { "x0": -0.55, "x1": 0.45, "y0": 0.95, "y1": 1.45 },
+      "facility": { "z": 0.2, "y": 0.5 }
+    }
   }
 }
