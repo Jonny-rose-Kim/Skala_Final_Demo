@@ -132,7 +132,7 @@ export function TopBar({ host }: { host: SceneHost | null }) {
         </Button>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <label className="flex items-center gap-1 whitespace-nowrap text-[13px] text-ink" title="Quality preset">
+        <label className="flex items-center gap-1 whitespace-nowrap text-meta text-ink" title="Quality preset">
           Q
           <select aria-label="Quality" className={SELECT_CLASS} value={quality} onChange={(e) => setQuality(e.target.value as QualityPreset)} data-testid="quality-select">
             <option value="auto">Auto ({effective})</option>

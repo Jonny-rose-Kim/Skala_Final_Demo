@@ -35,20 +35,20 @@ export function ComponentTree() {
 
   return (
     <aside id="component-tree" className="flex h-full w-full flex-col border-r border-line bg-subtle" data-testid="component-tree">
-      <div className="border-b border-line px-3 py-2">
+      <div className="border-b border-line px-3 pb-3 pt-3">
         <div className="mb-1 flex items-center justify-between gap-1">
-          <span className="truncate text-[13px] font-semibold uppercase tracking-wider text-ink-muted">Component tree</span>
-          <button type="button" className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-subtle hover:text-ink" onClick={() => setPanel("tree", false)} title="왼쪽 가장자리로 접기" aria-label="Component tree 접기" data-testid="fold-tree">
-            <ChevronsLeft className="h-3.5 w-3.5" aria-hidden />
+          <span className="truncate text-meta font-semibold text-ink">Component tree</span>
+          <button type="button" className="shrink-0 rounded p-1 text-ink-muted hover:bg-subtle hover:text-ink" onClick={() => setPanel("tree", false)} title="왼쪽 가장자리로 접기" aria-label="Component tree 접기" data-testid="fold-tree">
+            <ChevronsLeft className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        <div className="mb-1.5 truncate text-[13px] text-ink-muted" title={activeInstanceId}>
+        <div className="mb-2 truncate text-meta text-ink-muted" title={activeInstanceId}>
           {activeInstanceId}
           {bundle ? <span className="text-ink-muted"> · {bundle.template.displayName}</span> : null}
         </div>
-        <label className="flex items-center gap-1.5 rounded-md border border-control bg-canvas px-2 py-1.5">
-          <Search className="h-3.5 w-3.5 text-ink-muted" aria-hidden />
-          <input className="w-full bg-transparent text-[13px] outline-none placeholder:text-ink-muted" placeholder="부품 검색 (English name / id)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search components" data-testid="tree-search" />
+        <label className="flex h-9 items-center gap-2 rounded border border-control bg-canvas px-2 pointer-coarse:h-11">
+          <Search className="h-4 w-4 text-ink-muted" aria-hidden />
+          <input className="w-full bg-transparent text-meta outline-none placeholder:text-ink-muted" placeholder="부품 검색 (English name / id)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search components" data-testid="tree-search" />
         </label>
       </div>
       <div className="panel-scroll flex-1 overflow-y-auto py-1">
@@ -58,14 +58,14 @@ export function ComponentTree() {
             <div key={assembly.id}>
               <button
                 type="button"
-                className="flex w-full items-center gap-1 px-2 py-1 text-left text-[13px] font-semibold text-ink hover:bg-sunken"
+                className="flex min-h-8 w-full items-center gap-1 px-2 text-left text-meta font-semibold text-ink hover:bg-sunken pointer-coarse:min-h-11"
                 onClick={() => setCollapsed((c) => ({ ...c, [assembly.id]: !c[assembly.id] }))}
                 title={assembly.description}
                 aria-expanded={!isCollapsed}
               >
-                {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" aria-hidden /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden />}
+                {isCollapsed ? <ChevronRight className="h-4 w-4" aria-hidden /> : <ChevronDown className="h-4 w-4" aria-hidden />}
                 {assembly.name}
-                <span className="ml-auto text-[13px] text-ink-muted">{items.length}</span>
+                <span className="ml-auto text-meta text-ink-muted">{items.length}</span>
               </button>
               {!isCollapsed &&
                 items.map((c) => {
@@ -76,18 +76,18 @@ export function ComponentTree() {
                   return (
                     <div
                       key={c.assetId}
-                      className={`group flex items-center gap-1 pl-6 pr-2 ${isSel ? "bg-accent-soft text-accent-strong shadow-[inset_3px_0_0_var(--color-accent)]" : isHov ? "bg-sunken" : "hover:bg-sunken"}`}
+                      className={`group flex items-center gap-1 pl-6 pr-2 ${isSel ? "bg-accent-soft font-medium text-accent-strong" : isHov ? "bg-sunken" : "hover:bg-sunken"}`}
                       onMouseEnter={() => hover(c.assetId)}
                       onMouseLeave={() => hover(null)}
                       data-testid={`tree-item-${c.assetId}`}
                       data-selected={isSel ? "true" : "false"}
                     >
-                      <button type="button" className={`flex-1 truncate py-1.5 text-left text-[14px] ${isHidden ? "text-ink-muted line-through" : ""}`} onClick={() => select(c.assetId)} title={`${c.name}\n${c.description}`}>
+                      <button type="button" className={`min-h-8 flex-1 truncate py-1 text-left text-body pointer-coarse:min-h-11 ${isHidden ? "text-ink-muted line-through" : ""}`} onClick={() => select(c.assetId)} title={`${c.name}\n${c.description}`}>
                         {c.name}
                       </button>
                       {!isEffect && (
-                        <button type="button" className="rounded p-0.5 text-ink-muted hover:bg-canvas hover:text-ink" onClick={() => toggleHidden(c.assetId)} title={isHidden ? "Show" : "Hide"} aria-label={`${isHidden ? "Show" : "Hide"} ${c.name}`}>
-                          {isHidden ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
+                        <button type="button" className="rounded p-1 text-ink-muted hover:bg-canvas hover:text-ink" onClick={() => toggleHidden(c.assetId)} title={isHidden ? "Show" : "Hide"} aria-label={`${isHidden ? "Show" : "Hide"} ${c.name}`}>
+                          {isHidden ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
                         </button>
                       )}
                     </div>
@@ -96,7 +96,13 @@ export function ComponentTree() {
             </div>
           );
         })}
-        {!bundle && <div className="px-3 py-2 text-[13px] text-ink-muted">장비를 불러오는 중…</div>}
+        {!bundle && (
+          <div className="space-y-3 px-3 py-2" aria-busy="true" aria-label="부품 목록을 불러오는 중">
+            {[28, 40, 32, 36, 24].map((w, i) => (
+              <span key={i} className="skeleton block h-4" style={{ width: `${w * 4}px` }} />
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   );

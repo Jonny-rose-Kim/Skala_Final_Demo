@@ -6,10 +6,10 @@ import type { SceneHost } from "../../scene/sceneHost";
 import { Button, SELECT_CLASS, Toggle } from "../components/ui";
 
 const EQUIPMENT_TONE: Record<string, string> = {
-  ccp: "border-[#7c5cc4] bg-[#f3effc] text-[#4b2f91]",
-  remote: "border-[#b4529a] bg-[#fcf0f8] text-[#7d2766]",
-  cmp: "border-[#2f8f62] bg-[#ecf8f1] text-[#1a5e3e]",
-  oht: "border-[#c26a06] bg-warn-soft text-warn",
+  ccp: "border-[oklch(55.7%_0.156_295)] bg-[oklch(95.9%_0.018_300)] text-[oklch(39.8%_0.153_291)]",
+  remote: "border-[oklch(58.5%_0.154_339)] bg-[oklch(96.7%_0.017_338)] text-[oklch(42.6%_0.139_340)]",
+  cmp: "border-[oklch(58.2%_0.113_159)] bg-ok-soft text-[oklch(43.1%_0.086_159)]",
+  oht: "border-warn-mark bg-warn-soft text-warn",
   carrier: "border-accent bg-accent-soft text-accent-strong",
   external: "border-control bg-subtle text-ink-muted",
 };
@@ -49,11 +49,11 @@ export function Timeline({ host }: { host: SceneHost | null }) {
           ))}
         </select>
         <Button onClick={() => clock?.toggle()} title={t.playing ? "Pause (효과 시간 정지, 카메라 조작 가능)" : "Play"} testId="timeline-play">
-          {t.playing ? <Pause className="h-3.5 w-3.5" aria-hidden /> : <Play className="h-3.5 w-3.5" aria-hidden />}
+          {t.playing ? <Pause className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
           {t.playing ? "Pause" : "Play"}
         </Button>
         <Button onClick={() => clock?.restart()} title="Restart illustration: 설명용 시퀀스를 처음부터 (Visual demonstration만 재시작)" testId="timeline-restart">
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Restart
+          <RotateCcw className="h-4 w-4" aria-hidden /> Restart
         </Button>
         {heldPhase && (
           <Button
@@ -62,7 +62,7 @@ export function Timeline({ host }: { host: SceneHost | null }) {
             title={`${def?.releaseLabel ?? "Release"}: 유지 중인 단계를 끝내고 다음 연출로 진행 (해당 단계에서만 사용 가능)`}
             testId="timeline-extinguish"
           >
-            <PowerOff className="h-3.5 w-3.5" aria-hidden /> {def?.releaseLabel ?? "Release"}
+            <PowerOff className="h-4 w-4" aria-hidden /> {def?.releaseLabel ?? "Release"}
           </Button>
         )}
         <select aria-label="Playback speed" className={SELECT_CLASS} value={t.speed} onChange={(e) => clock?.setSpeed(parseFloat(e.target.value))}>
@@ -79,7 +79,7 @@ export function Timeline({ host }: { host: SceneHost | null }) {
             <button
               key={p.id + p.start}
               type="button"
-              className={`absolute top-0 h-5 truncate rounded-sm border px-1 text-left text-[13px] hover:brightness-95 ${EQUIPMENT_TONE[p.equipment ?? "external"] ?? EQUIPMENT_TONE.external} ${t.phase === p.id ? "ring-2 ring-accent" : ""}`}
+              className={`absolute top-0 h-5 truncate rounded-sm border px-1 text-left text-meta hover:brightness-95 ${EQUIPMENT_TONE[p.equipment ?? "external"] ?? EQUIPMENT_TONE.external} ${t.phase === p.id ? "ring-2 ring-accent" : ""}`}
               style={{ left: `${(p.start / dur) * 100}%`, width: `calc(${((p.end - p.start) / dur) * 100}% - 2px)` }}
               title={`${p.label} (${p.labelKo}) ${p.start.toFixed(1)}–${p.end.toFixed(1)} s · ${p.equipment ?? ""} · scripted presentation`}
               onClick={() => clock?.scrub(p.start + 0.001)}
@@ -101,7 +101,7 @@ export function Timeline({ host }: { host: SceneHost | null }) {
           onChange={(e) => clock?.scrub(parseFloat(e.target.value))}
         />
       </div>
-      <div className="w-60 shrink-0 text-right text-[13px] text-ink-muted">
+      <div className="w-60 shrink-0 text-right text-meta text-ink-muted">
         <div>
           <span className="tabular-nums text-ink">{t.playheadSec.toFixed(2)} s</span> / {dur.toFixed(0)} s · <span className="text-ink" data-testid="timeline-phase">{t.holding ? `${t.phaseLabelKo} 유지 중` : t.phaseLabelKo}</span>
         </div>

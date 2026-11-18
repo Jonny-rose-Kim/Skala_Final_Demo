@@ -86,7 +86,7 @@ export function TreeDock({ children }: { children: ReactNode }) {
         className={
           open
             ? `absolute inset-y-0 right-[-5px] z-10 w-[8px] cursor-col-resize touch-none select-none after:absolute after:inset-y-0 after:left-[1px] after:w-[3px] ${dragging ? "after:bg-accent" : "hover:after:bg-accent"}`
-            : `flex w-[20px] shrink-0 cursor-pointer touch-none select-none flex-col items-center gap-2 border-r border-line pt-2.5 hover:bg-sunken hover:text-ink ${dragging ? "bg-sunken text-ink" : "bg-subtle text-ink-muted"}`
+            : `flex w-[20px] shrink-0 cursor-pointer touch-none select-none flex-col items-center gap-2 border-r border-line pt-3 hover:bg-sunken hover:text-ink ${dragging ? "bg-sunken text-ink" : "bg-subtle text-ink-muted"}`
         }
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -102,8 +102,8 @@ export function TreeDock({ children }: { children: ReactNode }) {
       >
         {!open && (
           <>
-            <ChevronsRight className="h-3 w-3 shrink-0" aria-hidden />
-            <span className="text-[13px] font-semibold uppercase tracking-wider [writing-mode:vertical-rl]">Component tree</span>
+            <ChevronsRight className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="text-meta font-semibold [writing-mode:vertical-rl]">Component tree</span>
           </>
         )}
       </div>
