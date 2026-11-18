@@ -34,22 +34,22 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
   }, [onHost]);
 
   return (
-    <div className="relative min-w-0 flex-1 bg-[#0b0e12]" data-testid="viewport">
+    <div className="relative min-w-0 flex-1 bg-[#e9edf2]" data-testid="viewport">
       <div ref={ref} className="absolute inset-0" />
       {renderer.status === "initializing" && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/70 text-[13px] text-slate-300" data-testid="loading">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-subtle text-[14px] text-ink-muted" data-testid="loading">
           {renderer.message ?? "로딩 중…"}
         </div>
       )}
       {renderer.status === "error" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/90 p-6" data-testid="renderer-error">
-          <div className="max-w-lg rounded border border-amber-700/60 bg-slate-900 p-4 text-[13px]">
-            <div className="mb-2 flex items-center gap-2 text-amber-300">
+        <div className="absolute inset-0 flex items-center justify-center bg-canvas p-6" data-testid="renderer-error">
+          <div className="max-w-lg rounded-lg border border-warn-line bg-canvas p-4 text-[14px] shadow-sm">
+            <div className="mb-2 flex items-center gap-2 text-warn">
               <AlertTriangle className="h-4 w-4" aria-hidden /> 3D 렌더러를 시작할 수 없습니다
             </div>
-            <p className="text-slate-300">{renderer.message}</p>
-            {renderer.fallbackReason && <p className="mt-2 text-slate-400">WebGPU 실패 원인: {renderer.fallbackReason}</p>}
-            <ul className="mt-3 list-disc pl-5 text-slate-400">
+            <p className="text-ink">{renderer.message}</p>
+            {renderer.fallbackReason && <p className="mt-2 text-ink-muted">WebGPU 실패 원인: {renderer.fallbackReason}</p>}
+            <ul className="mt-3 list-disc pl-5 text-ink-muted">
               <li>브라우저의 하드웨어 가속(GPU) 설정이 켜져 있는지 확인하세요.</li>
               <li>Chrome 최신 버전을 권장합니다. WebGL2 또는 WebGPU 중 하나가 필요합니다.</li>
               <li>
@@ -61,10 +61,10 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
       )}
       <div className="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-2">
         {devWarnings.length > 0 && showWarnings && (
-          <div className="pointer-events-auto max-w-md rounded border border-amber-700/60 bg-slate-900/90 p-2 text-[11px] text-amber-200" data-testid="dev-warnings">
+          <div className="pointer-events-auto max-w-md rounded-lg border border-warn-line bg-canvas p-2.5 text-[13px] text-warn shadow-sm" data-testid="dev-warnings">
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold">Configuration warnings ({devWarnings.length})</span>
-              <button type="button" className="text-slate-400 hover:text-slate-100" onClick={() => setShowWarnings(false)} aria-label="Dismiss warnings">
+              <button type="button" className="text-ink-muted hover:text-ink" onClick={() => setShowWarnings(false)} aria-label="Dismiss warnings">
                 ×
               </button>
             </div>
@@ -77,10 +77,10 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
         )}
         <CarrierInset />
       </div>
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-slate-400">
+      <div className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-line bg-canvas/95 px-2.5 py-1 text-[13px] text-ink-muted shadow-sm">
         Orbit: 좌클릭 드래그 · Pan: 우클릭/Ctrl 드래그 · Zoom: 휠 · 클릭: 부품 선택
       </div>
-      <div className="pointer-events-none absolute right-2 top-2 rounded bg-slate-900/60 px-2 py-1 text-[10px] text-amber-200/80">VISUAL DEMO · Illustrative</div>
+      <div className="pointer-events-none absolute right-3 top-3 rounded-md border border-warn-line bg-warn-soft px-2 py-1 text-[13px] font-medium text-warn">VISUAL DEMO · Illustrative</div>
     </div>
   );
 }

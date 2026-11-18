@@ -85,8 +85,8 @@ export function TreeDock({ children }: { children: ReactNode }) {
         title={open ? "끌어서 폭을 바꿉니다. 왼쪽 끝까지 밀면 접히고, 더블클릭하면 기본 폭으로 돌아갑니다." : "누르거나 오른쪽으로 끌면 Component tree가 펼쳐집니다."}
         className={
           open
-            ? `absolute inset-y-0 right-[-5px] z-10 w-[8px] cursor-col-resize touch-none select-none after:absolute after:inset-y-0 after:left-[1px] after:w-[3px] ${dragging ? "after:bg-sky-400" : "hover:after:bg-sky-500"}`
-            : `flex w-[16px] shrink-0 cursor-pointer touch-none select-none flex-col items-center gap-2 border-r border-slate-800 pt-2.5 hover:bg-slate-800/80 hover:text-slate-200 ${dragging ? "bg-slate-800/80 text-slate-200" : "bg-slate-950/70 text-slate-500"}`
+            ? `absolute inset-y-0 right-[-5px] z-10 w-[8px] cursor-col-resize touch-none select-none after:absolute after:inset-y-0 after:left-[1px] after:w-[3px] ${dragging ? "after:bg-accent" : "hover:after:bg-accent"}`
+            : `flex w-[20px] shrink-0 cursor-pointer touch-none select-none flex-col items-center gap-2 border-r border-line pt-2.5 hover:bg-sunken hover:text-ink ${dragging ? "bg-sunken text-ink" : "bg-subtle text-ink-muted"}`
         }
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -103,7 +103,7 @@ export function TreeDock({ children }: { children: ReactNode }) {
         {!open && (
           <>
             <ChevronsRight className="h-3 w-3 shrink-0" aria-hidden />
-            <span className="text-[10px] font-semibold uppercase tracking-wider [writing-mode:vertical-rl]">Component tree</span>
+            <span className="text-[13px] font-semibold uppercase tracking-wider [writing-mode:vertical-rl]">Component tree</span>
           </>
         )}
       </div>

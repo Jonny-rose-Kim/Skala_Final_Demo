@@ -266,7 +266,7 @@ export class SceneHost {
     const { engine } = created;
     const isWebGPU = created.backend === "webgpu";
     const scene = new Scene(engine);
-    scene.clearColor = new Color4(0.105, 0.115, 0.135, 1);
+    scene.clearColor = new Color4(0.914, 0.929, 0.949, 1);
     scene.ambientColor = new Color3(0.02, 0.02, 0.02);
     scene.useRightHandedSystem = false;
     scene.skipPointerMovePicking = true;
@@ -406,7 +406,7 @@ export class SceneHost {
     backdrop.position.set(bayCenter.x, 0, bayCenter.z);
     const backdropMat = new PBRMaterial("mat.backdrop", scene);
     backdropMat.unlit = true;
-    backdropMat.albedoColor = new Color3(0.105, 0.115, 0.135);
+    backdropMat.albedoColor = new Color3(0.93, 0.945, 0.965);
     backdropMat.backFaceCulling = false;
     backdrop.material = backdropMat;
     backdrop.isPickable = false;
@@ -710,10 +710,10 @@ export class SceneHost {
     const inst = this.activeInstance(s);
     if (!inst) return;
     if (s.hoveredAssetId && s.hoveredAssetId !== s.selectedAssetId) {
-      for (const m of inst.highlightMeshes(s.hoveredAssetId)) w.highlight.addMesh(m, new Color3(0.55, 0.75, 0.95));
+      for (const m of inst.highlightMeshes(s.hoveredAssetId)) w.highlight.addMesh(m, new Color3(0.36, 0.56, 0.95));
     }
     if (s.selectedAssetId) {
-      for (const m of inst.highlightMeshes(s.selectedAssetId)) w.highlight.addMesh(m, new Color3(0.25, 0.95, 1.0));
+      for (const m of inst.highlightMeshes(s.selectedAssetId)) w.highlight.addMesh(m, new Color3(0.11, 0.37, 0.82));
     }
   }
 

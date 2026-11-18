@@ -1,9 +1,47 @@
 @import "tailwindcss";
 
+/* Pretendard Variable (OFL 1.1), subset to Latin + KS X 1001 Hangul. See public/fonts/Pretendard-OFL.txt. */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/PretendardVariable.subset.woff2") format("woff2-variations");
+}
+
+@theme {
+  --font-sans: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+
+  /* surfaces */
+  --color-canvas: #ffffff;
+  --color-subtle: #f5f7fa;
+  --color-sunken: #eceff4;
+  /* text */
+  --color-ink: #17212f;
+  --color-ink-muted: #526175;
+  /* lines: decorative dividers vs. control boundaries (>= 3:1 on canvas and subtle) */
+  --color-line: #dee4ec;
+  --color-control: #7a8699;
+  /* status */
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-danger-line: #f4c7c3;
+  --color-warn: #b54708;
+  --color-warn-soft: #fff8eb;
+  --color-warn-line: #f7d9a8;
+  --color-accent: #1d5fd1;
+  --color-accent-strong: #174ea6;
+  --color-accent-soft: #eef4ff;
+  --color-accent-line: #c3d5f6;
+  --color-ok: #1f7a4d;
+  --color-ok-soft: #ecf8f1;
+}
+
 :root {
-  color-scheme: dark;
-  font-family: "Inter", "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-feature-settings: "ss06" on;
 }
 
 html,
@@ -11,24 +49,51 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: #0b0e12;
-  color: #e2e8f0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
   overflow: hidden;
 }
 
+body {
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* numbers line up in tables, KPIs and chart axes */
+.num,
+svg text,
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+svg text {
+  font-family: var(--font-sans);
+}
+
 input[type="range"] {
-  accent-color: #38bdf8;
+  accent-color: var(--color-accent);
 }
 
 .panel-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #b6c0cc transparent;
 }
 
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #38bdf8;
-  outline-offset: 1px;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

@@ -3,15 +3,15 @@ import { releasePointSec } from "../../presentation/scenario";
 import { availableScenarios, getScenario } from "../../presentation/scenarioRegistry";
 import { usePresentationStore } from "../../presentation/store";
 import type { SceneHost } from "../../scene/sceneHost";
-import { Button, Toggle } from "../components/ui";
+import { Button, SELECT_CLASS, Toggle } from "../components/ui";
 
 const EQUIPMENT_TONE: Record<string, string> = {
-  ccp: "border-violet-700/60 bg-violet-900/30 text-violet-100",
-  remote: "border-fuchsia-700/60 bg-fuchsia-900/30 text-fuchsia-100",
-  cmp: "border-emerald-700/60 bg-emerald-900/30 text-emerald-100",
-  oht: "border-amber-700/60 bg-amber-900/30 text-amber-100",
-  carrier: "border-sky-700/60 bg-sky-900/30 text-sky-100",
-  external: "border-slate-600/60 bg-slate-800/40 text-slate-300",
+  ccp: "border-[#7c5cc4] bg-[#f3effc] text-[#4b2f91]",
+  remote: "border-[#b4529a] bg-[#fcf0f8] text-[#7d2766]",
+  cmp: "border-[#2f8f62] bg-[#ecf8f1] text-[#1a5e3e]",
+  oht: "border-[#c26a06] bg-warn-soft text-warn",
+  carrier: "border-accent bg-accent-soft text-accent-strong",
+  external: "border-control bg-subtle text-ink-muted",
 };
 
 export function Timeline({ host }: { host: SceneHost | null }) {
@@ -30,11 +30,11 @@ export function Timeline({ host }: { host: SceneHost | null }) {
   const canRelease = releaseAt !== null && heldPhase !== undefined && t.phase === heldPhase.id;
   const options = availableScenarios(instances);
   return (
-    <footer className="flex h-16 shrink-0 items-center gap-3 border-t border-slate-800 bg-slate-950/90 px-3" data-testid="timeline">
+    <footer className="flex h-16 shrink-0 items-center gap-3 border-t border-line bg-canvas px-3" data-testid="timeline">
       <div className="flex items-center gap-1">
         <select
           aria-label="Scenario"
-          className="max-w-[230px] rounded border border-slate-700 bg-slate-800 px-1 py-1 text-[12px]"
+          className={`max-w-[230px] ${SELECT_CLASS}`}
           value={scenarioId}
           onChange={(e) => setScenario(e.target.value)}
           title={def ? `${def.titleKo} · scripted presentation (설명용 scenario 초기화)` : ""}
@@ -65,7 +65,7 @@ export function Timeline({ host }: { host: SceneHost | null }) {
             <PowerOff className="h-3.5 w-3.5" aria-hidden /> {def?.releaseLabel ?? "Release"}
           </Button>
         )}
-        <select aria-label="Playback speed" className="rounded border border-slate-700 bg-slate-800 px-1 py-1 text-[12px]" value={t.speed} onChange={(e) => clock?.setSpeed(parseFloat(e.target.value))}>
+        <select aria-label="Playback speed" className={SELECT_CLASS} value={t.speed} onChange={(e) => clock?.setSpeed(parseFloat(e.target.value))}>
           {[0.25, 0.5, 1, 2, 4].map((v) => (
             <option key={v} value={v}>
               {v}×
@@ -79,7 +79,7 @@ export function Timeline({ host }: { host: SceneHost | null }) {
             <button
               key={p.id + p.start}
               type="button"
-              className={`absolute top-0 h-5 truncate rounded-sm border px-1 text-left text-[10px] hover:brightness-125 ${EQUIPMENT_TONE[p.equipment ?? "external"] ?? EQUIPMENT_TONE.external} ${t.phase === p.id ? "ring-1 ring-sky-400" : ""}`}
+              className={`absolute top-0 h-5 truncate rounded-sm border px-1 text-left text-[13px] hover:brightness-95 ${EQUIPMENT_TONE[p.equipment ?? "external"] ?? EQUIPMENT_TONE.external} ${t.phase === p.id ? "ring-2 ring-accent" : ""}`}
               style={{ left: `${(p.start / dur) * 100}%`, width: `calc(${((p.end - p.start) / dur) * 100}% - 2px)` }}
               title={`${p.label} (${p.labelKo}) ${p.start.toFixed(1)}–${p.end.toFixed(1)} s · ${p.equipment ?? ""} · scripted presentation`}
               onClick={() => clock?.scrub(p.start + 0.001)}
@@ -101,9 +101,9 @@ export function Timeline({ host }: { host: SceneHost | null }) {
           onChange={(e) => clock?.scrub(parseFloat(e.target.value))}
         />
       </div>
-      <div className="w-60 shrink-0 text-right text-[11px] text-slate-400">
+      <div className="w-60 shrink-0 text-right text-[13px] text-ink-muted">
         <div>
-          <span className="tabular-nums text-slate-100">{t.playheadSec.toFixed(2)} s</span> / {dur.toFixed(0)} s · <span className="text-slate-200" data-testid="timeline-phase">{t.holding ? `${t.phaseLabelKo} 유지 중` : t.phaseLabelKo}</span>
+          <span className="tabular-nums text-ink">{t.playheadSec.toFixed(2)} s</span> / {dur.toFixed(0)} s · <span className="text-ink" data-testid="timeline-phase">{t.holding ? `${t.phaseLabelKo} 유지 중` : t.phaseLabelKo}</span>
         </div>
         <div className="flex items-center justify-end gap-2">
           <span>presentation_time · {def?.kind === "linked" ? "linked demo" : "illustrative sequence"}</span>

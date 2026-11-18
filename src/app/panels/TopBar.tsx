@@ -1,11 +1,11 @@
-import { Box, Layers, Scissors, Eye, Grid3x3, Camera, RotateCcw, Crosshair, PanelLeft, PanelBottom, Sun, Lightbulb, Factory, PackageOpen } from "lucide-react";
+import { Box, Layers, Scissors, Eye, Camera, RotateCcw, Crosshair, PanelLeft, PanelBottom, Sun, Lightbulb, Factory, PackageOpen } from "lucide-react";
 import { usePresentationStore, type ViewMode, type QualityPreset } from "../../presentation/store";
 import { cameraPresets } from "../../scene/cameraPresets";
 import { getBundle } from "../../domain/registry";
 import { CHAMBER_LAYOUT } from "../../config/geometry";
 import { MODES } from "../../providers/modes";
 import type { SceneHost } from "../../scene/sceneHost";
-import { Badge, Button } from "../components/ui";
+import { Badge, Brand, Button, SELECT_CLASS } from "../components/ui";
 
 const VIEW_MODES: { id: ViewMode; label: string; icon: typeof Box; title: string }[] = [
   { id: "assembled", label: "Assembled", icon: Box, title: "정상 조립 상태. 외장과 viewport를 통해 내부를 본다." },
@@ -48,10 +48,9 @@ export function TopBar({ host }: { host: SceneHost | null }) {
   const presets = host ? host.presetsFor(activeInstanceId) : cameraPresets(CHAMBER_LAYOUT);
 
   return (
-    <header className="flex h-11 shrink-0 items-center gap-2 overflow-hidden border-b border-slate-800 bg-slate-950/90 px-2" data-testid="topbar">
-      <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-        <Grid3x3 className="h-4 w-4 text-sky-400" aria-hidden />
-        <span className="text-[13px] font-semibold tracking-wide">PECVD FAB Twin</span>
+    <header className="flex h-16 shrink-0 items-center gap-3 overflow-hidden border-b border-line bg-canvas px-5" data-testid="topbar">
+      <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
+        <Brand />
         <Badge tone="info" title={mode.summaryKo}>
           {mode.label}
         </Badge>
@@ -59,14 +58,14 @@ export function TopBar({ host }: { host: SceneHost | null }) {
           {!timeline.playing ? "Paused" : timeline.holding ? "Holding" : "Playing"}
         </Badge>
       </div>
-      <div className="h-6 w-px shrink-0 bg-slate-800" />
+      <div className="h-6 w-px shrink-0 bg-line" />
       <div className="flex min-w-0 shrink items-center gap-1" aria-label="장비 선택">
         <Button active={overview} onClick={() => setOverview(true)} title="FAB overview: 네 장비와 OHT rail 전체 배치" testId="overview-button">
-          <Factory className="h-3.5 w-3.5" aria-hidden /> Overview
+          <Factory className="h-4 w-4" aria-hidden /> Overview
         </Button>
         <select
           aria-label="Equipment instance"
-          className="min-w-0 max-w-[210px] truncate rounded border border-slate-700 bg-slate-800 px-1.5 py-1 text-[12px]"
+          className={`min-w-0 max-w-[230px] truncate ${SELECT_CLASS}`}
           value={activeInstanceId}
           onChange={(e) => {
             setActiveInstance(e.target.value);
@@ -83,25 +82,25 @@ export function TopBar({ host }: { host: SceneHost | null }) {
           ))}
         </select>
       </div>
-      <div className="h-6 w-px shrink-0 bg-slate-800" />
+      <div className="h-6 w-px shrink-0 bg-line" />
       <nav className="flex shrink-0 items-center gap-1" aria-label="관찰 모드">
         {VIEW_MODES.map((m) => (
           <Button key={m.id} active={!overview && viewMode === m.id} onClick={() => setViewMode(m.id)} title={m.title} testId={`viewmode-${m.id}`}>
-            <m.icon className="h-3.5 w-3.5" aria-hidden /> {m.label}
+            <m.icon className="h-4 w-4" aria-hidden /> {m.label}
           </Button>
         ))}
         {hasCarrier && (
           <Button active={carrierSection} onClick={() => setCarrierSection(!carrierSection)} title="FOUP 단면 보기: seat 축을 지나는 평면으로 FOUP 뒤쪽 절반을 잘라 slot과 웨이퍼를 보여 줍니다. 선택한 장비와 보기 모드는 그대로이고, 몇 장이 들었는지는 화면 왼쪽 위에 나옵니다." testId="carrier-section-button">
-            <PackageOpen className="h-3.5 w-3.5" aria-hidden /> FOUP section
+            <PackageOpen className="h-4 w-4" aria-hidden /> FOUP section
           </Button>
         )}
       </nav>
-      <div className="h-6 w-px shrink-0 bg-slate-800" />
+      <div className="h-6 w-px shrink-0 bg-line" />
       <div className="flex shrink-0 items-center gap-1">
-        <Camera className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+        <Camera className="h-4 w-4 text-ink-muted" aria-hidden />
         <select
           aria-label="Camera preset"
-          className="max-w-[170px] rounded border border-slate-700 bg-slate-800 px-1.5 py-1 text-[12px]"
+          className={`max-w-[180px] ${SELECT_CLASS}`}
           value={cameraPresetId ?? ""}
           onChange={(e) => {
             const p = presets.find((x) => x.id === e.target.value);
@@ -123,19 +122,19 @@ export function TopBar({ host }: { host: SceneHost | null }) {
           ))}
         </select>
         <Button onClick={requestResetCamera} title="Reset camera: 현재 장비의 기본 시점으로 복귀 (관찰 모드는 유지)" testId="reset-camera">
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Reset
+          <RotateCcw className="h-4 w-4" aria-hidden /> Reset
         </Button>
         <Button onClick={requestFocusSelected} disabled={!selected && !selectedMeasurement} title="선택한 부품/계측 위치로 카메라 이동" testId="focus-selected">
-          <Crosshair className="h-3.5 w-3.5" aria-hidden /> Focus
+          <Crosshair className="h-4 w-4" aria-hidden /> Focus
         </Button>
         <Button active={lighting === "inspection"} onClick={() => setLighting(lighting === "inspection" ? "exterior" : "inspection")} title={lighting === "inspection" ? "Inspection light 켜짐: 카메라 headlamp와 환경광 보강 (클릭하면 Exterior light)" : "Exterior light: 클릭하면 Inspection light (내부 부품 관찰용 headlamp)"} testId="lighting-toggle">
-          {lighting === "inspection" ? <Lightbulb className="h-3.5 w-3.5" aria-hidden /> : <Sun className="h-3.5 w-3.5" aria-hidden />}
+          {lighting === "inspection" ? <Lightbulb className="h-4 w-4" aria-hidden /> : <Sun className="h-4 w-4" aria-hidden />}
         </Button>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <label className="flex items-center gap-1 whitespace-nowrap text-[12px] text-slate-300" title="Quality preset">
+        <label className="flex items-center gap-1 whitespace-nowrap text-[13px] text-ink" title="Quality preset">
           Q
-          <select aria-label="Quality" className="rounded border border-slate-700 bg-slate-800 px-1.5 py-1 text-[12px]" value={quality} onChange={(e) => setQuality(e.target.value as QualityPreset)} data-testid="quality-select">
+          <select aria-label="Quality" className={SELECT_CLASS} value={quality} onChange={(e) => setQuality(e.target.value as QualityPreset)} data-testid="quality-select">
             <option value="auto">Auto ({effective})</option>
             <option value="high">High</option>
             <option value="balanced">Balanced</option>
@@ -153,12 +152,12 @@ export function TopBar({ host }: { host: SceneHost | null }) {
             {perf.fps.toFixed(0)} fps · {perf.frameMs.toFixed(1)} ms
           </Badge>
         )}
-        <div className="h-6 w-px shrink-0 bg-slate-800" />
+        <div className="h-6 w-px shrink-0 bg-line" />
         <Button active={panels.tree} onClick={() => togglePanel("tree")} title="Component tree 펼치기/접기 (접으면 왼쪽 가장자리에 얇은 줄로 남습니다)" testId="toggle-tree">
-          <PanelLeft className="h-3.5 w-3.5" aria-hidden />
+          <PanelLeft className="h-4 w-4" aria-hidden />
         </Button>
         <Button active={panels.timeline} onClick={() => togglePanel("timeline")} title="Timeline 열기/닫기" testId="toggle-timeline">
-          <PanelBottom className="h-3.5 w-3.5" aria-hidden />
+          <PanelBottom className="h-4 w-4" aria-hidden />
         </Button>
       </div>
     </header>

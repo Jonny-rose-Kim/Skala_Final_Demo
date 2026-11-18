@@ -49,7 +49,7 @@ export class LabelsOverlay {
     for (const it of items) {
       if (!this.els.has(it.id)) {
         const el = document.createElement("div");
-        el.className = "absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded border border-slate-500/60 bg-slate-900/80 px-1.5 py-0.5 text-[11px] text-slate-100 shadow";
+        el.className = "absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded border border-control bg-canvas px-1.5 py-0.5 text-[13px] text-ink shadow";
         el.textContent = it.text;
         el.style.display = "none";
         this.layer.appendChild(el);

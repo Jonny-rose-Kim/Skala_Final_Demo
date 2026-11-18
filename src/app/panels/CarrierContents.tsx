@@ -51,10 +51,10 @@ export function CarrierContents({ carrierId, templateId }: { carrierId: string; 
   const away = preview ? Object.values(preview.wafers).filter((w) => w.reservedSlot.carrierId === carrierId && !(w.holder.kind === "carrier_slot" && w.holder.carrierId === carrierId)) : [];
   return (
     <div data-testid="carrier-contents">
-      <div className="text-[12px] text-slate-200" data-testid="foup-wafer-count" data-count={occupied.length}>
+      <div className="text-[13px] text-ink" data-testid="foup-wafer-count" data-count={occupied.length}>
         {carrier ? (
           <>
-            웨이퍼 <span className="font-semibold text-sky-200">{occupied.length}</span>장 / {slots.count} slot
+            웨이퍼 <span className="font-semibold text-accent-strong">{occupied.length}</span>장 / {slots.count} slot
           </>
         ) : (
           "이 시나리오에는 carrier 상태가 없습니다"
@@ -64,26 +64,26 @@ export function CarrierContents({ carrierId, templateId }: { carrierId: string; 
         <div className="flex gap-[2px]">
           {Array.from({ length: slots.count }, (_, i) => i + 1).map((k) => {
             const w = byIndex.get(k);
-            return <div key={k} data-slot={k} data-occupied={w ? "1" : "0"} title={`slot ${k}: ${w ?? "empty"}`} className={`h-4 flex-1 rounded-[2px] border ${w ? "border-sky-300 bg-sky-400/85" : "border-slate-700 bg-slate-900"}`} />;
+            return <div key={k} data-slot={k} data-occupied={w ? "1" : "0"} title={`slot ${k}: ${w ?? "empty"}`} className={`h-4 flex-1 rounded-[2px] border ${w ? "border-accent bg-accent" : "border-line bg-canvas"}`} />;
           })}
         </div>
         {TICKS.filter((k) => k <= slots.count).map((k) => (
-          <span key={k} className="absolute bottom-0 -translate-x-1/2 text-[10px] tabular-nums text-slate-500" style={{ left: `${((k - 0.5) / slots.count) * 100}%` }}>
+          <span key={k} className="absolute bottom-0 -translate-x-1/2 text-[13px] tabular-nums text-ink-muted" style={{ left: `${((k - 0.5) / slots.count) * 100}%` }}>
             {k}
           </span>
         ))}
       </div>
       {occupied.length > 0 && (
-        <ul className="mt-1 text-[11px] text-slate-400">
+        <ul className="mt-1 text-[13px] text-ink-muted">
           {occupied.map((o) => (
             <li key={o.index}>
-              slot {o.index}: <span className="text-slate-200">{o.waferId}</span>
+              slot {o.index}: <span className="text-ink">{o.waferId}</span>
             </li>
           ))}
         </ul>
       )}
       {away.map((w) => (
-        <div key={w.waferId} className="mt-1 text-[11px] text-slate-400" data-testid="carrier-wafer-away">
+        <div key={w.waferId} className="mt-1 text-[13px] text-ink-muted" data-testid="carrier-wafer-away">
           {w.waferId}은 지금 slot 밖에 있습니다: {HOLDER_LABEL[w.holder.kind] ?? w.holder.kind}
           {w.holder.attachment ? ` (${w.holder.attachment})` : ""}
           {w.holder.instanceId ? ` @ ${w.holder.instanceId}` : ""}. 돌아올 slot은 {w.reservedSlot.slotId}입니다.
@@ -104,15 +104,15 @@ export function CarrierInset() {
   const carrier = instances.find((i) => i.mobile && getBundle(i.templateId)?.carrierSlots);
   if (!on || !carrier) return null;
   return (
-    <div className="pointer-events-none w-64 rounded border border-slate-700/70 bg-slate-950/85 px-2.5 py-2" data-testid="carrier-inset">
-      <div className="mb-1 flex items-center justify-between text-[11px]">
-        <span className="font-semibold text-slate-200">{carrier.instanceId} 단면</span>
+    <div className="pointer-events-none w-72 rounded-lg border border-line bg-canvas/95 px-3 py-2.5 shadow-sm" data-testid="carrier-inset">
+      <div className="mb-1 flex items-center justify-between text-[13px]">
+        <span className="font-semibold text-ink">{carrier.instanceId} 단면</span>
         <Button onClick={requestFocusCarrier} title="카메라를 FOUP 단면이 열리는 쪽으로 옮깁니다. 선택한 장비와 보기 모드는 그대로입니다." testId="focus-carrier" className="pointer-events-auto">
           <Crosshair className="h-3 w-3" aria-hidden /> FOUP 보기
         </Button>
       </div>
       <CarrierContents carrierId={carrier.instanceId} templateId={carrier.templateId} />
-      <div className="mt-1 text-[10px] text-amber-200/80" title="Slot map은 시나리오의 scripted carrier state이며 load port mapping sensor 값이 아닙니다.">scripted 상태 · mapping sensor 값 아님</div>
+      <div className="mt-1 text-[13px] text-warn" title="Slot map은 시나리오의 scripted carrier state이며 load port mapping sensor 값이 아닙니다.">scripted 상태 · mapping sensor 값 아님</div>
     </div>
   );
 }

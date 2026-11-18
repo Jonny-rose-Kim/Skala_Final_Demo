@@ -1,7 +1,7 @@
 # Asset attributions
 
-All runtime assets of PECVD FAB Twin V1 are generated locally at build/run time. No external HDRI, texture,
-model, font or CDN resource is loaded while the application runs.
+Geometry, textures and the environment are generated locally at build/run time. The font and the logo below
+are files served from `public/`; no CDN or other external resource is loaded while the application runs.
 
 | Asset | Source | License / note |
 | --- | --- | --- |
@@ -12,6 +12,8 @@ model, font or CDN resource is loaded while the application runs.
 | Plasma volume shader (CCP electrode gap, Remote source tube and afterglow) | `src/plasma/shaders/plasma.glsl.ts`, `plasma.wgsl.ts` | Project code, illustrative approximation |
 | Schematic overlays (gas path, source/precursor traces, slurry, optical path, rail frames, measurement markers) | `src/interaction/gasPathOverlay.ts`, `src/equipment/*/effects.ts`, `src/scene/measurementOverlay.ts` | Project code, illustrative |
 | Icons | `lucide-react` 1.70.0 | ISC license (npm package) |
+| UI font | Pretendard Variable v1.3.9 (orioncactus/pretendard), subset to Latin and KS X 1001 Hangul: `public/fonts/PretendardVariable.subset.woff2` | SIL Open Font License 1.1, `public/fonts/Pretendard-OFL.txt` |
+| SK hynix logo | Official logo image from www.skhynix.com (`/img/common/img_logo_m.png`), unmodified: `public/brand/sk-hynix-logo.png` | SK hynix trademark, used to identify the company; not covered by the project license |
 | 3D engine | `@babylonjs/core` 9.34.0, `@babylonjs/loaders` 9.34.0 | Apache-2.0 |
 | UI | React 19.3.1, Tailwind CSS 4.3.5, Zustand 5.1.0 | MIT |
 
