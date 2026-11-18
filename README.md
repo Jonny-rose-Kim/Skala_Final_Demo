@@ -102,6 +102,7 @@ docs/              설계 문서
 - `docs/visual-design.md` 재질, 조명, 플라즈마 표현 방식
 - `docs/model-assumptions.md` 물리 모델 범위 (아직 구현하지 않음)
 - `docs/status.md` 진행 상황, 테스트 결과, 성능 측정값
+- `docs/flickering_solutions.md` tree 폭을 바꿀 때 3D 화면이 깜빡이는 원인과 해결 방안 (후속 작업)
 - `assets/ATTRIBUTIONS.md` 외부 자료 출처
 
 ## 참고

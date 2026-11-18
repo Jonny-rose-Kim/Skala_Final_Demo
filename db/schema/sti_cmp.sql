@@ -102,7 +102,7 @@ CREATE TABLE cmp_polish_trace (
   equipment_id text NOT NULL REFERENCES cmp_equipment(equipment_id),
   platen_no integer NOT NULL,
   ts timestamptz NOT NULL,
-  run_id text,
+  run_id text REFERENCES cmp_run(run_id),
   step_no integer,
   platen_speed double precision,
   head_speed double precision,

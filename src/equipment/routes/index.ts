@@ -17,7 +17,7 @@ import { CCP_PROCESS_SEGMENT } from "../ccp/scenario";
 import { applyCmpFilm, applyCmpState, cmpFullState, cmpPhases, CMP_PLAN } from "../cmp/scenario";
 import { CMP_TEMPLATE_ID } from "../cmp/template";
 import { stationHandlingPhases, type ProcessSegment } from "../handling/handlingScenario";
-import { applyStationState, stationStateAt, stationTimeline, type StationTimeline } from "../handling/stationScenario";
+import { applyStationState, applyStationTool, stationStateAt, stationTimeline, type StationTimeline } from "../handling/stationScenario";
 import type { StationPlan } from "../handling/stationSequence";
 import { idleToolPose } from "../idle";
 import { OHT_LAYOUT } from "../oht/layout";
@@ -125,6 +125,8 @@ export function routePreview(route: RouteDef, scenario: VisualScenario, t: numbe
     // the deposition tool holds the carrier, the wafer and the FOUP door
     applyStationState({ out, plan: tool.plan, state: st, toolInstanceId: depInst.instanceId, foupInstanceId: foupInst?.instanceId ?? null, stationId: srcStation.stationId, carrierId, waferId, slotId, stageWaferAssetId: tool.stageWaferAssetId, film, reservedSlot: DEMO_RESERVED_SLOT });
   } else if (t < S.cmpStart) {
+    // after the unload the deposition tool keeps its end pose (stage at transfer height, as at the route start)
+    applyStationTool(dp, tool.plan, st);
     out.carriers[carrierId] = { carrierId, holder: ohtState.holder, doorOpen: false, slots: { [slotId]: waferId }, docked: false, dockOffset: 0, yawFromStationId: ohtState.yawFromStationId };
     out.wafers[waferId] = { waferId, holder: { kind: "carrier_slot", carrierId, slotId }, reservedSlot: DEMO_RESERVED_SLOT, frontsideNormalLocal: [0, 1, 0], film, wetState: "dry" };
     if (foupInst) {
@@ -132,16 +134,12 @@ export function routePreview(route: RouteDef, scenario: VisualScenario, t: numbe
       out.instances[foupInst.instanceId].presentedWaferAssetId = "foup_wafer";
     }
   } else {
-    const cmpT = Math.min(t - S.cmpStart, CMP_PLAN.total);
-    const cs = cmpFullState(CMP_PLAN, cmpT);
-    applyCmpState({ out, plan: CMP_PLAN, state: cs, cmpInstanceId: cmpInst.instanceId, foupInstanceId: foupInst?.instanceId ?? null, stationId: dstStation.stationId, carrierId, waferId, slotId, film: applyCmpFilm(film, cs.polish.film) });
-  }
-  const cp = out.instances[cmpInst.instanceId];
-  if (t < S.cmpStart) cp.phaseLabelKo = "대기 (carrier 도착 전)";
-  else {
+    applyStationTool(dp, tool.plan, st);
     const cs = cmpFullState(CMP_PLAN, Math.min(t - S.cmpStart, CMP_PLAN.total));
-    cp.phaseLabelKo = t >= S.cmpEnd ? "완료 (Visual sequence complete)" : cs.labelKo || phase.labelKo;
+    applyCmpState({ out, plan: CMP_PLAN, state: cs, cmpInstanceId: cmpInst.instanceId, foupInstanceId: foupInst?.instanceId ?? null, stationId: dstStation.stationId, carrierId, waferId, slotId, film: applyCmpFilm(film, cs.polish.film) });
+    out.instances[cmpInst.instanceId].phaseLabelKo = t >= S.cmpEnd ? "완료 (Visual sequence complete)" : cs.labelKo || phase.labelKo;
   }
+  if (t < S.cmpStart) out.instances[cmpInst.instanceId].phaseLabelKo = "대기 (carrier 도착 전)";
   out.phaseFocusInstanceId = phase.equipment === "oht" ? ohtInst.instanceId : phase.equipment === "cmp" || phase.equipment === "carrier" ? cmpInst.instanceId : depInst.instanceId;
   return out;
 }

@@ -434,6 +434,8 @@ export function chamberHandlingInput(cfg: GeometryConfig, slitAzimuth: number, r
     slitHeight: cfg.ports.slit.height,
     portFaceR: rOuter + 0.012,
     valveBodySize: cfg.ports.slit.valve_body_size,
+    bottomFlangeR: cfg.chamber.bottom_flange_outer_diameter / 2,
+    slitGate: { thickness: cfg.ports.slit.door_thickness, travel: cfg.ports.slit.gate_travel },
     floorY: floorTopY(cfg),
     stage: { processTopY: p.process_top_y, transferTopY: p.transfer_top_y, edgeRingThickness: p.edge_ring_thickness, liftPinStroke: p.lift_pin_stroke, radius: p.diameter / 2, liftPinCircleRadius: p.lift_pin_circle_diameter / 2 },
   };

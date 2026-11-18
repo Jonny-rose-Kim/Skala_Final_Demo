@@ -577,6 +577,8 @@ export class SceneHost {
     this.clock.configure(def.scenario.durationSec, holdPointSec(def.scenario), true);
     this.frozenTime = null;
     this.lastFocusInstance = null;
+    // an exploded view keeps one frozen snapshot: take it again from the new scenario
+    this.explodeSnapshot = null;
     this.log(`Scenario: ${def.id} (${def.kind}, ${def.scenario.durationSec} s)`);
   }
 
@@ -607,13 +609,25 @@ export class SceneHost {
       if (templateId && templateId !== this.activeTemplateId) {
         this.activeTemplateId = templateId;
         const b = inst!.bundle;
-        // a different template reads best with its own default sector; same-template switches keep the user's sector
-        if (!force) queueMicrotask(() => usePresentationStore.getState().setCutaway({ azimuthDeg: b.cutawayDefault.azimuthDeg, sweepDeg: b.cutawayDefault.sweepDeg }));
+        // a different template reads best with its own default sector; same-template switches keep the user's sector.
+        // Both defaults below are queued: a cutaway or scenario set explicitly in the same tick wins over them.
+        if (!force) {
+          const { azimuthDeg, sweepDeg } = s.cutaway;
+          queueMicrotask(() => {
+            const st = usePresentationStore.getState();
+            if (st.cutaway.azimuthDeg === azimuthDeg && st.cutaway.sweepDeg === sweepDeg) st.setCutaway({ azimuthDeg: b.cutawayDefault.azimuthDeg, sweepDeg: b.cutawayDefault.sweepDeg });
+          });
+        }
         // standalone demonstrations follow the active equipment
         const cur = this.scenarioDef;
         if (!inst?.def.mobile && cur && cur.kind === "standalone" && cur.templateId !== templateId) {
           const next = standaloneScenarioFor(templateId);
-          if (next) queueMicrotask(() => usePresentationStore.getState().setScenario(next.id));
+          const picked = s.scenarioId;
+          if (next)
+            queueMicrotask(() => {
+              const st = usePresentationStore.getState();
+              if (st.scenarioId === picked) st.setScenario(next.id);
+            });
         }
       }
       w.markers.setInstance(inst, inst ? (measurementIndex(inst.templateId) ?? null) : null);
@@ -1086,14 +1100,20 @@ export class SceneHost {
     }
   }
 
-  /** Distance LOD: fine details (fasteners, labels, cable ties) of far, inactive tools are hidden. */
+  /**
+   * Distance LOD: fine details (fasteners, labels, cable ties) of far, inactive tools are hidden. The distance is
+   * taken to the tool's static center or to its vehicle (path joint), whichever is closer; details appear inside
+   * 4.5 m and hide beyond 5 m so orbiting at the limit does not toggle them.
+   */
   private updateLod(s: PresentationState): void {
     const w = this.world!;
     const cam = w.camera.globalPosition;
     for (const [id, inst] of w.instances) {
       const c = w.lodCenters.get(id);
       const active = id === s.activeInstanceId && !s.overview;
-      const near = !c || Vector3.Distance(cam, c) < 4.5;
+      let d = c ? Vector3.Distance(cam, c) : 0;
+      for (const p of inst.pathJointPositions()) d = Math.min(d, Vector3.Distance(cam, p));
+      const near = d < (inst.fineDetailVisible ? 5 : 4.5);
       inst.setFineDetailVisible(active || near || inst.def.mobile === true);
     }
   }

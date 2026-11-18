@@ -95,7 +95,7 @@ COMMENT ON COLUMN ccp_run_step.sp_duration IS '[s]';
 CREATE TABLE ccp_rf_trace (
   equipment_id text NOT NULL REFERENCES ccp_equipment(equipment_id),
   ts timestamptz NOT NULL,
-  run_id text,
+  run_id text REFERENCES ccp_run(run_id),
   step_no integer,
   forward_power double precision,
   reflected_power double precision,
@@ -123,7 +123,7 @@ COMMENT ON COLUMN ccp_rf_trace.vi_phase IS '전압과 전류의 위상차 선택
 CREATE TABLE ccp_chamber_trace (
   equipment_id text NOT NULL REFERENCES ccp_equipment(equipment_id),
   ts timestamptz NOT NULL,
-  run_id text,
+  run_id text REFERENCES ccp_run(run_id),
   step_no integer,
   chamber_pressure double precision,
   throttle_valve_pos double precision,

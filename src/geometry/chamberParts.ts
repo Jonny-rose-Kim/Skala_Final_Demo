@@ -542,7 +542,8 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       jointId: JS,
       build: (kept) => mergeMeshData(rings.map((r) => revolveProfile(r, { segments: 128, ranges: kept, caps: true, smoothAngleDeg: 60 }))),
     });
-    // lift pins (3, flush with the pedestal top at 0) + lift hoop just under the pedestal
+    // lift pins (3, flush with the pedestal top at 0); their drive is not drawn: a hoop moving with the pins would hit
+    // the pedestal at full stroke or the floor at the transfer height
     const pinR = cfg.pedestal.lift_pin_diameter / 2;
     const pinAz = [30 * DEG, 150 * DEG, 270 * DEG];
     for (let i = 0; i < pinAz.length; i++) {
@@ -551,7 +552,6 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
       rotateYMeshData(pin, pinAz[i]);
       fixed(`lift_pin_${i}`, "lift_pins", "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false, jointId: JP });
     }
-    sector("lift_ring", "lift_pins", "stainless", chamfRect(L.liftPinRadius - 0.014, L.liftPinRadius + 0.014, L.pedestalBottomY - 0.014, L.pedestalBottomY - 0.008, 0.001), { segments: 128, jointId: JP });
     const shaft: Vec2[] = [
       [0, L.shaftBottomY],
       [L.rShaft + 0.03, L.shaftBottomY],

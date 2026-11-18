@@ -377,7 +377,7 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
     kind: "support",
     assembly: "wafer_support",
     parentAssetId: "pedestal",
-    description: "Pedestal을 관통하는 3개의 세라믹 pin과 그 아래 lift hoop. Pedestal이 transfer 위치로 내려온 뒤 pin이 올라가 vacuum blade에서 wafer를 받고, 내려가며 wafer를 pedestal에 놓는다. Pin은 0에서 pedestal 표면과 같은 높이다.",
+    description: "Pedestal을 관통하는 3개의 세라믹 pin. Pedestal이 transfer 위치로 내려온 뒤 pin이 올라가 vacuum blade에서 wafer를 받고, 내려가며 wafer를 pedestal에 놓는다. Pin은 0에서 pedestal 표면과 같은 높이다. Pin을 올리는 구동부는 그리지 않았다.",
     materialRef: "ceramic",
     materialNote: "Alumina ceramic pins (가정)",
     selectable: true,

@@ -12,6 +12,7 @@ import { buildPhases, phaseAt, type ScenarioContext, type ScenarioDefinition, ty
 import type { EquipmentInstanceDef } from "../../domain/types";
 import { hoistExtensionForSeat, OHT_LAYOUT, projectOnRail, type OhtLayout } from "./layout";
 import { OHT_TEMPLATE_ID } from "./template";
+import { idleToolPose } from "../idle";
 
 const rows = buildPhases([
   { id: "oht_ready", label: "Ready", labelKo: "대기 (park)", duration: 2, equipment: "oht" },
@@ -120,7 +121,12 @@ export function ohtStandalonePreview(t: number, _seed: number, _animT: number, c
   const phase = phaseAt(OHT_SCENARIO, t);
   const out: PreviewState = { scenarioId: OHT_SCENARIO.id, t, phaseId: phase.id, phaseLabel: phase.label, phaseLabelKo: phase.labelKo, phaseFocusInstanceId: null, instances: {}, carriers: {}, wafers: {}, plasma: { intensity: 0, flicker: 0 }, blockedReason: null };
   const oht = ctx.instances.find((i) => i.templateId === OHT_TEMPLATE_ID);
-  for (const inst of ctx.instances) out.instances[inst.instanceId] = emptyInstancePreview(inst.instanceId);
+  for (const inst of ctx.instances) {
+    // tools outside the demonstration stand in their home pose
+    const p = emptyInstancePreview(inst.instanceId);
+    p.joints = idleToolPose(inst.templateId);
+    out.instances[inst.instanceId] = p;
+  }
   if (!oht) return out;
   const stationIds = Object.keys(ctx.stations);
   const srcId = stationIds.find((id) => ctx.stations[id].instanceId === "PECVD-01.CH-A") ?? stationIds[0];

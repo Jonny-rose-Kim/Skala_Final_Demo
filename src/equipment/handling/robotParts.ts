@@ -341,7 +341,7 @@ export function buildScaraRobotParts(sink: PartSink, spec: ScaraRobotSpec): void
     sink.fixed(`${p}_roll_housing`, wristId, body, rollHouse, { cutaway: "keep", jointId: `${p}_wrist` });
     // edge-grip fork on the roll axis: plate just below the wafer midplane
     const plateTop = yRoll - spec.waferThickness / 2 - spec.padH;
-    const plate = oriented(forkOutline(spec.eeReach, ee.tineQ, 0.165, 0.03), plateTop - spec.eeThickness, plateTop, spec.d0, ax);
+    const plate = oriented(forkOutline(spec.eeReach, ee.tineQ, spec.tipBeyond, 0.03), plateTop - spec.eeThickness, plateTop, spec.d0, ax);
     const stops: MeshData[] = [];
     for (const q of [-(ee.tineQ[0] + ee.tineQ[1]) / 2, (ee.tineQ[0] + ee.tineQ[1]) / 2]) {
       const c = at(spec, spec.eeReach + spec.waferRadius + 0.006, 0, q);

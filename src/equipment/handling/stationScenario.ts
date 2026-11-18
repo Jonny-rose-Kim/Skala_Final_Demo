@@ -63,13 +63,20 @@ export interface StationApplyArgs {
   reservedSlot: { carrierId: string; slotId: string };
 }
 
+/** Tool joints and gate flags of a station state (no carrier or wafer). */
+export function applyStationTool(ip: InstancePreview, plan: StationPlan, state: StationState): void {
+  const v = state.values;
+  ip.joints = { ...ip.joints, ...stationJointValues(plan, v) };
+  const gates = stationGates(v);
+  ip.flags = { ...ip.flags, gateClosed: !gates.slitGateOpen, slitGateOpen: gates.slitGateOpen, atmDoorOpen: gates.atmDoorOpen, loadLockState: String(state.flags.llState ?? "atmosphere"), handlingStep: state.stepId };
+}
+
 /** Write the station state into the preview (tool joints, FOUP door, carrier docking, wafer holder). */
 export function applyStationState(a: StationApplyArgs): void {
   const ip: InstancePreview = a.out.instances[a.toolInstanceId];
   const v = a.state.values;
-  ip.joints = { ...ip.joints, ...stationJointValues(a.plan, v) };
+  applyStationTool(ip, a.plan, a.state);
   const gates = stationGates(v);
-  ip.flags = { ...ip.flags, gateClosed: !gates.slitGateOpen, slitGateOpen: gates.slitGateOpen, atmDoorOpen: gates.atmDoorOpen, loadLockState: String(a.state.flags.llState ?? "atmosphere"), handlingStep: a.state.stepId };
   const asset = stationPresentedAsset(a.state.holder, a.stageWaferAssetId);
   if (asset) {
     ip.presentedWaferId = a.waferId;

@@ -108,10 +108,9 @@ export function portedShell(o: PortedShellOptions): MeshData {
     const nUniform = Math.max(8, Math.ceil((range.sweep / TAU) * segments));
     let phis: number[] = [];
     for (let j = 0; j <= nUniform; j++) phis.push(start + (range.sweep * j) / nUniform);
-    for (const p of patches) {
-      phis = phis.filter((v) => !(v > p.phiA + 1e-9 && v < p.phiB - 1e-9));
-      phis.push(p.phiA, p.phiB);
-    }
+    // the uniform breakpoints inside a patch stay: the rows above and below a wide port must follow the arc
+    // (one quad across the port would draw the wall there as a flat chord, well inside the true radius)
+    for (const p of patches) phis.push(p.phiA, p.phiB);
     if (full) phis = phis.filter((v) => v < end - 1e-9); // avoid duplicate seam; we close by wrapping
     phis.sort((a, b) => a - b);
     phis = phis.filter((v, i, arr) => i === 0 || v - arr[i - 1] > 1e-9);
@@ -260,17 +259,19 @@ export function portedShell(o: PortedShellOptions): MeshData {
       } else {
         const ha = p.halfAngleRect;
         const hh = p.halfHeightRect;
-        const faces: { phi0: number; phi1: number; ya: number; yb: number; n: Vec3 }[] = [
-          { phi0: az - ha, phi1: az + ha, ya: cy - hh, yb: cy - hh, n: [0, 1, 0] }, // bottom face normal up
-          { phi0: az - ha, phi1: az + ha, ya: cy + hh, yb: cy + hh, n: [0, -1, 0] }, // top face normal down
+        const faces: { ya: number; n: Vec3 }[] = [
+          { ya: cy - hh, n: [0, 1, 0] }, // bottom face normal up
+          { ya: cy + hh, n: [0, -1, 0] }, // top face normal down
         ];
+        // the hole edges share the wall's breakpoints, so the bore faces meet the cells above / below without cracks
+        const edgePhis = phiCells.filter((v) => v >= az - ha - 1e-9 && v <= az + ha + 1e-9);
         for (const f of faces) {
           // arc strip from inner to outer radius across phi
-          const n = 10;
+          const n = edgePhis.length - 1;
           const row0: number[] = [];
           const row1: number[] = [];
           for (let j = 0; j <= n; j++) {
-            const phi = f.phi0 + ((f.phi1 - f.phi0) * j) / n;
+            const phi = edgePhis[j];
             const c = Math.cos(phi);
             const s = Math.sin(phi);
             row0.push(pushVertex(md, [rIn * c, f.ya, rIn * s], f.n, [phi * rIn * uvScale, 0]));

@@ -139,22 +139,35 @@ export class FabEnvironment {
     const [mx, mz] = c.module;
     const tb = c.tbar_width;
     const cy = this.ceilingY;
+    // grid lines every module from the bay corner, closed at the far edges; the last row / column of modules is
+    // cut to the bay size and gets plain panels
+    const lines = (a0: number, a1: number, m: number) => {
+      const out: number[] = [];
+      for (let a = a0; a < a1 - 1e-6; a += m) out.push(a);
+      out.push(a1);
+      return out;
+    };
+    const gx = lines(f.x0, f.x1, mx);
+    const gz = lines(f.z0, f.z1, mz);
     const grid: MeshData[] = [];
-    for (let x = f.x0; x <= f.x1 + 1e-6; x += mx) grid.push(box(x - tb / 2, x + tb / 2, cy, cy + c.tbar_depth, f.z0, f.z1, 0.002));
-    for (let z = f.z0; z <= f.z1 + 1e-6; z += mz) grid.push(box(f.x0, f.x1, cy + 0.002, cy + c.tbar_depth - 0.002, z - tb / 2, z + tb / 2, 0.002));
+    for (const x of gx) grid.push(box(x - tb / 2, x + tb / 2, cy, cy + c.tbar_depth, f.z0, f.z1, 0.002));
+    for (const z of gz) grid.push(box(f.x0, f.x1, cy + 0.002, cy + c.tbar_depth - 0.002, z - tb / 2, z + tb / 2, 0.002));
     this.add(this.ceiling, "env.ceiling.grid", mergeMeshData(grid), materials.get("painted_offwhite"));
     const ffu: MeshData[] = [];
     const ffuFace: MeshData[] = [];
     const lights: MeshData[] = [];
-    let ix = 0;
-    for (let x = f.x0; x + mx <= f.x1 + 1e-6; x += mx, ix++) {
-      let iz = 0;
-      for (let z = f.z0; z + mz <= f.z1 + 1e-6; z += mz, iz++) {
+    for (let ix = 0; ix < gx.length - 1; ix++) {
+      const x = gx[ix];
+      const xFull = gx[ix + 1] - x > mx - 1e-6;
+      for (let iz = 0; iz < gz.length - 1; iz++) {
+        const z = gz[iz];
         const cx0 = x + tb / 2;
-        const cx1 = x + mx - tb / 2;
+        const cx1 = gx[ix + 1] - tb / 2;
         const cz0 = z + tb / 2;
-        const cz1 = z + mz - tb / 2;
-        if (iz % c.light_every === 1) lights.push(box(cx0 + 0.02, cx1 - 0.02, cy + 0.004, cy + 0.02, cz0 + 0.18, cz1 - 0.18, 0.002));
+        const cz1 = gz[iz + 1] - tb / 2;
+        const full = xFull && gz[iz + 1] - z > mz - 1e-6;
+        if (!full) ffuFace.push(floorQuad(cx0, cx1, cz0, cz1, cy + 0.008, 0.6));
+        else if (iz % c.light_every === 1) lights.push(box(cx0 + 0.02, cx1 - 0.02, cy + 0.004, cy + 0.02, cz0 + 0.18, cz1 - 0.18, 0.002));
         else if (c.ffu_pattern[ix % c.ffu_pattern.length]) {
           ffu.push(box(cx0, cx1, cy + c.tbar_depth, cy + c.tbar_depth + 0.12, cz0, cz1, 0.006));
           ffuFace.push(floorQuad(cx0, cx1, cz0, cz1, cy + 0.006, 0.3));

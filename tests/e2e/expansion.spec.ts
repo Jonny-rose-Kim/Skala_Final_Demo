@@ -245,6 +245,8 @@ test.describe("Expansion: Remote ICP PECVD, STI CMP, OHT", () => {
           st.setOverlay("markers", true);
         }, [inst, scen] as const);
         await page.waitForTimeout(200);
+        // the scenario picked together with the instance runs (the queued standalone default does not replace it)
+        expect(await page.evaluate(() => window.__pecvdTwin!.scenario())).toBe(scen);
         await page.evaluate(() => {
           const st = window.__pecvdTwin!.store.getState();
           st.setViewMode("xray");

@@ -385,7 +385,8 @@ export function heatedStageParts(sink: PartSink, p: HeatedStageParams): void {
     rings.push(circleProfile(R, (h.y0 + h.y1) / 2, h.rElement, 14));
   }
   sink.sectorCustom("heater_rings", ids.heater, "nichrome", (kept) => mergeMeshData(rings.map((r) => revolveProfile(r, { segments: 128, ranges: kept, caps: true, smoothAngleDeg: 60 }))), { castShadow: false, capProfile: { outer: rings[0], holes: [] }, jointId: js });
-  // lift pins: tops flush with the stage surface at value 0, carried by a hoop just under the stage
+  // lift pins: tops flush with the stage surface at value 0; their drive is not drawn (no room for a hoop under the
+  // lowered stage)
   const pinAz = [30 * DEG, 150 * DEG, 270 * DEG];
   for (let i = 0; i < pinAz.length; i++) {
     const pin = revolveProfile(chamfRect(0, p.liftPins.r, pd.bottomY - 0.008, pd.topY, 0.0008), { segments: 16 });
@@ -393,7 +394,6 @@ export function heatedStageParts(sink: PartSink, p: HeatedStageParams): void {
     rotateYMeshData(pin, pinAz[i]);
     sink.fixed(`lift_pin_${i}`, ids.liftPins, "ceramic", pin, { cutaway: "hide-in-sector", azimuth: pinAz[i], castShadow: false, jointId: jp });
   }
-  sink.sector("lift_ring", ids.liftPins, "stainless", chamfRect(p.liftPins.radius - 0.014, p.liftPins.radius + 0.014, pd.bottomY - 0.014, pd.bottomY - 0.008, 0.001), { segments: 128, jointId: jp });
   const shaft: Vec2[] = [
     [0, p.shaft.bottomY],
     [p.shaft.r + 0.03, p.shaft.bottomY],

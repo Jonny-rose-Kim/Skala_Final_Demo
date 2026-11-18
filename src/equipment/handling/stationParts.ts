@@ -12,7 +12,7 @@ import { chamferedBox, mergeMeshData, prismY, rectProfile, revolveProfile, rotat
 import { PartSink, chamfRect, type Mat } from "../../geometry/sharedParts";
 import { buildScaraRobotParts, type ScaraRobotSpec } from "./robotParts";
 import { waferHalfMeshes } from "../../geometry/waferParts";
-import type { HandlingStationLayout } from "./stationLayout";
+import { SLIT_BONNET_HEIGHT, SLIT_GATE_INSET, SLIT_GATE_MARGIN, type HandlingStationLayout } from "./stationLayout";
 
 /** Asset ids of the station components (kept in one place so template, parts and sequence agree). */
 export const STATION_IDS = {
@@ -439,24 +439,30 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
   const motor = g.cylY(0.11, e.ffuTopY, e.ffuTopY + 0.06, (e.r0 + e.r1) / 2, qc, 32, 0.006);
   g.fixed("ffu_box", I.ffu, "painted_offwhite", mergeMeshData([ffu, motor]), { cutaway: "keep" });
   g.fixed("ffu_grille", I.ffu, "dark_steel", mergeMeshData(grille), { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
-  // HMI on a swing arm at the operator side
-  const qh = qR - 0.17;
+  // HMI on a swing arm at the operator side, outside the load port module so the FOUP hoisted by the OHT passes by
+  const hq0 = qc + lp.deckWidth / 2 + 0.005;
+  const hq1 = qR + 0.01;
+  const qh = (hq0 + hq1) / 2;
   const yh = fy + 1.48;
   const arm = g.tube([[e.r1 + 0.005, yh - 0.12, qh], [e.r1 + 0.09, yh - 0.12, qh], [e.r1 + 0.09, yh - 0.02, qh]], 0.012, 0.03);
   g.fixed("hmi_arm", I.hmi, "dark_steel", arm, { cutaway: "keep", castShadow: false });
-  g.fixed("hmi_screen", I.hmi, "painted_offwhite", g.box(e.r1 + 0.075, e.r1 + 0.11, yh, yh + 0.27, qh - 0.19, qh + 0.19, 0.008), { cutaway: "keep" });
-  g.fixed("hmi_glass", I.hmi, "painted_dark", g.box(e.r1 + 0.11, e.r1 + 0.112, yh + 0.02, yh + 0.25, qh - 0.17, qh + 0.17, 0.001), { cutaway: "keep", castShadow: false });
-  // load port module: frame plate with the opening, deck, column, opener rail, indicators
+  g.fixed("hmi_screen", I.hmi, "painted_offwhite", g.box(e.r1 + 0.075, e.r1 + 0.11, yh, yh + 0.27, hq0, hq1, 0.008), { cutaway: "keep" });
+  g.fixed("hmi_glass", I.hmi, "painted_dark", g.box(e.r1 + 0.11, e.r1 + 0.112, yh + 0.02, yh + 0.25, hq0 + 0.02, hq1 - 0.02, 0.001), { cutaway: "keep", castShadow: false });
+  // load port module: frame plate with the opening (flush with the front wall; the docked FOUP rim stops at its face),
+  // deck, column, door guide rails, indicators
   const op = lp.opening;
   const dw = lp.deckWidth / 2;
-  g.fixed("lp_frame_plate", I.loadPort, "painted_offwhite", g.holedPlate(e.r1 - 0.014, e.r1 + 0.012, lp.deckTopY - 0.24, op.y1 + 0.06, qc - dw, qc + dw, [{ y0: op.y0, y1: op.y1, q0: qc - op.width / 2, q1: qc + op.width / 2 }]), { cutaway: "keep" });
+  g.fixed("lp_frame_plate", I.loadPort, "painted_offwhite", g.holedPlate(e.r1 - 0.026, e.r1, bay.y0 + 0.001, bay.y1 - 0.001, bay.q0 + 0.001, bay.q1 - 0.001, [{ y0: op.y0, y1: op.y1, q0: qc - op.width / 2, q1: qc + op.width / 2 }]), { cutaway: "keep" });
   const deckY1 = lp.deckTopY - 0.012;
-  g.fixed("lp_deck", I.loadPort, "stainless", g.box(lp.deckR0 + 0.012, lp.deckR1, deckY1 - lp.deckThickness, deckY1, qc - dw, qc + dw, 0.004), { cutaway: "keep" });
+  g.fixed("lp_deck", I.loadPort, "stainless", g.box(lp.deckR0, lp.deckR1, deckY1 - lp.deckThickness, deckY1, qc - dw, qc + dw, 0.004), { cutaway: "keep" });
   g.fixed("lp_column", I.loadPort, "painted_offwhite", g.box(lp.deckR0 + 0.012, lp.deckR0 + 0.2, fy + 0.02, deckY1 - lp.deckThickness, qc - dw + 0.04, qc + dw - 0.04, 0.006), { cutaway: "keep" });
-  const railR = e.r1 - lp.doorPull - lp.doorPlateThickness - 0.03;
-  g.fixed("lp_opener_rail", I.loadPort, "dark_steel", g.box(railR - 0.02, railR, op.y0 - lp.doorLower - 0.06, op.y1, qc - 0.03, qc + 0.03, 0.003), { cutaway: "keep", castShadow: false });
+  // the pulled door slides down between two guide rails beside the opening, inside the door opener zone (outside the robot swing)
+  const railR0 = e.r1 - lp.doorPull - lp.doorPlateThickness;
+  const rails: MeshData[] = [];
+  for (const sgn of [-1, 1]) rails.push(g.box(railR0, railR0 + lp.doorPlateThickness, op.y0 - lp.doorLower - 0.06, op.y1, qc + sgn * (op.width / 2 + 0.004), qc + sgn * (op.width / 2 + 0.024), 0.003));
+  g.fixed("lp_opener_rail", I.loadPort, "dark_steel", mergeMeshData(rails), { cutaway: "keep", castShadow: false });
   const leds: MeshData[] = [];
-  for (let k = 0; k < 4; k++) leds.push(g.box(e.r1 + 0.012, e.r1 + 0.016, op.y1 + 0.02, op.y1 + 0.035, qc - 0.12 + k * 0.08, qc - 0.09 + k * 0.08, 0.001));
+  for (let k = 0; k < 4; k++) leds.push(g.box(e.r1, e.r1 + 0.004, op.y1 + 0.02, op.y1 + 0.035, qc - 0.12 + k * 0.08, qc - 0.09 + k * 0.08, 0.001));
   g.fixed("lp_indicators", I.loadPort, "safety_marking", mergeMeshData(leds), { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
   // dock plate + kinematic pins (lp_dock); FOUP pad (px, pz) -> station (seat - px, -pz) because the FOUP +X faces the tool
   const dock = g.box(lp.seatR - 0.18, lp.seatR + 0.18, deckY1, lp.deckTopY, qc - 0.17, qc + 0.17, 0.003);
@@ -478,6 +484,8 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
  * Slit gate valve between the chamber port face and the load lock adapter: body with a through
  * opening, gate plate (moves down on `slit_gate`), pneumatic actuator, bonnet bolts, and the two limit
  * switch bodies of the existing gate status instrument (one instrument, one body bracket).
+ * The gate seals on the load-lock side of the body and retreats into the bonnet; bonnet and actuator hang
+ * outside the chamber's bottom flange (`slit.lowerR0`).
  */
 export function buildSlitGateValve(sink: PartSink, S: HandlingStationLayout, doorThickness: number, gateTravel: number): void {
   const g = new StationGeom(S.az, sink);
@@ -486,26 +494,33 @@ export function buildSlitGateValve(sink: PartSink, S: HandlingStationLayout, doo
   const r0 = sl.valveR0;
   const r1 = sl.valveR1;
   const yc = sl.centerY;
-  const body = g.framedPlate(r0, r1, yc - vh / 2, yc + vh / 2, -vw / 2, vw / 2, { y0: sl.y0, y1: sl.y1, q0: -sl.width / 2, q1: sl.width / 2 }, 0.005);
-  const bonnet = g.box(r0 + 0.01, r1 - 0.01, yc - vh / 2 - 0.05, yc - vh / 2, -vw / 2 + 0.04, vw / 2 - 0.04, 0.004);
+  const yb = yc - vh / 2;
+  const gm = SLIT_GATE_MARGIN;
+  const bonnetR0 = sl.lowerR0;
+  const bonnetR1 = r1 - 0.01;
+  const bonnetQ = Math.max(vw / 2 - 0.04, sl.width / 2 + 0.025);
+  const actR = (bonnetR0 + bonnetR1) / 2;
+  const body = g.framedPlate(r0, r1, yb, yc + vh / 2, -vw / 2, vw / 2, { y0: sl.y0, y1: sl.y1, q0: -sl.width / 2, q1: sl.width / 2 }, 0.005);
+  const bonnet = g.box(bonnetR0, bonnetR1, yb - SLIT_BONNET_HEIGHT, yb, -bonnetQ, bonnetQ, 0.004);
   sink.fixed("slit_valve_body", STATION_IDS.slitValve, "aluminum_machined", mergeMeshData([body, bonnet]), { cutaway: "hide-in-sector", azimuth: S.az });
-  const act = g.cylY(0.028, yc - vh / 2 - 0.21, yc - vh / 2 - 0.05, (r0 + r1) / 2, 0, 32, 0.003);
-  const rod = g.cylY(0.01, yc - vh / 2 - 0.25, yc - vh / 2 - 0.21, (r0 + r1) / 2, 0, 16);
+  const act = g.cylY(0.028, yb - 0.21, yb - SLIT_BONNET_HEIGHT, actR, 0, 32, 0.003);
+  const rod = g.cylY(0.01, yb - 0.25, yb - 0.21, actR, 0, 16);
   // limit switch pair + cable of the gate status instrument (sensor body with bracket and cable)
-  const swR = (r0 + r1) / 2;
-  const sw: MeshData[] = [g.box(swR - 0.012, swR + 0.012, yc - vh / 2 - 0.2, yc - vh / 2 - 0.06, 0.032, 0.036, 0.001)];
-  for (const yy of [yc - vh / 2 - 0.08, yc - vh / 2 - 0.18]) sw.push(g.box(swR - 0.012, swR + 0.012, yy - 0.012, yy + 0.012, 0.036, 0.058, 0.002));
-  const cable = g.tube([[swR, yc - vh / 2 - 0.19, 0.058], [swR, yc - vh / 2 - 0.27, 0.07], [swR + 0.06, yc - vh / 2 - 0.3, 0.07]], 0.003, 0.02, 8);
+  const swR = actR;
+  const sw: MeshData[] = [g.box(swR - 0.012, swR + 0.012, yb - 0.2, yb - 0.06, 0.032, 0.036, 0.001)];
+  for (const yy of [yb - 0.08, yb - 0.18]) sw.push(g.box(swR - 0.012, swR + 0.012, yy - 0.012, yy + 0.012, 0.036, 0.058, 0.002));
+  // the cable leaves sideways (along q), inside the process enclosure
+  const cable = g.tube([[swR, yb - 0.19, 0.058], [swR, yb - 0.27, 0.07], [swR, yb - 0.3, 0.13]], 0.003, 0.02, 8);
   sink.fixed("slit_valve_actuator", STATION_IDS.slitValve, "stainless", mergeMeshData([act, rod]), { cutaway: "hide-in-sector", azimuth: S.az, pickable: true });
   sink.fixed("slit_valve_switches", STATION_IDS.slitValve, "painted_dark", mergeMeshData([...sw, cable]), { cutaway: "hide-in-sector", azimuth: S.az, castShadow: false });
   const bolts: MeshData[] = [];
   for (let i = 0; i < 6; i++) bolts.push(g.cylR(0.006, r1, r1 + 0.006, i % 2 === 0 ? yc + vh / 2 - 0.02 : yc - vh / 2 + 0.02, -vw / 2 + 0.03 + Math.floor(i / 2) * ((vw - 0.06) / 2), 16));
   sink.fixed("slit_valve_bolts", STATION_IDS.slitValve, "dark_steel", mergeMeshData(bolts), { cutaway: "hide-in-sector", azimuth: S.az, pickable: false, castShadow: false, lod: "fine" });
-  // gate plate (closed = covers the slit, seals on the chamber side)
-  const gr0 = r0 + 0.012;
-  const gate = g.box(gr0, gr0 + doorThickness, sl.y0 - 0.015, sl.y1 + 0.015, -sl.width / 2 - 0.02, sl.width / 2 + 0.02, 0.002);
-  const seal = g.box(gr0 - 0.002, gr0, sl.y0 - 0.008, sl.y1 + 0.008, -sl.width / 2 - 0.012, sl.width / 2 + 0.012, 0.0008);
-  const gateRod = g.cylY(0.008, sl.y0 - 0.015 - gateTravel, sl.y0 - 0.015, gr0 + doorThickness / 2, 0, 12);
+  // gate plate (closed = covers the slit, seals on the load-lock side); its rod runs down the actuator axis
+  const gr1 = r1 - SLIT_GATE_INSET;
+  const gate = g.box(gr1 - doorThickness, gr1, sl.y0 - gm, sl.y1 + gm, -sl.width / 2 - 0.02, sl.width / 2 + 0.02, 0.002);
+  const seal = g.box(gr1, gr1 + 0.002, sl.y0 - 0.008, sl.y1 + 0.008, -sl.width / 2 - 0.012, sl.width / 2 + 0.012, 0.0008);
+  const gateRod = g.cylY(0.008, sl.y0 - gm - gateTravel, sl.y0 - gm, actR, 0, 12);
   sink.fixed("slit_gate_plate", STATION_IDS.slitGate, "aluminum_machined", mergeMeshData([gate, gateRod]), { cutaway: "hide-in-sector", azimuth: S.az, jointId: STATION_JOINTS.slitGate });
   sink.fixed("slit_gate_seal", STATION_IDS.slitGate, "rubber_membrane", seal, { cutaway: "hide-in-sector", azimuth: S.az, jointId: STATION_JOINTS.slitGate, castShadow: false, pickable: false, lod: "fine" });
 }

@@ -166,7 +166,7 @@ export const OHT_COMPONENTS: ComponentDef<OhtLayout>[] = [
     selectable: true,
     explode: DOWN(0.6),
     cutaway: "keep",
-    dimensions: (L) => [mm("Finger height", L.cfg.hoist.finger_size[1]), mm("Open gap", L.cfg.hoist.finger_open_gap), mm("Closed gap", L.cfg.hoist.finger_closed_gap)],
+    dimensions: (L) => [mm("Finger height", L.cfg.hoist.finger_size[1]), mm("Open gap (lips)", L.cfg.hoist.finger_open_gap), mm("Closed gap (lips)", L.cfg.hoist.finger_closed_gap)],
   },
   {
     assetId: "gripper_finger_b",

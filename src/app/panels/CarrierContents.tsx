@@ -61,7 +61,8 @@ export function CarrierContents({ carrierId, templateId }: { carrierId: string; 
         )}
       </div>
       <div className="relative mt-2 pb-4" role="img" aria-label={`slot map: ${occupied.length} / ${slots.count} occupied`} data-testid="foup-slot-map">
-        <div className="flex gap-1">
+        {/* takes the pointer even inside the drag-through inset, so the per-slot tooltips show */}
+        <div className="pointer-events-auto flex gap-1">
           {Array.from({ length: slots.count }, (_, i) => i + 1).map((k) => {
             const w = byIndex.get(k);
             return <div key={k} data-slot={k} data-occupied={w ? "1" : "0"} title={`slot ${k}: ${w ?? "empty"}`} className={`h-4 flex-1 rounded-[2px] border ${w ? "border-accent bg-accent" : "border-line bg-canvas"}`} />;
@@ -95,7 +96,8 @@ export function CarrierContents({ carrierId, templateId }: { carrierId: string; 
 
 /**
  * Viewport inset while the FOUP section view is on: wafer count and slot map next to the cut FOUP, and a
- * button that brings the camera to the FOUP. Only the button takes pointer input; camera drags pass through.
+ * button that brings the camera to the FOUP. Only the button, the slot strip and the note take pointer input
+ * (the latter two for their tooltips); camera drags pass through the rest.
  */
 export function CarrierInset() {
   const on = usePresentationStore((s) => s.carrierSection);
@@ -112,7 +114,7 @@ export function CarrierInset() {
         </Button>
       </div>
       <CarrierContents carrierId={carrier.instanceId} templateId={carrier.templateId} />
-      <div className="mt-1 text-meta text-warn" title="Slot map은 시나리오의 scripted carrier state이며 load port mapping sensor 값이 아닙니다.">scripted 상태 · mapping sensor 값 아님</div>
+      <div className="pointer-events-auto mt-1 text-meta text-warn" title="Slot map은 시나리오의 scripted carrier state이며 load port mapping sensor 값이 아닙니다.">scripted 상태 · mapping sensor 값 아님</div>
     </div>
   );
 }

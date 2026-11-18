@@ -23,7 +23,7 @@
     "travel_reference_z": -4.6,
     "park_position_z": -4.6
   },
-  "hoist": { "stroke": 1.50, "belt_count": 4, "belt_offsets": [[0.10, 0.14], [-0.10, 0.14], [0.10, -0.14], [-0.10, -0.14]], "belt_width": 0.02, "belt_thickness": 0.004, "belt_base_length": 0.03, "gripper_plate_size": [0.36, 0.03, 0.36], "finger_size": [0.03, 0.07, 0.10], "finger_open_gap": 0.17, "finger_closed_gap": 0.10, "finger_lip": 0.02 },
+  "hoist": { "stroke": 1.50, "belt_count": 4, "belt_offsets": [[0.10, 0.14], [-0.10, 0.14], [0.10, -0.14], [-0.10, -0.14]], "belt_width": 0.02, "belt_thickness": 0.004, "belt_base_length": 0.03, "gripper_plate_size": [0.36, 0.03, 0.36], "finger_size": [0.03, 0.038, 0.10], "finger_open_gap": 0.17, "finger_closed_gap": 0.10, "finger_lip": 0.02 },
   "foup": { "note": "Closed 25-slot FOUP. Origin = bottom seating reference (kinematic coupling center); the wafer stack center sits on the same vertical line; the front door faces +X. Values are design assumptions, not a product drawing.", "body_size": [0.42, 0.335, 0.39], "door_face_x": 0.215, "door_thickness": 0.028, "door_inset": 0.0, "frame_rim": 0.016, "wall_thickness": 0.006, "opening_size": [0.34, 0.28], "opening_bottom_y": 0.045, "flange_size": [0.12, 0.012, 0.12], "flange_neck_height": 0.04, "flange_neck_radius": 0.02, "handle_size": [0.13, 0.026, 0.03], "coupling_pad_size": 0.03, "coupling_pad_height": 0.006, "coupling_pad_positions": [[0.06, 0.09], [0.06, -0.09], [-0.1, 0.0]], "slot_count": 25, "slot_pitch": 0.01, "slot1_height": 0.065, "slot_rib_depth": 0.05, "wafer_center_x": 0.0 },
   "station": { "approach_clearance": 0.05, "lateral_tolerance": 0.006 }
 }

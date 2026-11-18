@@ -105,7 +105,11 @@ export interface CmpFrontLayout {
   loadPort: { deckR0: number; deckR1: number; deckTopY: number; deckWidth: number; deckThickness: number; seatR: number; dockedR: number; dockStroke: number; opening: { width: number; y0: number; y1: number; centerY: number }; doorPull: number; doorLower: number; doorPlateThickness: number };
   foup: FoupInterface;
   slotY: (slot: number) => number;
-  dry: { geom: ScaraGeom; shoulderY0: number; baseTopY: number; supportOffset: number; floorY: number; swingRadius: number };
+  /**
+   * `turnRho`: wafer-center reach while the dry robot turns or waits. Facing the FOUP the wrist hub sits behind the
+   * axis toward the transfer tower, facing the tower the wafer edge points at it; both stay clear of the tower.
+   */
+  dry: { geom: ScaraGeom; shoulderY0: number; baseTopY: number; supportOffset: number; floorY: number; swingRadius: number; turnRho: { foup: number; tower: number } };
   wet: { geom: ScaraGeom; shoulderY0: number; baseTopY: number; rollAxisY0: number; floorY: number; swingRadius: number; rollAxisHeight: number; transitHeight: number; overhead: { beamTopY: number; housingTopY: number; beamX: [number, number]; beamGap: number } };
   tower: { x: number; z: number; half: number; dryerPlaneY: number; spinDrop: number; flipPlaneY: number; flipAxisY: number; dryerTopY: number; flipTopY: number };
   cleaner: { x: number; z: number; planeY: number; size: Vec3Tuple; baseY: number };
@@ -285,6 +289,9 @@ export function deriveCmpLayout(cfg: CmpGeometryConfig): CmpLayout {
   };
 }
 
+/** Dryer shutters hang on the outside of the transfer tower walls. */
+export const TOWER_SHUTTER_THICKNESS = 0.01;
+
 /** Front end: EFEM / load port in the CMP station frame (az = pi), robot heights, tower, cleaner, rinse station. */
 export function deriveCmpFront(cfg: CmpGeometryConfig, cupPinTopY: number): CmpFrontLayout {
   const fe = cfg.front_end;
@@ -312,6 +319,10 @@ export function deriveCmpFront(cfg: CmpGeometryConfig, cupPinTopY: number): CmpF
   const beamTopY = fe.enclosure.top_y - 0.012;
   const housingTopY = beamTopY + 0.06 + wr.z_stroke + 0.03;
   const rinseAz = (fe.rinse_station.azimuth_from_wet_robot_deg * Math.PI) / 180;
+  // dry robot turn poses: wrist hub (facing the FOUP) and wafer edge (facing the tower) 15 mm off the tower face,
+  // which carries the dry-side shutter (10 mm) on its outside
+  const towerGap = Math.abs(dr.axis_x - fe.tower.x) - fe.tower.half_size - TOWER_SHUTTER_THICKNESS;
+  const turnRho = { foup: dr.ee_reach + dr.hub_radius - (towerGap - 0.015), tower: towerGap - 0.015 - cfg.wafer.diameter / 2 };
   return {
     az: Math.PI,
     efem: { r0, r1, qc, width: fe.efem.width, topY: fe.efem.height_above_floor, ffuTopY: fe.efem.height_above_floor + fe.efem.ffu_height, doorZoneR: r1 - fe.efem.door_zone_depth },
@@ -325,6 +336,7 @@ export function deriveCmpFront(cfg: CmpGeometryConfig, cupPinTopY: number): CmpF
       supportOffset: drySupport,
       floorY: 0.06,
       swingRadius: Math.max(dr.link_length + dr.hub_radius, dr.ee_reach + dr.hub_radius, dr.tip_beyond_center ?? 0.12, 0.15),
+      turnRho,
     },
     wet: {
       geom: { axisXZ: [wr.axis_x, wr.axis_z], d0: [0, -1], linkLength: wr.link_length, eeReach: wr.ee_reach },
@@ -431,7 +443,7 @@ export function validateCmpConfig(cfg: CmpGeometryConfig): ValidationReport {
     must(rho - g.eeReach < 2 * g.linkLength - 0.02 && rho - g.eeReach > 0.05, `${name} must be reachable (rho ${rho.toFixed(3)} m)`);
   }
   // wet robot wrist stays outside the alcove, the tower and the cleaner when reaching in
-  must(L.loadCup.z + reach(wetG, L.loadCup.x, L.loadCup.z) - wetG.eeReach - fe.wet_robot.hub_radius >= L.loadCup.alcove.z1 + 0.005, "wet robot wrist must stay outside the alcove");
+  must(wetG.axisXZ[1] - (reach(wetG, L.loadCup.x, L.loadCup.z) - wetG.eeReach) - fe.wet_robot.hub_radius >= L.loadCup.alcove.z1 + 0.005, "wet robot wrist must stay outside the alcove");
   must(wetG.axisXZ[0] - (reach(wetG, tw.x, tw.z) - wetG.eeReach) - fe.wet_robot.hub_radius >= tw.x + tw.half + 0.005, "wet robot wrist must stay outside the transfer tower");
   must(wetG.axisXZ[1] + (reach(wetG, F.cleaner.x, F.cleaner.z) - wetG.eeReach) + fe.wet_robot.hub_radius <= F.cleaner.z - F.cleaner.size[2] / 2 - 0.005, "wet robot wrist must stay outside the cleaner");
   // wet robot swing (wafer over the axis) clears the tower, the cleaner and the alcove
@@ -441,6 +453,22 @@ export function validateCmpConfig(cfg: CmpGeometryConfig): ValidationReport {
   // dry robot inside the EFEM; tower straddles the EFEM back wall
   must(-dryG.axisXZ[0] - F.dry.swingRadius >= F.efem.r0 + 0.02 && -dryG.axisXZ[0] + F.dry.swingRadius <= F.efem.doorZoneR - 0.02, "dry robot swing must fit the EFEM depth");
   must(-(tw.x + tw.half) < F.efem.r0 && -(tw.x - tw.half) > F.efem.r0, "transfer tower must straddle the EFEM back wall");
+  // the tower reaches into the EFEM: the dry robot turns with the wafer at turnRho and swings link 1 through the front
+  const tr = F.dry.turnRho;
+  const towerGap = Math.abs(dryG.axisXZ[0] - tw.x) - tw.half - TOWER_SHUTTER_THICKNESS;
+  must(tr.foup > 0 && tr.tower > 0 && tr.tower < tr.foup + 0.05, "dry robot turn reach must be positive on both headings");
+  must(dryG.eeReach - tr.foup + fe.dry_robot.hub_radius <= towerGap - 0.01, "dry robot wrist must stay clear of the transfer tower while facing the FOUP");
+  must(tr.tower + L.rWafer <= towerGap - 0.01, "wafer on the dry robot must stay clear of the transfer tower while facing it");
+  must(-dryG.axisXZ[0] + dryG.linkLength + fe.dry_robot.link_width / 2 <= F.efem.doorZoneR - 0.02, "dry robot link 1 must turn through the EFEM front without reaching the door opener zone");
+  must(-dryG.axisXZ[0] + tr.foup + L.rWafer <= F.efem.doorZoneR - 0.02, "wafer on the dry robot must stay out of the door opener zone while facing the FOUP");
+  // module footprints: transfer tower, cleaner and rinse station do not overlap
+  const cs = F.cleaner.size;
+  must(Math.abs(tw.x - F.cleaner.x) >= tw.half + cs[0] / 2 || Math.abs(tw.z - F.cleaner.z) >= tw.half + cs[2] / 2, "transfer tower and cleaner must not overlap");
+  // the rinse box is turned toward the wet robot: its bounding circle against the cleaner box
+  const rinseR = Math.hypot(fe.rinse_station.size[0], fe.rinse_station.size[2]) / 2;
+  const dx = Math.max(Math.abs(F.rinse.x - F.cleaner.x) - cs[0] / 2, 0);
+  const dz = Math.max(Math.abs(F.rinse.z - F.cleaner.z) - cs[2] / 2, 0);
+  must(Math.hypot(dx, dz) >= rinseR, "rinse station and cleaner must not overlap");
   // load cup pins leave room for the wet robot fork below the wafer
   const plateBottom = F.cupPlaneY - fe.wet_robot.pad_height - fe.wet_robot.ee_thickness - fe.wet_robot.approach_clearance;
   must(plateBottom - L.loadCup.topY >= 0.006, `wet robot fork must pass above the load cup body (${((plateBottom - L.loadCup.topY) * 1000).toFixed(1)} mm)`);

@@ -8,7 +8,7 @@
 import type { AssemblyDef, ComponentDef, ConnectionDef, JointDef, PortDef } from "../../domain/types";
 import { scaraRobotComponents, scaraRobotJoints } from "./robotParts";
 import { EFEM_FLOOR_RAISE, STATION_IDS as I, STATION_JOINTS as J, atmRobotSpec, type ProcessEnclosureSpec } from "./stationParts";
-import { stationPoint, type HandlingStationLayout } from "./stationLayout";
+import { SLIT_GATE_INSET, stationPoint, type HandlingStationLayout } from "./stationLayout";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
 
@@ -45,7 +45,7 @@ export function stationJoints(S: HandlingStationLayout, slitGateTravel: number):
     { jointId: J.llPins, name: "Load lock support pins", kind: "prismatic", origin: P(ll.centerR, ll.pinDropTop), axis: [0, 1, 0], range: [0, ll.pinStroke], unit: "m", homeNote: "0 = pin top이 blade 면 아래(blade가 wafer를 가짐), stroke = robot fork가 들어갈 높이로 상승" },
     { jointId: J.bladeS1, name: "Vacuum blade stage 1", kind: "prismatic", origin: P(S.blade.stageRestR0, S.blade.stageY0), axis: toChamber, range: [0, S.blade.s1max], unit: "m", homeNote: "0 = load lock 안으로 후퇴, 양수 = chamber 방향 신장" },
     { jointId: J.bladeS2, name: "Vacuum blade carriage", parentJointId: J.bladeS1, kind: "prismatic", origin: [0, 0, 0], axis: toChamber, range: [0, S.blade.s2max], unit: "m", homeNote: "Stage 1 위 carriage. 두 단 합계가 load lock 중심에서 chamber 축까지의 이송 거리" },
-    { jointId: J.slitGate, name: "Slit valve gate", kind: "prismatic", origin: P(S.slit.valveR0 + 0.012, S.slit.centerY), axis: [0, -1, 0], range: [0, slitGateTravel], unit: "m", homeNote: "0 = 닫힘(slit seal), travel = slit 아래로 후퇴" },
+    { jointId: J.slitGate, name: "Slit valve gate", kind: "prismatic", origin: P(S.slit.valveR1 - SLIT_GATE_INSET, S.slit.centerY), axis: [0, -1, 0], range: [0, slitGateTravel], unit: "m", homeNote: "0 = 닫힘(slit seal), travel = slit 아래로 후퇴" },
   ];
   const spec = atmRobotSpec(S, S.floorY + EFEM_FLOOR_RAISE);
   return [...joints, ...scaraRobotJoints(spec)];
@@ -148,7 +148,7 @@ export function stationComponents<L>(st: (L: L) => HandlingStationLayout, S: Han
     { assetId: I.bladeStage, nodeKey: "station.load_lock.blade_stage", name: "Vacuum blade stage 1", kind: "drive", assembly: "load_lock_module", parentAssetId: I.bladeDrive, description: "Guide 위를 미끄러지는 첫 번째 telescopic stage. Slit을 지나 chamber 안까지 들어가며 stage 위에서 carriage가 다시 움직인다.", materialRef: "aluminum_anodized", materialNote: "Anodized slide (가정)", selectable: true, explode: UP(0.08), cutaway: "keep", jointId: J.bladeS1, dimensions: (L) => [mm("Stage length", st(L).cfg.vacuum_blade.stage_length), mm("Stage stroke", st(L).blade.s1max)] },
     { assetId: I.blade, nodeKey: "station.load_lock.blade", name: "Vacuum transfer blade", kind: "drive", assembly: "load_lock_module", parentAssetId: I.bladeStage, description: "Carriage와 얇은 ceramic blade. Wafer를 4개 pad로 받쳐 load lock과 chamber 사이를 옮긴다. Chamber에서는 lift pin, load lock에서는 support pin과 Z 방향으로 인계한다.", materialRef: "ceramic", materialNote: "Alumina blade, PEEK pads (가정)", selectable: true, explode: UP(0.12), cutaway: "keep", jointId: J.bladeS2, dimensions: (L) => [mm("Blade thickness", st(L).cfg.vacuum_blade.thickness), mm("Blade width", st(L).cfg.vacuum_blade.width), mm("Carriage stroke", st(L).blade.s2max)], label: { text: "Vacuum blade", priority: 2 } },
     { assetId: I.waferBlade, nodeKey: "station.load_lock.blade_wafer", name: "Wafer on vacuum blade", kind: "wafer", assembly: "load_lock_module", parentAssetId: I.blade, description: "Vacuum blade 위 wafer의 표시. Holder가 transfer_blade일 때만 보인다.", materialRef: "silicon_wafer", materialNote: "Presentation of the wafer", selectable: true, explode: UP(0.16), cutaway: "keep", jointId: J.bladeS2, dimensions: () => [mm("Diameter", 0.3)] },
-    { assetId: I.slitGate, nodeKey: "access.slit_valve.gate", name: "Slit valve gate", kind: "valve", assembly: "load_lock_module", parentAssetId: I.slitValve, description: "Slit valve 안에서 아래로 후퇴하는 gate plate. 닫히면 chamber 쪽 slit을 seal한다. Load lock atmospheric door와 동시에 열리지 않는다.", materialRef: "aluminum_machined", materialNote: "Gate plate with o-ring (가정)", selectable: true, explode: ex(0.3), cutaway: "hide-in-sector", azimuthDeg: (S.az * 180) / Math.PI, jointId: J.slitGate, dimensions: (L) => [mm("Slit width", st(L).slit.width), mm("Slit height", st(L).slit.height)] },
+    { assetId: I.slitGate, nodeKey: "access.slit_valve.gate", name: "Slit valve gate", kind: "valve", assembly: "load_lock_module", parentAssetId: I.slitValve, description: "Slit valve 안에서 아래 bonnet으로 후퇴하는 gate plate. 닫히면 load lock 쪽에서 slit을 seal한다. Load lock atmospheric door와 동시에 열리지 않는다.", materialRef: "aluminum_machined", materialNote: "Gate plate with o-ring (가정)", selectable: true, explode: ex(0.3), cutaway: "hide-in-sector", azimuthDeg: (S.az * 180) / Math.PI, jointId: J.slitGate, dimensions: (L) => [mm("Slit width", st(L).slit.width), mm("Slit height", st(L).slit.height)] },
   ];
   if (enclosureIds) {
     comps.push(

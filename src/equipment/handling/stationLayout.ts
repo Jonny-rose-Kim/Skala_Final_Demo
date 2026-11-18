@@ -98,6 +98,10 @@ export interface ChamberHandlingInput {
   /** Radial position of the machined slit port face on the chamber wall. */
   portFaceR: number;
   valveBodySize: Vec3Tuple;
+  /** Outer radius of the chamber's bottom flange: the valve bonnet and actuator below the body stay outside it. */
+  bottomFlangeR: number;
+  /** Slit gate plate thickness and its travel (down = open). */
+  slitGate: { thickness: number; travel: number };
   /** Fab floor height in the instance frame. */
   floorY: number;
   stage: { processTopY: number; transferTopY: number; edgeRingThickness: number; liftPinStroke: number; radius: number; liftPinCircleRadius: number };
@@ -125,7 +129,8 @@ export interface HandlingStationLayout {
   floorY: number;
   /** Wafer bottom when the wafer rides on the vacuum blade (pad top). */
   planeY: number;
-  slit: { centerY: number; width: number; height: number; y0: number; y1: number; portFaceR: number; valveR0: number; valveR1: number; valveSize: Vec3Tuple };
+  /** `lowerR0`: inner radius of the bonnet and gate actuator under the valve body (clear of the chamber bottom flange). */
+  slit: { centerY: number; width: number; height: number; y0: number; y1: number; portFaceR: number; valveR0: number; valveR1: number; valveSize: Vec3Tuple; lowerR0: number };
   adapter: { r0: number; r1: number };
   ll: {
     r0: number;
@@ -203,6 +208,11 @@ export interface HandlingStationLayout {
   /** Task-space targets of the atmospheric robot. */
   targets: { foupRho: number; llRho: number; foupTheta: number; llTheta: number };
 }
+
+/** Slit valve: bonnet height under the body, gate overlap above / below the slit, gate inset from the body's load-lock face. */
+export const SLIT_BONNET_HEIGHT = 0.05;
+export const SLIT_GATE_MARGIN = 0.015;
+export const SLIT_GATE_INSET = 0.012;
 
 /** Station frame (r, y, q) -> instance frame. */
 export function stationPoint(S: { u: [number, number]; p: [number, number] }, r: number, y: number, q: number): Vec3Tuple {
@@ -286,7 +296,7 @@ export function deriveHandlingStation(cfg: HandlingStationConfig, ch: ChamberHan
     p,
     floorY: ch.floorY,
     planeY,
-    slit: { centerY: ch.slitCenterY, width: ch.slitWidth, height: ch.slitHeight, y0: ch.slitCenterY - ch.slitHeight / 2, y1: ch.slitCenterY + ch.slitHeight / 2, portFaceR: ch.portFaceR, valveR0, valveR1, valveSize: ch.valveBodySize },
+    slit: { centerY: ch.slitCenterY, width: ch.slitWidth, height: ch.slitHeight, y0: ch.slitCenterY - ch.slitHeight / 2, y1: ch.slitCenterY + ch.slitHeight / 2, portFaceR: ch.portFaceR, valveR0, valveR1, valveSize: ch.valveBodySize, lowerR0: Math.max(valveR0 + 0.01, ch.bottomFlangeR + 0.004) },
     adapter: { r0: valveR1, r1: adapterR1 },
     ll: {
       r0: llR0,
@@ -357,6 +367,7 @@ export function validateHandlingStation(S: HandlingStationLayout, ch: ChamberHan
   const ar = S.cfg.atm_robot;
   const ll = S.ll;
   const bl = S.blade;
+  must(ll.r0 >= S.slit.valveR1 + 0.002, "load lock must clear the slit valve body");
   // load lock holds the wafer, the retracted blade and the gate retreat
   must(ll.centerR - W - ll.innerR0 >= 0.03, `load lock interior must clear the wafer on the vacuum side (${((ll.centerR - W - ll.innerR0) * 1000).toFixed(0)} mm)`);
   must(ll.innerR1 - (ll.centerR + W) >= 0.03, "load lock interior must clear the wafer on the atmospheric side");
@@ -373,6 +384,14 @@ export function validateHandlingStation(S: HandlingStationLayout, ch: ChamberHan
   const contact = S.planeY - ch.stage.transferTopY;
   must(contact > 0.002 && contact < ch.stage.liftPinStroke - 0.003, "chamber lift pins must take the wafer off the blade within their stroke");
   must(S.slit.portFaceR > ch.stage.radius, "slit port must be outside the stage");
+  // slit valve: bonnet and actuator hang outside the chamber bottom flange; the open gate retreats into the bonnet
+  const sl = S.slit;
+  const bodyBottom = sl.centerY - sl.valveSize[1] / 2;
+  const gateR0 = sl.valveR1 - SLIT_GATE_INSET - ch.slitGate.thickness;
+  must(sl.valveR1 - 0.01 - sl.lowerR0 >= 0.04, `slit valve bonnet needs room outside the chamber bottom flange (${((sl.valveR1 - 0.01 - sl.lowerR0) * 1000).toFixed(0)} mm)`);
+  must(gateR0 >= sl.lowerR0 + 0.002, "slit gate must retreat inside the bonnet, outside the chamber bottom flange");
+  must(sl.y0 - SLIT_GATE_MARGIN - ch.slitGate.travel >= bodyBottom - SLIT_BONNET_HEIGHT + 0.003, "open slit gate must stay inside the bonnet");
+  must(sl.y1 + SLIT_GATE_MARGIN - ch.slitGate.travel <= sl.y0 + 1e-9, "open slit gate must clear the slit");
   // lift pins vs blade footprint in the chamber (pins at 30/150/270 deg on the pin circle)
   for (const deg of [30, 150, 270]) {
     const a = (deg * Math.PI) / 180;
@@ -421,6 +440,7 @@ export function validateHandlingStation(S: HandlingStationLayout, ch: ChamberHan
   const foupOpenY0 = S.loadPort.deckTopY + S.foup.openingBottomY;
   must(S.loadPort.opening.y0 <= foupOpenY0 + 0.002 && S.loadPort.opening.y1 >= foupOpenY0 + S.foup.openingSize[1] - 0.002, "EFEM front opening must cover the FOUP door opening");
   must(S.loadPort.doorLower >= S.loadPort.opening.y1 - S.loadPort.opening.y0 + 0.02, "door opener must lower the door below the opening");
+  must(S.loadPort.doorPull + S.loadPort.doorPlateThickness <= S.cfg.efem.door_zone_depth + 1e-9, "pulled port door and its guide rails must stay inside the door opener zone");
   must(S.efem.topY > S.loadPort.opening.y1 + 0.3, "EFEM must be taller than the load port opening");
   should(S.cfg.efem.height_above_floor < 2.3, "EFEM taller than usual; check OHT clearance");
   return { errors, warnings };

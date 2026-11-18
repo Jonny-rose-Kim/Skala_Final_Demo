@@ -149,6 +149,8 @@ const summary = {
   resizeWithoutRenderInSameFrame: unrendered,
   screencastFrames: shots.length,
   blankFrames: blank.length,
+  dragSec: +((tEnd - tStart) / 1000).toFixed(2),
+  dragFps: +(drag.length / ((tEnd - tStart) / 1000)).toFixed(1),
   dragFrameMs: { frames: drag.length, p50: pct(drag, 0.5), p95: pct(drag, 0.95), max: drag.length ? +drag[drag.length - 1].toFixed(1) : null, over25ms: drag.filter((d) => d > 25).length },
   idleFrameMs: { frames: idle.length, p50: pct(idle, 0.5), p95: pct(idle, 0.95) },
   errors,

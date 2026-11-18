@@ -47,8 +47,34 @@ FOUP 안에 웨이퍼가 몇 장 들었는지 볼 수 있게 FOUP 단면 보기�
 - Tree 제목 옆의 접기 버튼과 위쪽 바의 tree 버튼도 같은 줄로 접고 편다. 전에는 위쪽 바 버튼이 tree를 아예 없앴다.
 - 키보드로는 경계선에 focus를 두고 왼쪽, 오른쪽 화살표로 16 px씩 바꾸고 Enter로 접고 편다.
 - 접혀 있는 동안에도 tree는 화면 뒤에 남아 있어서 검색어와 접어 둔 assembly가 그대로다. 폭은 저장하지 않아서 새로고침하면 기본 폭이다.
-- 3D 캔버스는 기존 ResizeObserver로 폭이 바뀔 때마다 다시 맞춰지므로 끄는 동안에도 그림이 늘어나지 않는다. 좁은 폭에서 잘린 부품 이름은 마우스를 올리면 전체 이름과 설명이 나온다.
+- 3D 캔버스는 기존 ResizeObserver로 폭이 바뀔 때마다 다시 맞춰진다. 다만 폭이 바뀌는 프레임마다 빈 프레임이 하나씩 화면에 나가서 끄는 동안 깜빡인다(아래 남은 문제). 좁은 폭에서 잘린 부품 이름은 마우스를 올리면 전체 이름과 설명이 나온다.
 - 구현: `src/app/panels/TreeDock.tsx`와 store의 `setPanel`.
+
+## 코드 리뷰 반영 (추가 작업)
+
+리뷰에서 나온 부품 충돌과 상태 오류를 고쳤다. 확인은 NullEngine에 실제 bundle을 올리고 모든 시나리오를 0.2 s(route는 0.4 s) 간격으로 돌리며 움직이는 부품의 삼각형 교차를 세는 방식으로 했다. 리뷰가 지적한 교차는 모두 없어졌고, 새로 생긴 교차는 flip 축이 actuator와 bearing에 끼워진 부분뿐이다.
+
+- Load port: door opener rail을 opening 가운데 뒤쪽에서 opening 양옆 바깥으로 옮겼다. 대기 robot과 CMP dry robot이 그 rail을 지나가고 있었다. Frame plate를 EFEM 앞벽과 같은 면으로 맞춰서 dock한 FOUP 테두리가 plate 안에 10 mm 들어가던 것도 고쳤다.
+- HMI 화면을 load port deck 폭 바깥으로 옮겼다. OHT가 FOUP을 올리고 내릴 때 FOUP 옆면이 화면을 지나갔다.
+- Slit valve: gate를 load lock 쪽으로 옮기고 bonnet과 actuator를 chamber 바닥 flange 바깥에 두었다. Bonnet, gate rod, Remote의 열린 gate가 flange 안으로 들어가 있었다. Limit switch 케이블이 process enclosure 판을 지나던 것도 옆으로 돌렸다.
+- 벽과 liner를 만드는 `portedShell`이 넓은 port 위아래 띠를 직선 하나로 그려서, slit 아래 벽이 Remote에서 9 cm, CCP에서 7 cm 안쪽에 있었다. 원호를 따라 그리게 고쳤다. Remote stage, edge ring, heater가 transfer 높이에서 벽을 뚫던 문제가 이것이었다.
+- Remote liner를 바닥 1 mm 위부터 시작하게 내리고 배기 port에도 liner 구멍을 냈다. 전에는 liner 바닥이 slit 바닥과 같아서 slit 구멍이 빠졌고 blade와 wafer가 liner를 지나갔다. Port와 liner 높이 관계를 config validation에 넣었다.
+- Lift hoop를 뺐다. Pin과 함께 움직이면 stroke 끝에서 pedestal 속으로 들어가고, 내린 pedestal 아래에는 들어갈 높이가 없다.
+- Bellows처럼 늘어나는 부품의 단면 cap이 40 mm 위에 그려지고 늘어나지 않았다. 이제 cap도 같은 기준점과 배율을 쓴다.
+- OHT finger: open, closed 간격을 lip 사이 간격으로 보고 다리를 그만큼 바깥에 두었다. Finger 높이를 70 mm에서 38 mm로 줄여 lip이 flange 바로 아래에 오고, 잡은 FOUP의 flange 윗면이 presence sensor에 닿는다. 전에는 닫힌 finger가 flange 안으로 10 mm 들어가고 lip이 FOUP 윗면 속에 있었다.
+- CMP flip station: wafer와 두 robot fork를 가로지르던 rotor bar를 없앴다. Jaw는 guide rod를 따라 움직이고, jaw 바깥쪽 end block이 +Z actuator와 -Z bearing에 축으로 물린다. 열린 jaw가 actuator 안에 1 cm 들어가 있던 것도 같이 없어졌다.
+- CMP dry robot: 대기하거나 돌 때 wafer 중심을 축 앞에 두고(FOUP 쪽 105 mm, tower 쪽 85 mm), FOUP와 tower 사이는 link 1이 EFEM 앞쪽으로 지나가는 방향으로 돈다. 전에는 대기 자세의 손목과 fork가 dryer 하우징 안에 있었고, 돌 때마다 link 1이 tower를 지나갔다.
+- Wet robot이 rinse box에 fork를 넣는 깊이를 fork 끝이 뒷벽 10 mm 앞에 올 때까지로 줄였다. 전에는 뒷벽 밖으로 65 mm 나갔다. Spin dryer bowl 가장자리를 wafer보다 10 mm 바깥으로 넓히고, cleaner rinse spray 표시를 brush 옆으로 옮겼다.
+- 시나리오: CMP와 OHT 단독 시연에서 시연에 나오지 않는 장비가 joint 0 자세 대신 대기 자세로 서 있다. Route A, B는 OHT 구간에 들어가도 증착 장비의 stage가 transfer 높이에 남는다(전에는 CCP 80 mm, Remote 55 mm가 한 프레임에 튀었다). 반복 재생할 때의 첫 자세와도 같다.
+- 분해 보기에서 시나리오를 바꾸면 고정해 둔 자세를 새 시나리오에서 다시 잡는다.
+- 같은 순간에 장비와 시나리오(또는 cutaway)를 함께 바꾸면, 뒤늦게 실행되는 장비 기본값이 직접 고른 값을 덮어쓰지 않는다. E2E의 자원 누적 테스트가 Route A를 실행하지 못했고 QA 캡처 f07의 cutaway가 기본값으로 바뀌던 원인이다.
+- OHT 세부 부품의 거리 LOD를 rail 가운데뿐 아니라 vehicle 위치에서도 재고, 4.5 m 안에서 켜고 5 m 밖에서 끈다. 전에는 vehicle 바로 앞에서도 꺼져서 클릭이 안 됐다.
+- CMP nodeKey 6개를 원래 이름으로 되돌렸다(`post.dry`, `post.dry.chuck`, `post.dry.wafer`, `post.clean`, `post.clean.brushes`, `post.clean.wafer`).
+- QA: `qa/views/final.json`, `routes.json`, `routes2.json`의 v1 시나리오 id를 v2로 바꾸고 같은 단계의 시각으로 옮겼다. `qa/shoot.mjs`는 장비를 먼저 바꾼 뒤 시나리오와 cutaway를 적용하고, 없는 시나리오를 요청하면 멈춘다.
+- FOUP 단면 상자의 slot map과 안내 문구에 마우스를 올리면 툴팁이 나온다. 천장 grid가 bay 끝에서 0.4 m씩 비던 자리를 잘린 panel로 채웠다.
+- Config validation 보강: load lock과 slit valve body, transfer tower와 cleaner, rinse station과 cleaner가 겹치지 않는지, wet robot 손목이 alcove 밖에 있는지(식의 부호가 반대였다), dry robot 회전 자세, slit valve bonnet 공간, door opener 구역.
+- 매 프레임 모든 joint transform을 다시 쓰던 것을 값이 바뀐 joint만 쓰게 했고, route는 CMP 상태를 프레임마다 한 번만 계산한다. CMP의 FOUP door와 gate 판단은 station 공용 함수를 쓴다.
+- DB 스키마: run_id가 비어 있을 수 있는 trace 테이블 5개(`ccp_rf_trace`, `ccp_chamber_trace`, `remote_source_trace`, `remote_chamber_trace`, `cmp_polish_trace`)의 run_id에 run 테이블 외래 키를 더했다. 전에는 step_no가 비어 있으면 없는 run을 가리키는 행이 들어갔다. Run이 없는 시간의 행(run_id NULL)은 그대로 받는다. `docs/diagrams/db-*.png`는 다시 그리지 않았다.
 
 ## 검증 결과
 
@@ -56,9 +82,9 @@ FOUP 안에 웨이퍼가 몇 장 들었는지 볼 수 있게 FOUP 단면 보기�
 | --- | --- |
 | `npm run typecheck` | 통과 |
 | `npm test` | 106개 통과 (8 파일). 상세 장비 작업에서 추가한 `tests/unit/handling.test.ts` 21개, `tests/unit/cmpHandling.test.ts` 13개, FOUP 단면에서 추가한 `tests/unit/foupSection.test.ts` 7개 포함 |
-| `npm run validate:config` | 5개 bundle 오류 0, 경고 0. Station 3개 모두 lateral 0.0 mm, hoist extension 1.093 m |
-| `npm run test:e2e` | 52개 통과 (`chrome-webgl2` 26, `chrome-webgpu` 26). `tests/e2e/handling.spec.ts` 6개, FOUP 단면의 `tests/e2e/foup-section.spec.ts` 2개, tree 폭 조절의 `tests/e2e/tree-dock.spec.ts` 1개(backend마다) 포함. 오른쪽 패널을 지우면서 inspector 내용만 보던 테스트 1개를 지우고, 패널을 쓰던 나머지 확인은 store와 component tree로 바꿨다 |
-| `npm run build` | 통과 (메인 청크 2.53 MB, gzip 667 kB) |
+| `npm run validate:config` | 5개 bundle 오류 0, 경고 0. Station 3개 모두 lateral 0.0 mm, hoist extension 1.081 m (finger가 presence sensor 아래에서 FOUP을 잡게 바꾸면서 12 mm 줄었다) |
+| `npm run test:e2e` | 52개 중 34개 통과, 18개 실패(2026-11-18, 리뷰 반영 후). 실패 18개는 9개 테스트가 두 backend에서 실패한 것으로, 중간 발표용 커밋 `61c597c`가 앱을 Route B 자동 재생으로 시작하고 타임라인과 상단 바 제목을 뺀 것과 맞지 않는 테스트다(`expansion.spec.ts` 4개, `visual-inspection.spec.ts` 5개). 리뷰 반영 전 HEAD에서도 같은 9개가 같은 이유로 실패한다. 나머지는 모두 통과하고, 자원 누적 테스트는 이제 Route A가 실제로 실행되는지도 확인한다 |
+| `npm run build` | 통과 (메인 청크 2.54 MB, gzip 671 kB) |
 | 캡처 중 콘솔 오류 | 0 (WebGL2, WebGPU 모두) |
 
 새 테스트가 확인하는 것:
@@ -172,6 +198,8 @@ vsync를 켜면 WebGL2는 모든 상태에서 60 fps이고, WebGPU는 Remote sou
 - 메인 청크가 2.55 MB다. 장비 bundle을 지연 로딩하면 첫 화면이 빨라진다.
 - CMP 세정의 brush2, megasonic 모듈과 slurry line b, c는 DB에만 있다. 런타임에 넣을지 정해야 한다.
 - MacBook과 Safari에서 확인하지 못했다.
+- Tree 폭을 끄는 동안 3D 화면이 깜빡이고, WebGL2 High에서는 드래그가 끊긴다. 원인과 해결 방안, 측정 방법(`qa/flicker.mjs`)은 `docs/flickering_solutions.md`에 정리했다.
+- CMP 세정 trace(`cmp_clean_trace`)와 두께 측정(`cmp_thickness_measurement`)은 pass_id로 cmp_run과 묶이지만 pass 테이블이 없어서 외래 키로 검사되지 않는다. Platen이 여러 개면 run과 pass가 1:1이 아니라서 pass 테이블을 따로 둘지 정해야 한다.
 
 ## 다음 우선순위
 

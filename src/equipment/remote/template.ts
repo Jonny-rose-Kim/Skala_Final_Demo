@@ -463,7 +463,7 @@ export const REMOTE_COMPONENTS: ComponentDef<RemoteLayout>[] = [
     name: "Wafer lift pins",
     kind: "support",
     assembly: "wafer_stage",
-    description: "Transfer 시 wafer를 들어 올리는 3개 pin과 lift ring (static pose).",
+    description: "Stage를 관통하는 3개 pin. Stage가 transfer 위치로 내려온 뒤 올라가 vacuum blade에서 wafer를 받고, 내려가며 wafer를 stage에 놓는다. Pin을 올리는 구동부는 그리지 않았다.",
     materialRef: "ceramic",
     materialNote: "Ceramic pins (가정)",
     selectable: true,

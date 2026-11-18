@@ -115,6 +115,8 @@ export class EquipmentInstance {
   private isolated: string | null = null;
   private exploded = false;
   private frozenJoints: Record<string, number> | null = null;
+  /** Last value written to each joint node (revolute / prismatic). */
+  private readonly appliedJoints = new Map<string, number>();
   /** Inspection: removable cover panels hidden (display only; never a scripted door state). */
   private coversRemoved = false;
   /** Distance LOD: fine details (fasteners, labels, cable ties) shown. */
@@ -207,6 +209,8 @@ export class EquipmentInstance {
         cap.receiveShadows = true;
         cap.metadata = { ...meta, isCap: true } as InstanceMeshMetadata;
         cap.setEnabled(false);
+        // caps are rebased like the mesh, so a stretch part's cap sits on the same anchor and scales with it
+        if (stretchAnchor) cap.position.set(stretchAnchor[0], stretchAnchor[1], stretchAnchor[2]);
       }
       this.built.push({ part, mesh, cap, baseMaterial: material, capBaseMaterial: capMaterial, rebase, stretchAnchor, sectorRemoved: false, empty: false, capActive: false });
       this.meshesByAsset.get(part.assetId)!.push(mesh);
@@ -324,6 +328,21 @@ export class EquipmentInstance {
     this.refreshVisibility();
   }
 
+  get fineDetailVisible(): boolean {
+    return this.fineVisible;
+  }
+
+  /** World positions of the path joints (a vehicle on its rail); distance LOD measures from them as well. */
+  pathJointPositions(): Vector3[] {
+    const out: Vector3[] = [];
+    for (const j of this.joints) {
+      if (j.kind !== "path") continue;
+      const node = this.jointNodes.get(j.jointId);
+      if (node) out.push(node.getAbsolutePosition());
+    }
+    return out;
+  }
+
   /** Display-only explode offsets; the geometry itself is unchanged. Joint poses freeze while exploded. */
   applyExplode(amount: number, enabled: boolean): void {
     const a = enabled ? amount : 0;
@@ -356,6 +375,9 @@ export class EquipmentInstance {
       const node = this.jointNodes.get(j.jointId);
       if (!node) continue;
       const v = use[j.jointId] ?? 0;
+      // writing a node transform marks its subtree dirty even for the same value: skip joints that did not move
+      if (this.appliedJoints.get(j.jointId) === v) continue;
+      this.appliedJoints.set(j.jointId, v);
       if (j.kind === "revolute") {
         Quaternion.RotationAxisToRef(new Vector3(j.axis[0], j.axis[1], j.axis[2]), v, node.rotationQuaternion!);
         node.position.set(j.origin[0], j.origin[1], j.origin[2]);
@@ -367,7 +389,10 @@ export class EquipmentInstance {
       if (!b.part.stretch) continue;
       const ext = use[b.part.stretch.jointId] ?? 0;
       const k = Math.max(0.001, (b.part.stretch.baseLength + (b.part.stretch.sign ?? 1) * ext) / b.part.stretch.baseLength);
-      if (Math.abs(b.mesh.scaling.y - k) > 1e-6) b.mesh.scaling.y = k;
+      if (Math.abs(b.mesh.scaling.y - k) > 1e-6) {
+        b.mesh.scaling.y = k;
+        if (b.cap) b.cap.scaling.y = k;
+      }
     }
   }
 

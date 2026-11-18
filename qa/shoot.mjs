@@ -21,14 +21,20 @@ await page.waitForFunction(() => window.__pecvdTwin && window.__pecvdTwin.isRead
 await page.waitForTimeout(800);
 console.log("backend:", await page.evaluate(() => window.__pecvdTwin.backend()));
 for (const v of VIEWS) {
+  // the active instance first: switching to another template queues its default cutaway (and its standalone
+  // scenario) as microtasks, which must run before the view's own scenario and cutaway are applied
   await page.evaluate(({ v }) => {
-    const api = window.__pecvdTwin;
-    const st = api.store.getState();
+    const st = window.__pecvdTwin.store.getState();
     st.setQualityPreset("high");
     st.setFollowPhase(false);
     st.setVisual({ visualSeed: 7, plasmaVisible: !v.plasmaOff });
-    if (v.scenario) st.setScenario(v.scenario);
     if (v.instance) st.setActiveInstance(v.instance);
+  }, { v });
+  await page.waitForTimeout(100);
+  await page.evaluate(({ v }) => {
+    const api = window.__pecvdTwin;
+    const st = api.store.getState();
+    if (v.scenario) st.setScenario(v.scenario);
     if (v.overlays) for (const [k, val] of Object.entries(v.overlays)) st.setOverlay(k, val);
     if (st.setCoverMode) st.setCoverMode(v.covers ?? "auto");
     if (st.setEnvironment) st.setEnvironment({ visible: true, ceiling: true, walls: true, ...(v.env ?? {}) });
@@ -40,6 +46,9 @@ for (const v of VIEWS) {
     if (v.measurement) st.selectMeasurement(v.measurement);
   }, { v });
   await page.waitForTimeout(250);
+  // an unknown scenario id falls back to the active tool's standalone scenario: stop instead of capturing it
+  const running = await page.evaluate(() => window.__pecvdTwin.scenario());
+  if (v.scenario && running !== v.scenario) throw new Error(`${v.id}: scenario ${v.scenario} requested, ${running} running`);
   await page.evaluate(({ v }) => {
     const api = window.__pecvdTwin;
     api.freezeTime(v.time ?? 0);

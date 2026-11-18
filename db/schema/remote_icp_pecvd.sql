@@ -94,7 +94,7 @@ COMMENT ON COLUMN remote_run_step.sp_duration IS '[s]';
 CREATE TABLE remote_source_trace (
   equipment_id text NOT NULL REFERENCES remote_equipment(equipment_id),
   ts timestamptz NOT NULL,
-  run_id text,
+  run_id text REFERENCES remote_run(run_id),
   step_no integer,
   rf_forward_power double precision,
   rf_reflected_power double precision,
@@ -125,7 +125,7 @@ COMMENT ON COLUMN remote_source_trace.coolant_temp IS '냉각수 귀환 온도 [
 CREATE TABLE remote_chamber_trace (
   equipment_id text NOT NULL REFERENCES remote_equipment(equipment_id),
   ts timestamptz NOT NULL,
-  run_id text,
+  run_id text REFERENCES remote_run(run_id),
   step_no integer,
   chamber_pressure double precision,
   throttle_valve_pos double precision,

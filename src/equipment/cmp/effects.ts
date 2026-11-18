@@ -76,13 +76,15 @@ export function createCmpEffects(ctx: EffectFactoryContext): EffectSet {
   footprint.material = optMat;
   footprint.metadata = { instanceId: id, assetId: "optical_path_overlay", decorative: true, isOverlay: true };
   applyMeshData(footprint, revolveProfile(rectProfile(0, L.pad.window.widT / 2, L.padTopY + 0.0012, L.padTopY + 0.0018), { segments: 32 }));
-  // rinse spray cone in the clean module
+  // rinse spray in the clean module: from a nozzle of the upper spray bar (beside the brush, z + 0.12) slanting down to
+  // the wafer next to the upper brush roller, never through it
   const rinse = mk("rinse_spray", root);
   rinse.material = rinseMat;
   const cm = L.clean;
+  const nozzleX = cm.center[0] - cm.size[0] / 2 + 0.08 + (4 * (cm.size[0] - 0.16)) / 5;
   const sprayPath: Vec3[] = [
-    [cm.center[0] + 0.1, cm.baseY + cm.size[1] - 0.03, cm.center[2]],
-    [cm.center[0] + 0.1, cm.waferY + 0.04, cm.center[2]],
+    [nozzleX, cm.waferY + 0.094, cm.center[2] + 0.12],
+    [nozzleX, cm.waferY + 0.016, cm.center[2] + cm.rRoller + 0.03],
   ];
   applyMeshData(rinse, tubeAlongPath(sprayPath, 0.012, { segments: 12 }));
   let lastPose = { world: new Vector3(), visible: false };

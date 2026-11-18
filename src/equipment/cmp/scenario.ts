@@ -24,8 +24,10 @@ import { axisAngle, mulVec } from "../../domain/kinematics";
 import type { Vec3Tuple } from "../../config/geometry";
 import { phasesFromSteps } from "../handling/stationScenario";
 import { STATION_JOINTS } from "../handling/stationParts";
-import { CMP_FE, CMP_FE_JOINTS } from "./frontEnd";
+import { foupDoorJoints, stationGates } from "../handling/stationSequence";
+import { CMP_FE, CMP_FE_JOINTS, RINSE_BACK_WALL, wetRobotSpec } from "./frontEnd";
 import { CMP_LAYOUT, type CmpLayout } from "./layout";
+import { idleToolPose } from "../idle";
 import { CMP_TEMPLATE_ID } from "./template";
 
 // ------------------------------------------------------------------------------------------- polish segment
@@ -272,7 +274,12 @@ export function planCmp(L: CmpLayout, slot: number, T: CmpTiming = CMP_TIMING): 
   const thCl = near(wCl.theta, thCup);
   const thRinse = near(wRinse.theta, thCl);
   const thTower2 = near(wTower.theta, thCl);
-  const rinseRho = Math.hypot(F.rinse.x - wetG.axisXZ[0], F.rinse.z - wetG.axisXZ[1]);
+  // the end effector goes into the rinse box until the fork tip is 10 mm short of the back wall
+  const rinseRho = Math.hypot(F.rinse.x - wetG.axisXZ[0], F.rinse.z - wetG.axisXZ[1]) + fe.rinse_station.size[0] / 2 - RINSE_BACK_WALL - 0.01 - wetRobotSpec(L).tipBeyond;
+  // dry robot: waits and turns at turnRho; the tower heading is -pi so link 1 swings through the EFEM front, never the tower
+  const dHome = F.dry.turnRho.foup;
+  const dTurn = F.dry.turnRho.tower;
+  const dThTower = -Math.PI;
   const transit = F.wet.transitHeight;
   const rollY = F.wet.rollAxisHeight;
   const flipMid = F.tower.flipAxisY;
@@ -284,7 +291,7 @@ export function planCmp(L: CmpLayout, slot: number, T: CmpTiming = CMP_TIMING): 
   const cl = fe.cleaner;
   const gripS = fe.wet_robot.grip_stroke ?? 0.008;
   const inInitial: TrackInitial<CmpHolder> = {
-    values: { dock: 0, doorPull: 0, doorLower: 0, dRho: 0, dTheta: 0, dY: slotY + acD, flipRoll: 0, flipJaw: 0, wRho: 0, wTheta: thTower, wY: transit, wRoll: 0, wGrip: 0, dryChuck: 0, shutterWet: 0, shutterDry: 0, cleanShutter: 0, brushUp: cl.brush_travel, brushLow: cl.brush_travel, rollers: 0 },
+    values: { dock: 0, doorPull: 0, doorLower: 0, dRho: dHome, dTheta: 0, dY: slotY + acD, flipRoll: 0, flipJaw: 0, wRho: 0, wTheta: thTower, wY: transit, wRoll: 0, wGrip: 0, dryChuck: 0, shutterWet: 0, shutterDry: 0, cleanShutter: 0, brushUp: cl.brush_travel, brushLow: cl.brush_travel, rollers: 0 },
     holder: "foup",
     flags: { eeState: "clean_ready", cleaning: false, spinning: false },
   };
@@ -296,12 +303,12 @@ export function planCmp(L: CmpLayout, slot: number, T: CmpTiming = CMP_TIMING): 
     D("dry_to_slot", `Dry robot: slot-${slot} 접근 높이`, T.robot_z, { dTheta: 0, dY: slotY - acD }),
     D("dry_in_foup", `Dry robot: fork를 slot-${slot} wafer 아래로`, T.robot_extend, { dRho: dFoup.rho }),
     D("dry_pick_foup", `Dry robot: slot-${slot}에서 pick (dry, face up)`, T.robot_lift, { dY: slotY + acD }, { handoff: { holder: "dry_robot", at: { channel: "dY", value: slotY } } }),
-    D("dry_out_foup", "Dry robot 후퇴", T.robot_retract, { dRho: 0 }),
-    D("dry_to_flip", "Dry robot: flip station 방향·높이", T.robot_rotate, { dTheta: Math.PI, dY: F.tower.flipPlaneY }),
+    D("dry_out_foup", "Dry robot 후퇴", T.robot_retract, { dRho: dHome }),
+    D("dry_to_flip", "Dry robot: flip station 방향·높이", T.robot_rotate, { dRho: dTurn, dTheta: dThTower, dY: F.tower.flipPlaneY }),
     D("dry_in_flip", "Dry robot: wafer를 flip jaw 사이로", T.robot_extend, { dRho: dTower.rho }),
     D("flip_clamp", "Flip jaw가 wafer edge clamp", T.flip_grip, { flipJaw: tw.flip_jaw_travel }, { handoff: { holder: "flip", at: "end" } }),
     D("dry_off_flip", "Dry robot fork 하강 (wafer는 jaw에)", T.robot_lift, { dY: F.tower.flipPlaneY - acD }),
-    D("dry_out_flip", "Dry robot 후퇴", T.robot_retract, { dRho: 0 }),
+    D("dry_out_flip", "Dry robot 후퇴", T.robot_retract, { dRho: dTurn }),
     D("flip_turn", "Flip: clamp한 채 180도 회전 (face down)", T.flip_turn, { flipRoll: Math.PI }),
     D("wet_to_flip", "Wet robot: flip station 방향, wafer 아래 높이", T.robot_rotate, { wTheta: thTower, wY: flipMid - acW }),
     D("wet_in_flip", "Wet robot: fork를 wafer 아래로", T.robot_extend, { wRho: wTower.rho }),
@@ -363,15 +370,15 @@ export function planCmp(L: CmpLayout, slot: number, T: CmpTiming = CMP_TIMING): 
     D("spin_dry", "Spin dry (illustrative), 빈 wet robot end effector는 원위치로 roll", T.dry, { wRoll: 0 }, { set: { spinning: true } }),
     D("chuck_up", "Chuck 상승 (dry)", T.chuck_lift, { dryChuck: 0, wY: transit }, { set: { spinning: false } }),
     D("dryer_open_dry", "Dryer dry-side shutter 열림 (EFEM 쪽)", T.shutter, { shutterDry: tw.shutter_travel }),
-    D("dry_to_dryer", "Dry robot: dryer 방향·wafer 아래 높이", T.robot_rotate, { dTheta: Math.PI, dY: F.tower.dryerPlaneY - acD }),
+    D("dry_to_dryer", "Dry robot: dryer 방향·wafer 아래 높이", T.robot_rotate, { dTheta: dThTower, dY: F.tower.dryerPlaneY - acD }),
     D("dry_in_dryer", "Dry robot: fork가 chuck 양옆으로", T.robot_extend, { dRho: dTower.rho }),
     D("dry_pick_dryer", "Dry robot: dryer에서 pick (dry 반출)", T.robot_lift, { dY: F.tower.dryerPlaneY + acD }, { handoff: { holder: "dry_robot", at: { channel: "dY", value: F.tower.dryerPlaneY } } }),
-    D("dry_out_dryer", "Dry robot 후퇴", T.robot_retract, { dRho: 0 }),
+    D("dry_out_dryer", "Dry robot 후퇴", T.robot_retract, { dRho: dTurn }),
     D("dryer_close_dry", "Dry-side shutter 닫힘", T.shutter, { shutterDry: 0 }),
-    D("dry_to_foup", `Dry robot: FOUP 방향, slot-${slot} 위 높이`, T.robot_rotate, { dTheta: 0, dY: slotY + acD }),
+    D("dry_to_foup", `Dry robot: FOUP 방향, slot-${slot} 위 높이`, T.robot_rotate, { dRho: dHome, dTheta: 0, dY: slotY + acD }),
     D("dry_in_foup2", `Dry robot: wafer를 slot-${slot} 위로`, T.robot_extend, { dRho: dFoup.rho }),
     D("dry_place_foup", `Dry robot: reserved slot-${slot}에 place (dry only)`, T.robot_lift, { dY: slotY - acD }, { handoff: { holder: "foup", at: { channel: "dY", value: slotY } } }),
-    D("dry_out_foup2", "Dry robot 후퇴·home", T.robot_retract, { dRho: 0 }),
+    D("dry_out_foup2", "Dry robot 후퇴·home", T.robot_retract, { dRho: dHome }),
     D("foup_door_raise", "FOUP door 상승", T.door_lower, { doorLower: 0 }),
     D("foup_door_close", "FOUP door 닫힘·latch", T.door_pull, { doorPull: 0 }),
     D("lp_undock", "Undock (OHT 인계 준비)", T.undock, { dock: 0 }),
@@ -634,7 +641,7 @@ export function applyCmpState(a: CmpApplyArgs): void {
   const v = s.values;
   if (a.foupInstanceId && a.out.instances[a.foupInstanceId]) {
     const fp = a.out.instances[a.foupInstanceId];
-    fp.joints = { ...fp.joints, foup_door_pull: v.doorPull, foup_door_lower: v.doorLower };
+    fp.joints = { ...fp.joints, ...foupDoorJoints(v) };
     if (s.holder === "foup") {
       fp.presentedWaferId = a.waferId;
       fp.presentedWaferAssetId = "foup_wafer";
@@ -643,7 +650,7 @@ export function applyCmpState(a: CmpApplyArgs): void {
   a.out.carriers[a.carrierId] = {
     carrierId: a.carrierId,
     holder: { kind: "station", id: a.stationId },
-    doorOpen: v.doorPull > 0.0005 || v.doorLower > 0.0005,
+    doorOpen: stationGates(v).foupDoorOpen,
     slots: { [a.slotId]: s.holder === "foup" ? a.waferId : null },
     docked: v.dock > a.plan.L.front.loadPort.dockStroke - 1e-4,
     dockOffset: v.dock,
@@ -658,6 +665,8 @@ export function cmpStandalonePreview(t: number, _seed: number, _animT: number, c
   const s = cmpFullState(CMP_PLAN, t);
   for (const inst of ctx.instances) {
     const p = emptyInstancePreview(inst.instanceId);
+    // tools outside the demonstration stand in their home pose
+    p.joints = idleToolPose(inst.templateId);
     if (inst.templateId === CMP_TEMPLATE_ID) {
       p.joints = { ...s.joints };
       p.effects = { ...s.effects };

@@ -9,7 +9,7 @@
 import type { PartGeometry } from "../../geometry/chamberParts";
 import { chamferedBox, mergeMeshData, revolveProfile, rotateYMeshData, translateMeshData, type MeshData, type Vec3 } from "../../geometry/meshlib";
 import { PartSink, chamfRect } from "../../geometry/sharedParts";
-import type { OhtLayout } from "./layout";
+import { FINGER_LIP_THICKNESS, PRESENCE_SENSOR_HEIGHT, type OhtLayout } from "./layout";
 
 /** Cylinder along Y at (x, z). */
 function post(r: number, y0: number, y1: number, x: number, z: number, seg = 16): MeshData {
@@ -190,7 +190,7 @@ export function buildOhtParts(L: OhtLayout): PartGeometry[] {
   // gripper plate (hoist joint)
   const gp = h.gripper_plate_size;
   const plate = chamferedBox(gp, 0.004, [0, (L.hoist.plateTopY + L.hoist.plateBottomY) / 2, z0]);
-  const presence = chamferedBox([0.05, 0.012, 0.05], 0.002, [0, L.hoist.plateBottomY - 0.006, z0]);
+  const presence = chamferedBox([0.05, PRESENCE_SENSOR_HEIGHT, 0.05], 0.002, [0, L.hoist.plateBottomY - PRESENCE_SENSOR_HEIGHT / 2, z0]);
   const guides = mergeMeshData([chamferedBox([gp[0] - 0.04, 0.02, 0.04], 0.002, [0, L.hoist.plateBottomY - 0.01, z0 + 0.1]), chamferedBox([gp[0] - 0.04, 0.02, 0.04], 0.002, [0, L.hoist.plateBottomY - 0.01, z0 - 0.1])]);
   sink.fixed("gripper_plate", "gripper_plate", "painted_dark", mergeMeshData([plate, guides]), { cutaway: "keep", jointId: "hoist" });
   sink.fixed("presence_sensor", "gripper_plate", "painted_dark", presence, { cutaway: "keep", jointId: "hoist", pickable: false, castShadow: false });
@@ -199,12 +199,12 @@ export function buildOhtParts(L: OhtLayout): PartGeometry[] {
   const actuator = wheel(0.022, 0.16, [0, L.hoist.plateTopY + 0.024, z0]);
   const clamps = mergeMeshData(h.belt_offsets.map(([bx, bz]) => chamferedBox([h.belt_width + 0.016, 0.018, 0.02], 0.002, [bx, L.hoist.plateTopY + 0.009, z0 + bz])));
   sink.fixed("gripper_mechanism", "gripper_plate", "stainless", mergeMeshData([rails, actuator, clamps]), { cutaway: "keep", jointId: "hoist", castShadow: false, lod: "fine" });
-  // fingers (open pose): L-shaped: vertical leg + inward lip at the bottom
+  // fingers (open pose): L-shaped: vertical leg + inward lip at the bottom; the open / closed gaps are between the lips
   const f = h.finger_size;
   const mkFinger = (sign: number): MeshData => {
-    const x = sign * L.gripper.openHalfGap;
+    const x = sign * (L.gripper.openHalfGap + h.finger_lip);
     const leg = chamferedBox([f[0], f[1], f[2]], 0.002, [x + (sign * f[0]) / 2, L.hoist.plateBottomY - f[1] / 2, z0]);
-    const lip = chamferedBox([h.finger_lip + f[0], 0.012, f[2]], 0.002, [x - sign * (h.finger_lip / 2) + (sign * f[0]) / 2, L.hoist.fingerBottomY + 0.006, z0]);
+    const lip = chamferedBox([h.finger_lip + f[0], FINGER_LIP_THICKNESS, f[2]], 0.002, [x - sign * (h.finger_lip / 2) + (sign * f[0]) / 2, L.hoist.fingerBottomY + FINGER_LIP_THICKNESS / 2, z0]);
     return mergeMeshData([leg, lip]);
   };
   sink.fixed("finger_a", "gripper_finger_a", "stainless", mkFinger(1), { cutaway: "keep", jointId: "gripper_a" });

@@ -35,7 +35,7 @@
     "bolt_head_height": 0.009,
     "liner_thickness": 0.004,
     "liner_clearance": 0.005,
-    "liner_bottom_y": 0.060,
+    "liner_bottom_y": 0.001,
     "liner_top_y": 0.242
   },
   "stage": {

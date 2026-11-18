@@ -61,6 +61,11 @@ export function loadOhtConfig(): OhtGeometryConfig {
   return rawConfig as unknown as OhtGeometryConfig;
 }
 
+/** Carrier presence sensor under the gripper plate: the engaged FOUP flange top rests against its face. */
+export const PRESENCE_SENSOR_HEIGHT = 0.012;
+/** Thickness of the inward finger lip that catches the flange underside. */
+export const FINGER_LIP_THICKNESS = 0.012;
+
 export function deriveOhtLayout(cfg: OhtGeometryConfig): OhtLayout {
   const r = cfg.rail;
   const v = cfg.vehicle;
@@ -79,8 +84,8 @@ export function deriveOhtLayout(cfg: OhtGeometryConfig): OhtLayout {
     rail: { z0: r.z0, z1: r.z1, length: r.z1 - r.z0, bottomY: r.bottom_y, topY: r.bottom_y + r.height },
     vehicle: { bodyY0, bodyY1, bodyTopY: bodyY1, bogieY, size: v.body_size, parkS: v.park_position_z - r.z0 },
     hoist: { originY, stroke: h.stroke, plateTopY, plateBottomY, fingerBottomY, retractedExtension: 0 },
-    carrierSeatInHoistFrame: [0, plateBottomY - seatToFlangeTop - originY, 0],
-    foup: { seatToFlangeTop, flangeTopToPlate: 0, bodyTopY: f.body_size[1], flangeTopY: seatToFlangeTop },
+    carrierSeatInHoistFrame: [0, plateBottomY - PRESENCE_SENSOR_HEIGHT - seatToFlangeTop - originY, 0],
+    foup: { seatToFlangeTop, flangeTopToPlate: PRESENCE_SENSOR_HEIGHT, bodyTopY: f.body_size[1], flangeTopY: seatToFlangeTop },
     gripper: { openHalfGap: h.finger_open_gap / 2, closedHalfGap: h.finger_closed_gap / 2 },
   };
 }
@@ -111,9 +116,17 @@ export function validateOhtConfig(cfg: OhtGeometryConfig): ValidationReport {
   must(cfg.$schema_id === "pecvd-twin.oht-geometry-config/1", "schema id mismatch");
   must(L.rail.length > 1, "rail must have a usable length");
   must(cfg.vehicle.park_position_z >= cfg.rail.z0 && cfg.vehicle.park_position_z <= cfg.rail.z1, "park position must lie on the rail");
-  must(cfg.hoist.finger_open_gap > cfg.foup.flange_size[0] + 0.02, "open fingers must clear the FOUP flange");
-  must(cfg.hoist.finger_closed_gap < cfg.foup.flange_size[0] - 0.01, "closed fingers must reach under the FOUP flange");
-  must(cfg.hoist.finger_closed_gap > cfg.foup.flange_neck_radius * 2 + 0.01, "closed fingers must clear the flange neck");
+  // finger gaps are measured between the lips; the legs stand `finger_lip` further out
+  const h = cfg.hoist;
+  const fl = cfg.foup.flange_size;
+  must(h.finger_open_gap > fl[0] + 0.02, "open finger lips must clear the FOUP flange");
+  must(h.finger_closed_gap < fl[0] - 0.01, "closed finger lips must reach under the FOUP flange");
+  must(h.finger_closed_gap > cfg.foup.flange_neck_radius * 2 + 0.01, "closed finger lips must clear the flange neck");
+  must(h.finger_closed_gap / 2 + h.finger_lip >= fl[0] / 2 + 0.005, "closed finger legs must stay outside the flange edge");
+  // engaged: the lip sits under the flange and the finger ends above the FOUP top
+  const lipTop = PRESENCE_SENSOR_HEIGHT + fl[1] + 0.001;
+  must(h.finger_size[1] - FINGER_LIP_THICKNESS >= lipTop, "finger lips must sit below the FOUP flange");
+  must(h.finger_size[1] <= PRESENCE_SENSOR_HEIGHT + fl[1] + cfg.foup.flange_neck_height - 0.004, "fingers must end above the FOUP top");
   must(cfg.hoist.gripper_plate_size[0] < cfg.vehicle.body_size[0] && cfg.hoist.gripper_plate_size[2] < cfg.vehicle.body_size[2], "gripper plate must fit under the vehicle body");
   must(L.hoist.fingerBottomY > 0, "gripper must hang above the floor at the retracted pose");
   must(cfg.hoist.stroke > 0.5, "hoist stroke must be meaningful");

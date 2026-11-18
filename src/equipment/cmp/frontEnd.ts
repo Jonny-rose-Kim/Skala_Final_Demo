@@ -18,7 +18,7 @@ import { waferHalfMeshes } from "../../geometry/waferParts";
 import { buildScaraRobotParts, scaraRobotComponents, scaraRobotJoints, type ScaraRobotSpec } from "../handling/robotParts";
 import { EFEM_FLOOR_RAISE, STATION_IDS, StationGeom, buildEfemParts, buildProcessEnclosureParts, type ProcessEnclosureSpec } from "../handling/stationParts";
 import { efemComponents, loadPortJoints } from "../handling/stationTemplate";
-import type { CmpLayout } from "./layout";
+import { TOWER_SHUTTER_THICKNESS, type CmpLayout } from "./layout";
 
 const mm = (label: string, valueM: number) => ({ label, valueM });
 
@@ -182,7 +182,7 @@ export function cmpFrontComponents(L: CmpLayout): ComponentDef<CmpLayout>[] {
     { assetId: F.waferFlip, nodeKey: "front.flip.wafer", name: "Wafer in the flip station", kind: "wafer", assembly: "transfer_tower", parentAssetId: F.flipRotor, description: "Flip jaw에 clamp된 wafer 표시. 파란 쪽이 frontside다.", materialRef: "silicon_wafer", materialNote: "Presentation (frontside tinted)", selectable: true, explode: UP(0.45), cutaway: "keep", jointId: FJ.flipRoll, dimensions: (L) => [mm("Diameter", L.rWafer * 2)] },
     {
       assetId: F.dryer,
-      nodeKey: "post.dry_module",
+      nodeKey: "post.dry",
       name: "Spin dryer (housing, bowl, shutters frame, drain)",
       kind: "module",
       assembly: "post_cmp",
@@ -196,13 +196,13 @@ export function cmpFrontComponents(L: CmpLayout): ComponentDef<CmpLayout>[] {
       structuralBasis: basis,
       label: { text: "Spin dryer", priority: 2 },
     },
-    { assetId: F.dryChuck, nodeKey: "post.dry_chuck", name: "Spin chuck", kind: "drive", assembly: "post_cmp", parentAssetId: F.dryer, description: "교환 높이와 bowl 안 spin 위치 사이를 오르내리고 회전하는 vacuum chuck. Dry robot fork는 chuck 양옆으로 들어온다.", materialRef: "stainless", materialNote: "Stainless chuck (가정)", selectable: true, explode: UP(0.25), cutaway: "keep", jointId: FJ.drySpin, dimensions: (L) => [mm("Chuck diameter", L.dry.rChuck * 2)] },
+    { assetId: F.dryChuck, nodeKey: "post.dry.chuck", name: "Spin chuck", kind: "drive", assembly: "post_cmp", parentAssetId: F.dryer, description: "교환 높이와 bowl 안 spin 위치 사이를 오르내리고 회전하는 vacuum chuck. Dry robot fork는 chuck 양옆으로 들어온다.", materialRef: "stainless", materialNote: "Stainless chuck (가정)", selectable: true, explode: UP(0.25), cutaway: "keep", jointId: FJ.drySpin, dimensions: (L) => [mm("Chuck diameter", L.dry.rChuck * 2)] },
     { assetId: F.dryerShutterWet, nodeKey: "post.dry_shutter_wet", name: "Dryer wet-side shutter", kind: "access", assembly: "post_cmp", parentAssetId: F.dryer, description: "Wet robot 반입 opening의 shutter.", materialRef: "polymer_gray", materialNote: "PVC shutter (가정)", selectable: true, explode: X(0.15), cutaway: "keep", jointId: FJ.dryerShutterWet, dimensions: () => [] },
     { assetId: F.dryerShutterDry, nodeKey: "post.dry_shutter_dry", name: "Dryer dry-side shutter", kind: "access", assembly: "post_cmp", parentAssetId: F.dryer, description: "Dry robot 반출 opening(EFEM 쪽)의 shutter.", materialRef: "polymer_gray", materialNote: "PVC shutter (가정)", selectable: true, explode: X(-0.15), cutaway: "keep", jointId: FJ.dryerShutterDry, dimensions: () => [] },
-    { assetId: F.waferDry, nodeKey: "post.dry_wafer", name: "Wafer on the spin chuck", kind: "wafer", assembly: "post_cmp", parentAssetId: F.dryChuck, description: "Spin chuck 위 wafer 표시 (holder = dry_module).", materialRef: "silicon_wafer", materialNote: "Presentation (frontside tinted)", selectable: true, explode: UP(0.3), cutaway: "keep", jointId: FJ.drySpin, dimensions: (L) => [mm("Diameter", L.rWafer * 2)] },
+    { assetId: F.waferDry, nodeKey: "post.dry.wafer", name: "Wafer on the spin chuck", kind: "wafer", assembly: "post_cmp", parentAssetId: F.dryChuck, description: "Spin chuck 위 wafer 표시 (holder = dry_module).", materialRef: "silicon_wafer", materialNote: "Presentation (frontside tinted)", selectable: true, explode: UP(0.3), cutaway: "keep", jointId: FJ.drySpin, dimensions: (L) => [mm("Diameter", L.rWafer * 2)] },
     {
       assetId: F.cleaner,
-      nodeKey: "post.clean_module",
+      nodeKey: "post.clean",
       name: "Brush cleaner (housing, spray bars, drain)",
       kind: "module",
       assembly: "post_cmp",
@@ -217,11 +217,11 @@ export function cmpFrontComponents(L: CmpLayout): ComponentDef<CmpLayout>[] {
       label: { text: "Brush cleaner", priority: 2 },
     },
     { assetId: F.cleanerShutter, nodeKey: "post.clean_shutter", name: "Cleaner shutter", kind: "access", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Cleaner 접근 opening의 shutter.", materialRef: "polymer_gray", materialNote: "PVC shutter (가정)", selectable: true, explode: Z(-0.12), cutaway: "keep", jointId: FJ.cleanShutter, dimensions: () => [] },
-    { assetId: F.brushUpper, nodeKey: "post.brush_rollers", name: "Brush roller (upper)", kind: "module", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Wafer 윗면(frontside)을 문지르는 PVA brush roller. 세정 때 내려와 닿고 회전한다.", materialRef: "polymer_white", materialNote: "PVA sponge roller on a core (가정)", selectable: true, explode: UP(0.12), cutaway: "keep", jointId: FJ.brushUpSpin, dimensions: (L) => [mm("Roller diameter", L.clean.rRoller * 2), mm("Roller length", L.clean.rollerLen)] },
+    { assetId: F.brushUpper, nodeKey: "post.clean.brushes", name: "Brush roller (upper)", kind: "module", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Wafer 윗면(frontside)을 문지르는 PVA brush roller. 세정 때 내려와 닿고 회전한다.", materialRef: "polymer_white", materialNote: "PVA sponge roller on a core (가정)", selectable: true, explode: UP(0.12), cutaway: "keep", jointId: FJ.brushUpSpin, dimensions: (L) => [mm("Roller diameter", L.clean.rRoller * 2), mm("Roller length", L.clean.rollerLen)] },
     { assetId: F.brushLower, nodeKey: "post.brush_roller_lower", name: "Brush roller (lower)", kind: "module", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Wafer 아랫면(backside)을 문지르는 PVA brush roller.", materialRef: "polymer_white", materialNote: "PVA sponge roller on a core (가정)", selectable: true, explode: UP(-0.12), cutaway: "keep", jointId: FJ.brushLowSpin, dimensions: (L) => [mm("Roller diameter", L.clean.rRoller * 2)] },
     { assetId: F.edgeRollersA, nodeKey: "post.edge_rollers_a", name: "Edge drive rollers (+X arm)", kind: "drive", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Wafer edge를 홈으로 잡고 돌리는 roller 두 개.", materialRef: "polymer_white", materialNote: "Grooved PEEK rollers (가정)", selectable: true, explode: X(0.1), cutaway: "keep", jointId: FJ.rollersA, dimensions: (L) => [mm("Roller travel", L.cfg.front_end.cleaner.edge_roller_travel)] },
     { assetId: F.edgeRollersB, nodeKey: "post.edge_rollers_b", name: "Edge drive rollers (-X arm)", kind: "drive", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Wafer edge를 홈으로 잡고 돌리는 roller 두 개.", materialRef: "polymer_white", materialNote: "Grooved PEEK rollers (가정)", selectable: true, explode: X(-0.1), cutaway: "keep", jointId: FJ.rollersB, dimensions: (L) => [mm("Roller travel", L.cfg.front_end.cleaner.edge_roller_travel)] },
-    { assetId: F.waferClean, nodeKey: "post.clean_wafer", name: "Wafer in the cleaner", kind: "wafer", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Cleaner edge roller 사이의 wafer 표시 (holder = clean_module).", materialRef: "silicon_wafer", materialNote: "Presentation (frontside tinted)", selectable: true, explode: UP(0.2), cutaway: "keep", dimensions: (L) => [mm("Diameter", L.rWafer * 2)] },
+    { assetId: F.waferClean, nodeKey: "post.clean.wafer", name: "Wafer in the cleaner", kind: "wafer", assembly: "post_cmp", parentAssetId: F.cleaner, description: "Cleaner edge roller 사이의 wafer 표시 (holder = clean_module).", materialRef: "silicon_wafer", materialNote: "Presentation (frontside tinted)", selectable: true, explode: UP(0.2), cutaway: "keep", dimensions: (L) => [mm("Diameter", L.rWafer * 2)] },
     { assetId: F.rinse, nodeKey: "wet.ee_rinse", name: "End-effector rinse station", kind: "module", assembly: "wet_robot", description: "Dirty-wet wafer를 옮긴 wet robot end effector를 DIW로 rinse하는 box. 이 단계 뒤 end effector는 clean-ready 상태가 된다(표시용 상태, 측정 아님).", materialRef: "polymer_gray", materialNote: "PVC box with spray nozzles (가정)", selectable: true, explode: UP(0.2), cutaway: "keep", dimensions: (L) => [mm("Rinse plane", L.front.rinse.planeY)] },
     { assetId: F.wetZone, nodeKey: "station.wet_transfer", name: "Wet zone frame (deck, splash shields, drip tray)", kind: "enclosure", assembly: "wet_robot", description: "Wet robot, cleaner, rinse station이 놓인 deck와 낮은 splash shield, wet robot 아래 drip tray와 drain. v1.0의 불투명 wet transfer tunnel을 대체했다.", materialRef: "polymer_gray", materialNote: "PVC shields on a painted frame (가정)", selectable: true, explode: UP(-0.1), cutaway: "keep", dimensions: (L) => [mm("Deck length", L.cfg.front_end.wet_deck.x1 - L.cfg.front_end.wet_deck.x0), mm("Deck width", L.cfg.front_end.wet_deck.z1 - L.cfg.front_end.wet_deck.z0)] },
     {
@@ -313,6 +313,9 @@ export function cmpEnclosureSpec(L: CmpLayout): ProcessEnclosureSpec {
   };
 }
 
+/** Back wall thickness of the end-effector rinse box. */
+export const RINSE_BACK_WALL = 0.012;
+
 /** Front end + wet zone geometry. */
 export function buildCmpFrontParts(sink: PartSink, L: CmpLayout): void {
   const Fl = L.front;
@@ -381,16 +384,19 @@ export function buildCmpFrontParts(sink: PartSink, L: CmpLayout): void {
     const housing = mergeMeshData([wallX(x0, x0 + wt), wallX(x1 - wt, x1), box(x0, x1, yb, yt, z0, z0 + wt), box(x0, x1, yb, yt, z1 - wt, z1)]);
     sink.fixed("dryer_housing", F.dryer, "polymer_gray", housing, { cutaway: "keep" });
     sink.fixed("dryer_lid", F.dryer, "polymer_gray", box(x0, x1, yt - wt, yt, z0, z1, 0.004), { cutaway: "keep", cover: true });
+    // splash lip leans inward but stays 10 mm outside the wafer edge (the chuck lowers the wafer through it)
+    const br = fe.tower.bowl_radius;
+    const lipIn = Math.max(br - 0.04, R + 0.01);
     const bowl = revolveProfile(
       [
-        [fe.tower.bowl_radius - 0.03, yb + 0.02],
-        [fe.tower.bowl_radius, yb + 0.02],
-        [fe.tower.bowl_radius, fe.tower.bowl_rim_y - 0.02],
-        [fe.tower.bowl_radius - 0.035, fe.tower.bowl_rim_y],
-        [fe.tower.bowl_radius - 0.04, fe.tower.bowl_rim_y - 0.004],
-        [fe.tower.bowl_radius - 0.006, fe.tower.bowl_rim_y - 0.022],
-        [fe.tower.bowl_radius - 0.006, yb + 0.028],
-        [fe.tower.bowl_radius - 0.03, yb + 0.028],
+        [br - 0.03, yb + 0.02],
+        [br, yb + 0.02],
+        [br, fe.tower.bowl_rim_y - 0.02],
+        [lipIn + 0.005, fe.tower.bowl_rim_y],
+        [lipIn, fe.tower.bowl_rim_y - 0.004],
+        [br - 0.006, fe.tower.bowl_rim_y - 0.022],
+        [br - 0.006, yb + 0.028],
+        [br - 0.03, yb + 0.028],
       ],
       { segments: 96 },
     );
@@ -416,21 +422,49 @@ export function buildCmpFrontParts(sink: PartSink, L: CmpLayout): void {
     sink.fixed("wafer_in_dry_front", F.waferDry, "wafer_front", wd.front, { cutaway: "keep", jointId: CMP_FE_JOINTS.drySpin, castShadow: false });
     // shutters on the outside of the openings
     const shZ = (xa: number, xb: number) => box(xa, xb, op.y0 - 0.008, op.y1 + 0.008, tw.z - 0.18, tw.z + 0.18, 0.003);
-    sink.fixed("dryer_shutter_wet", F.dryerShutterWet, "polymer_gray", shZ(x1, x1 + 0.01), { cutaway: "keep", jointId: CMP_FE_JOINTS.dryerShutterWet });
-    sink.fixed("dryer_shutter_dry", F.dryerShutterDry, "polymer_gray", shZ(x0 - 0.01, x0), { cutaway: "keep", jointId: CMP_FE_JOINTS.dryerShutterDry });
+    sink.fixed("dryer_shutter_wet", F.dryerShutterWet, "polymer_gray", shZ(x1, x1 + TOWER_SHUTTER_THICKNESS), { cutaway: "keep", jointId: CMP_FE_JOINTS.dryerShutterWet });
+    sink.fixed("dryer_shutter_dry", F.dryerShutterDry, "polymer_gray", shZ(x0 - TOWER_SHUTTER_THICKNESS, x0), { cutaway: "keep", jointId: CMP_FE_JOINTS.dryerShutterDry });
     // flip station frame (posts, top plate, rotary actuator on +Z) above the dryer
     const fy0 = yt;
     const fy1 = tw.flipTopY;
     const posts: MeshData[] = [];
     for (const x of [x0 + 0.02, x1 - 0.02]) for (const z of [z0 + 0.02, z1 - 0.02]) posts.push(box(x - 0.015, x + 0.015, fy0, fy1, z - 0.015, z + 0.015, 0.003));
     posts.push(box(x0, x1, fy1 - 0.012, fy1, z0, z1, 0.003));
-    const act = box(tw.x - 0.06, tw.x + 0.06, tw.flipAxisY - 0.06, tw.flipAxisY + 0.06, z1 - 0.01, z1 + 0.08, 0.008);
-    sink.fixed("flip_frame", F.flipStation, "aluminum_anodized", mergeMeshData(posts), { cutaway: "keep" });
-    sink.fixed("flip_actuator", F.flipStation, "painted_offwhite", act, { cutaway: "keep" });
-    // rotor yoke (flip_roll) authored at roll 0: a bar along Z through the axis with end blocks carrying the jaw guides
+    // roll axis along Z through the wafer midplane. Each jaw slides on two guide rods between the wafer edge and an
+    // end block outside its open position; the end blocks turn on stub shafts in the rotary actuator (+Z) and a
+    // bearing block (-Z). Nothing crosses the wafer or the robot forks.
     const ya = tw.flipAxisY;
     const jt = fe.tower.flip_jaw_travel;
-    const yoke = mergeMeshData([box(tw.x - 0.012, tw.x + 0.012, ya - 0.008, ya + 0.008, z0 + 0.03, z1 - 0.01, 0.002), box(tw.x - 0.03, tw.x + 0.03, ya - 0.025, ya + 0.025, z0 + 0.03, z0 + 0.05, 0.003), box(tw.x - 0.03, tw.x + 0.03, ya - 0.025, ya + 0.025, z1 - 0.05, z1 - 0.03, 0.003)]);
+    const zb0 = R + jt + 0.035;
+    const zb1 = zb0 + 0.015;
+    const act = box(tw.x - 0.06, tw.x + 0.06, ya - 0.06, ya + 0.06, tw.z + zb1 + 0.005, tw.z + zb1 + 0.095, 0.008);
+    const bearing = box(tw.x - 0.035, tw.x + 0.035, ya - 0.035, ya + 0.035, tw.z - zb1 - 0.055, tw.z - zb1 - 0.005, 0.006);
+    sink.fixed("flip_frame", F.flipStation, "aluminum_anodized", mergeMeshData([...posts, bearing]), { cutaway: "keep" });
+    sink.fixed("flip_actuator", F.flipStation, "painted_offwhite", act, { cutaway: "keep" });
+    // rod along Z (axis +Y -> +Z: (x, y, z) -> (x, -z, y) is a proper rotation)
+    const rodZ = (r: number, za: number, zb: number, x: number, y: number) => {
+      const md = revolveProfile(chamfRect(0, r, za, zb, Math.min(0.001, r / 3)), { segments: 20 });
+      const p = md.positions;
+      const n = md.normals;
+      for (let i = 0; i < p.length; i += 3) {
+        const [py, pz] = [p[i + 1], p[i + 2]];
+        p[i + 1] = -pz;
+        p[i + 2] = py;
+        const [ny, nz] = [n[i + 1], n[i + 2]];
+        n[i + 1] = -nz;
+        n[i + 2] = ny;
+      }
+      return translateMeshData(md, x, y, 0);
+    };
+    const rotor: MeshData[] = [];
+    for (const sgn of [-1, 1]) {
+      const za = tw.z + sgn * zb0;
+      const zb = tw.z + sgn * zb1;
+      rotor.push(box(tw.x - 0.03, tw.x + 0.03, ya - 0.025, ya + 0.025, Math.min(za, zb), Math.max(za, zb), 0.003));
+      for (const gx of [-0.031, 0.031]) rotor.push(rodZ(0.004, Math.min(tw.z + sgn * (R + 0.005), za), Math.max(tw.z + sgn * (R + 0.005), za), tw.x + gx, ya));
+      rotor.push(rodZ(0.012, Math.min(zb, tw.z + sgn * (zb1 + 0.015)), Math.max(zb, tw.z + sgn * (zb1 + 0.015)), tw.x, ya));
+    }
+    const yoke = mergeMeshData(rotor);
     sink.fixed("flip_rotor", F.flipRotor, "stainless", yoke, { cutaway: "keep", jointId: CMP_FE_JOINTS.flipRoll });
     // jaws authored open (travel outward); V-notch blocks gripping the edge at z = +-R when closed
     const jaw = (sgn: number) => mergeMeshData([box(tw.x - 0.025, tw.x + 0.025, ya - 0.012, ya - 0.0035, tw.z + sgn * (R + jt), tw.z + sgn * (R + jt + 0.03), 0.002), box(tw.x - 0.025, tw.x + 0.025, ya + 0.0035, ya + 0.012, tw.z + sgn * (R + jt), tw.z + sgn * (R + jt + 0.03), 0.002), box(tw.x - 0.025, tw.x + 0.025, ya - 0.012, ya + 0.012, tw.z + sgn * (R + jt + 0.004), tw.z + sgn * (R + jt + 0.03), 0.002)]);
@@ -529,7 +563,7 @@ export function buildCmpFrontParts(sink: PartSink, L: CmpLayout): void {
     const yc = rs.planeY;
     bodyParts.push(chamferedBox([bx, 0.03, bz], 0.004, [0, yc - by / 2 + 0.015, 0]));
     bodyParts.push(chamferedBox([bx, 0.03, bz], 0.004, [0, yc + by / 2 - 0.015, 0]));
-    bodyParts.push(chamferedBox([0.012, by, bz], 0.003, [bx / 2 - 0.006, yc, 0]));
+    bodyParts.push(chamferedBox([RINSE_BACK_WALL, by, bz], 0.003, [bx / 2 - RINSE_BACK_WALL / 2, yc, 0]));
     bodyParts.push(chamferedBox([bx, by, 0.012], 0.003, [0, yc, bz / 2 - 0.006]));
     bodyParts.push(chamferedBox([bx, by, 0.012], 0.003, [0, yc, -bz / 2 + 0.006]));
     const nozzles: MeshData[] = [];

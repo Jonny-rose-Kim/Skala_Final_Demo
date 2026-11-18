@@ -219,7 +219,7 @@ export function deriveRemoteLayout(cfg: RemoteGeometryConfig): RemoteLayout {
     slit: mkPort("slit", rInner, cfg.ports.slit.azimuth_deg, cfg.ports.slit.center_y, { kind: "rect", width: cfg.ports.slit.width, height: cfg.ports.slit.height }, true),
     viewport: mkPort("viewport", rInner, cfg.ports.viewport.azimuth_deg, cfg.ports.viewport.center_y, { kind: "circle", radius: cfg.ports.viewport.bore_diameter / 2 }, true),
     pressure_tap: mkPort("pressure_tap", rInner, cfg.ports.pressure_tap.azimuth_deg, cfg.ports.pressure_tap.center_y, { kind: "circle", radius: cfg.ports.pressure_tap.bore_diameter / 2 }, true),
-    exhaust: mkPort("exhaust", rInner, cfg.ports.exhaust.azimuth_deg, cfg.ports.exhaust.center_y, { kind: "circle", radius: cfg.ports.exhaust.bore_diameter / 2 }, false),
+    exhaust: mkPort("exhaust", rInner, cfg.ports.exhaust.azimuth_deg, cfg.ports.exhaust.center_y, { kind: "circle", radius: cfg.ports.exhaust.bore_diameter / 2 }, true),
   };
   const gp = cfg.peripherals;
   const mfcCenters = (center: Vec3Tuple, size: Vec3Tuple, bsize: Vec3Tuple, pitch: number, count: number, offY: number, sign: number): Vec3Tuple[] =>
@@ -286,6 +286,8 @@ export function remoteHandlingInput(cfg: RemoteGeometryConfig, slitAzimuth: numb
     slitHeight: cfg.ports.slit.height,
     portFaceR: rOuter + 0.012,
     valveBodySize: cfg.ports.slit.valve_body_size,
+    bottomFlangeR: cfg.chamber.bottom_flange_outer_diameter / 2,
+    slitGate: { thickness: cfg.ports.slit.door_thickness, travel: cfg.ports.slit.gate_travel },
     floorY: cfg.peripherals.frame_bottom_y - 0.002,
     stage: { processTopY: st.top_y, transferTopY: st.transfer_top_y, edgeRingThickness: st.edge_ring_thickness, liftPinStroke: st.lift_pin_stroke, radius: st.diameter / 2, liftPinCircleRadius: st.lift_pin_circle_diameter / 2 },
   };
@@ -328,9 +330,14 @@ export function validateRemoteConfig(cfg: RemoteGeometryConfig): ValidationRepor
   must(cfg.stage.transfer_top_y < cfg.stage.top_y, "stage transfer position must be below the process position");
   must(cfg.stage.transfer_top_y - cfg.stage.body_height > L.floorTopY + 0.004, "lowered stage must stay above the chamber floor");
   must(cfg.ports.slit.gate_travel >= slit.height + 0.01, "slit valve gate must retreat below the slit opening");
+  must(cfg.chamber.liner_bottom_y > L.floorTopY && cfg.chamber.liner_top_y < L.wallTopY, "liner must sit between the floor and the lid");
   for (const p of Object.values(L.ports)) {
     const half = p.hole.kind === "circle" ? p.hole.radius : p.hole.height / 2;
     must(p.centerY - half >= L.floorTopY + 0.004 && p.centerY + half <= L.wallTopY - 0.004, `port ${p.id} must stay within the wall height`);
+    // the liner gets an opening only for a port that lies fully inside its height; a port at its edge is dropped
+    const inside = p.centerY - half >= cfg.chamber.liner_bottom_y + 0.002 && p.centerY + half <= cfg.chamber.liner_top_y - 0.002;
+    const outside = p.centerY - half >= cfg.chamber.liner_top_y || p.centerY + half <= cfg.chamber.liner_bottom_y;
+    must(p.throughLiner ? inside : outside, `port ${p.id} must lie ${p.throughLiner ? "inside" : "outside"} the liner height`);
   }
   must(L.rLinerOut + cfg.chamber.liner_clearance <= L.rInner + 1e-9, "liner must fit inside the wall");
   must(L.rShaft < L.rFloorBore && L.bellows.rIn > L.rShaft, "shaft must pass through the floor bore inside the bellows");
