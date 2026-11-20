@@ -634,6 +634,8 @@ export class SceneHost {
       w.markers.setVisible(s.overlays.markers && !s.overview, s.selectedMeasurement);
     }
     if (changed("scenarioId")) this.ensureScenario(s);
+    // turning phase follow on jumps to the equipment of the running phase right away
+    if (!force && changed("followPhase") && s.followPhase) this.lastFocusInstance = null;
 
     const modeKey = `${s.viewMode}:${s.overview}`;
     const prevModeKey = prev ? `${prev.viewMode}:${prev.overview}` : "";

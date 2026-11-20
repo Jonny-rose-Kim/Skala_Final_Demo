@@ -83,7 +83,7 @@ FOUP 안에 웨이퍼가 몇 장 들었는지 볼 수 있게 FOUP 단면 보기�
 | `npm run typecheck` | 통과 |
 | `npm test` | 106개 통과 (8 파일). 상세 장비 작업에서 추가한 `tests/unit/handling.test.ts` 21개, `tests/unit/cmpHandling.test.ts` 13개, FOUP 단면에서 추가한 `tests/unit/foupSection.test.ts` 7개 포함 |
 | `npm run validate:config` | 5개 bundle 오류 0, 경고 0. Station 3개 모두 lateral 0.0 mm, hoist extension 1.081 m (finger가 presence sensor 아래에서 FOUP을 잡게 바꾸면서 12 mm 줄었다) |
-| `npm run test:e2e` | 52개 중 34개 통과, 18개 실패(2026-11-18, 리뷰 반영 후). 실패 18개는 9개 테스트가 두 backend에서 실패한 것으로, 중간 발표용 커밋 `61c597c`가 앱을 Route B 자동 재생으로 시작하고 타임라인과 상단 바 제목을 뺀 것과 맞지 않는 테스트다(`expansion.spec.ts` 4개, `visual-inspection.spec.ts` 5개). 리뷰 반영 전 HEAD에서도 같은 9개가 같은 이유로 실패한다. 나머지는 모두 통과하고, 자원 누적 테스트는 이제 Route A가 실제로 실행되는지도 확인한다 |
+| `npm run test:e2e` | main에 옮긴 뒤 다시 돌리지 않았다. 리뷰 반영은 중간 발표 브랜치에서 먼저 했고, 거기서 실패한 9개 테스트(backend마다, `expansion.spec.ts` 4개, `visual-inspection.spec.ts` 5개)는 Route B 자동 재생과 타임라인을 뺀 발표 화면 때문이었다. main에는 그 화면이 없다. 나머지는 모두 통과했고, 자원 누적 테스트는 이제 Route A가 실제로 실행되는지도 확인한다 |
 | `npm run build` | 통과 (메인 청크 2.54 MB, gzip 671 kB) |
 | 캡처 중 콘솔 오류 | 0 (WebGL2, WebGPU 모두) |
 
