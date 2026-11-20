@@ -48,7 +48,7 @@ export function TopBar({ host }: { host: SceneHost | null }) {
   const presets = host ? host.presetsFor(activeInstanceId) : cameraPresets(CHAMBER_LAYOUT);
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 overflow-hidden border-b border-line bg-canvas px-5" data-testid="topbar">
+    <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-canvas px-5 py-3" data-testid="topbar">
       <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
         <Brand />
         <Badge tone="info" title={mode.summaryKo}>
@@ -59,13 +59,13 @@ export function TopBar({ host }: { host: SceneHost | null }) {
         </Badge>
       </div>
       <div className="h-6 w-px shrink-0 bg-line" />
-      <div className="flex min-w-0 shrink items-center gap-1" aria-label="장비 선택">
+      <div className="flex shrink-0 items-center gap-1" aria-label="장비 선택">
         <Button active={overview} onClick={() => setOverview(true)} title="FAB overview: 네 장비와 OHT rail 전체 배치" testId="overview-button">
           <Factory className="h-4 w-4" aria-hidden /> Overview
         </Button>
         <select
           aria-label="Equipment instance"
-          className={`min-w-0 max-w-[230px] truncate ${SELECT_CLASS}`}
+          className={`max-w-[230px] truncate ${SELECT_CLASS}`}
           value={activeInstanceId}
           onChange={(e) => {
             setActiveInstance(e.target.value);
