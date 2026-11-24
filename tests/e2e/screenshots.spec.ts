@@ -13,7 +13,8 @@ const VIEWS = [
 
 test("@screenshots capture review views", async ({ page }, info) => {
   const webgpu = info.project.name.includes("webgpu");
-  await page.goto(webgpu ? "/?" : "/?renderer=webgl2");
+  // review views of the legacy V1 CCP chamber (legacy-v1 fixture)
+  await page.goto(webgpu ? "/?fixture=legacy-v1" : "/?renderer=webgl2&fixture=legacy-v1");
   await page.waitForFunction(() => !!window.__pecvdTwin && window.__pecvdTwin.isReady(), null, { timeout: 90_000 });
   await page.waitForTimeout(600);
   const backend = await page.evaluate(() => window.__pecvdTwin!.backend());

@@ -19,6 +19,8 @@ declare global {
       covers(): Record<string, boolean | null>;
       cuts(): Record<string, { startDeg: number; sweepDeg: number }[] | null>;
       store: { getState(): Record<string, any> };
+      applyAgentEvent(e: any): any;
+      clearDiagnosis(): void;
       host: any;
     };
   }
