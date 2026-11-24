@@ -400,6 +400,8 @@ export function buildStationParts(sink: PartSink, S: HandlingStationLayout, opts
 export interface EfemSpec {
   /** Lateral center of the EFEM in the station frame. */
   qc: number;
+  /** Lateral center of the (active) load port bay; defaults to the EFEM center. */
+  lpQ?: number;
   r0: number;
   r1: number;
   width: number;
@@ -452,9 +454,10 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
   g.fixed("efem_floor", I.efem, "painted_dark", g.box(e.r0 + fs, e.r1 - fs, efemFloorTop - 0.012, efemFloorTop, qL + fs, qR - fs, 0.002), { cutaway: "keep", castShadow: false });
   // back wall with the transfer openings
   g.fixed("efem_back_wall", I.efem, "painted_offwhite", g.holedPlate(e.r0, e.r0 + pt, efemFloorTop, e.topY - fs, qL + fs, qR - fs, e.backHoles.map((h) => ({ ...h, q0: h.q0 + qc, q1: h.q1 + qc }))), { cutaway: "keep" });
+  const LQ = e.lpQ ?? qc;
   // front wall around the load port module bay + kick plate
   const lp = e.loadPort;
-  const bay = { y0: lp.deckTopY - 0.24, y1: lp.opening.y1 + 0.06, q0: qc - lp.deckWidth / 2 - 0.01, q1: qc + lp.deckWidth / 2 + 0.01 };
+  const bay = { y0: lp.deckTopY - 0.24, y1: lp.opening.y1 + 0.06, q0: LQ - lp.deckWidth / 2 - 0.01, q1: LQ + lp.deckWidth / 2 + 0.01 };
   g.fixed("efem_front_wall", I.efem, "painted_offwhite", g.holedPlate(e.r1 - pt, e.r1, efemFloorTop, e.topY - fs, qL + fs, qR - fs, [bay]), { cutaway: "keep" });
   g.fixed("efem_kick_plate", I.efem, "painted_dark", g.box(e.r1 - pt - 0.002, e.r1 + 0.004, fy + 0.02, efemFloorTop + 0.08, qL + fs, qR - fs, 0.002), { cutaway: "keep", castShadow: false });
   // side covers with a window (removable for inspection)
@@ -486,7 +489,7 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
   g.fixed("ffu_box", I.ffu, "painted_offwhite", mergeMeshData([ffu, motor]), { cutaway: "keep" });
   g.fixed("ffu_grille", I.ffu, "dark_steel", mergeMeshData(grille), { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
   // HMI on a swing arm at the operator side, outside the load port module so the FOUP hoisted by the OHT passes by
-  const hq0 = qc + lp.deckWidth / 2 + 0.005;
+  const hq0 = LQ + lp.deckWidth / 2 + 0.005;
   const hq1 = qR + 0.01;
   const qh = (hq0 + hq1) / 2;
   const yh = fy + 1.48;
@@ -498,30 +501,30 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
   // deck, column, door guide rails, indicators
   const op = lp.opening;
   const dw = lp.deckWidth / 2;
-  g.fixed("lp_frame_plate", I.loadPort, "painted_offwhite", g.holedPlate(e.r1 - 0.026, e.r1, bay.y0 + 0.001, bay.y1 - 0.001, bay.q0 + 0.001, bay.q1 - 0.001, [{ y0: op.y0, y1: op.y1, q0: qc - op.width / 2, q1: qc + op.width / 2 }]), { cutaway: "keep" });
+  g.fixed("lp_frame_plate", I.loadPort, "painted_offwhite", g.holedPlate(e.r1 - 0.026, e.r1, bay.y0 + 0.001, bay.y1 - 0.001, bay.q0 + 0.001, bay.q1 - 0.001, [{ y0: op.y0, y1: op.y1, q0: LQ - op.width / 2, q1: LQ + op.width / 2 }]), { cutaway: "keep" });
   const deckY1 = lp.deckTopY - 0.012;
-  g.fixed("lp_deck", I.loadPort, "stainless", g.box(lp.deckR0, lp.deckR1, deckY1 - lp.deckThickness, deckY1, qc - dw, qc + dw, 0.004), { cutaway: "keep" });
-  g.fixed("lp_column", I.loadPort, "painted_offwhite", g.box(lp.deckR0 + 0.012, lp.deckR0 + 0.2, fy + 0.02, deckY1 - lp.deckThickness, qc - dw + 0.04, qc + dw - 0.04, 0.006), { cutaway: "keep" });
+  g.fixed("lp_deck", I.loadPort, "stainless", g.box(lp.deckR0, lp.deckR1, deckY1 - lp.deckThickness, deckY1, LQ - dw, LQ + dw, 0.004), { cutaway: "keep" });
+  g.fixed("lp_column", I.loadPort, "painted_offwhite", g.box(lp.deckR0 + 0.012, lp.deckR0 + 0.2, fy + 0.02, deckY1 - lp.deckThickness, LQ - dw + 0.04, LQ + dw - 0.04, 0.006), { cutaway: "keep" });
   // the pulled door slides down between two guide rails beside the opening, inside the door opener zone (outside the robot swing)
   const railR0 = e.r1 - lp.doorPull - lp.doorPlateThickness;
   const rails: MeshData[] = [];
-  for (const sgn of [-1, 1]) rails.push(g.box(railR0, railR0 + lp.doorPlateThickness, op.y0 - lp.doorLower - 0.06, op.y1, qc + sgn * (op.width / 2 + 0.004), qc + sgn * (op.width / 2 + 0.024), 0.003));
+  for (const sgn of [-1, 1]) rails.push(g.box(railR0, railR0 + lp.doorPlateThickness, op.y0 - lp.doorLower - 0.06, op.y1, LQ + sgn * (op.width / 2 + 0.004), LQ + sgn * (op.width / 2 + 0.024), 0.003));
   g.fixed("lp_opener_rail", I.loadPort, "dark_steel", mergeMeshData(rails), { cutaway: "keep", castShadow: false });
   const leds: MeshData[] = [];
-  for (let k = 0; k < 4; k++) leds.push(g.box(e.r1, e.r1 + 0.004, op.y1 + 0.02, op.y1 + 0.035, qc - 0.12 + k * 0.08, qc - 0.09 + k * 0.08, 0.001));
+  for (let k = 0; k < 4; k++) leds.push(g.box(e.r1, e.r1 + 0.004, op.y1 + 0.02, op.y1 + 0.035, LQ - 0.12 + k * 0.08, LQ - 0.09 + k * 0.08, 0.001));
   g.fixed("lp_indicators", I.loadPort, "safety_marking", mergeMeshData(leds), { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
   // dock plate + kinematic pins (lp_dock); FOUP pad (px, pz) -> station (seat - px, -pz) because the FOUP +X faces the tool
-  const dock = g.box(lp.seatR - 0.18, lp.seatR + 0.18, deckY1, lp.deckTopY, qc - 0.17, qc + 0.17, 0.003);
+  const dock = g.box(lp.seatR - 0.18, lp.seatR + 0.18, deckY1, lp.deckTopY, LQ - 0.17, LQ + 0.17, 0.003);
   const pins: MeshData[] = [];
-  for (const [px, pz] of lp.couplingPads) pins.push(g.cylY(0.007, lp.deckTopY - 0.001, lp.deckTopY + 0.01, lp.seatR - px, qc - pz, 16, 0.003));
-  pins.push(g.box(lp.seatR - 0.02, lp.seatR + 0.02, lp.deckTopY, lp.deckTopY + 0.01, qc - 0.005, qc + 0.005, 0.002));
+  for (const [px, pz] of lp.couplingPads) pins.push(g.cylY(0.007, lp.deckTopY - 0.001, lp.deckTopY + 0.01, lp.seatR - px, LQ - pz, 16, 0.003));
+  pins.push(g.box(lp.seatR - 0.02, lp.seatR + 0.02, lp.deckTopY, lp.deckTopY + 0.01, LQ - 0.005, LQ + 0.005, 0.002));
   g.fixed("lp_dock_plate", I.dock, "aluminum_anodized", dock, { cutaway: "keep", jointId: J.dock });
   g.fixed("lp_dock_pins", I.dock, "stainless", mergeMeshData(pins), { cutaway: "keep", jointId: J.dock, castShadow: false });
   // port door (opener) with latch keys
-  const pd = g.box(e.r1 - lp.doorPlateThickness, e.r1 - 0.001, op.y0 + 0.006, op.y1 - 0.006, qc - op.width / 2 + 0.006, qc + op.width / 2 - 0.006, 0.004);
+  const pd = g.box(e.r1 - lp.doorPlateThickness, e.r1 - 0.001, op.y0 + 0.006, op.y1 - 0.006, LQ - op.width / 2 + 0.006, LQ + op.width / 2 - 0.006, 0.004);
   const keys: MeshData[] = [];
-  for (const q of [-0.1, 0.1]) keys.push(g.cylR(0.009, e.r1 - 0.002, e.r1 + 0.006, op.centerY, qc + q, 16));
-  for (const q of [-0.13, 0.13]) for (const yy of [op.y0 + 0.05, op.y1 - 0.05]) keys.push(g.cylR(0.006, e.r1 - 0.002, e.r1 + 0.004, yy, qc + q, 12));
+  for (const q of [-0.1, 0.1]) keys.push(g.cylR(0.009, e.r1 - 0.002, e.r1 + 0.006, op.centerY, LQ + q, 16));
+  for (const q of [-0.13, 0.13]) for (const yy of [op.y0 + 0.05, op.y1 - 0.05]) keys.push(g.cylR(0.006, e.r1 - 0.002, e.r1 + 0.004, yy, LQ + q, 12));
   g.fixed("lp_port_door", I.opener, "painted_offwhite", pd, { cutaway: "keep", jointId: J.doorLower });
   g.fixed("lp_port_door_keys", I.opener, "dark_steel", mergeMeshData(keys), { cutaway: "keep", jointId: J.doorLower, castShadow: false, lod: "fine" });
 }

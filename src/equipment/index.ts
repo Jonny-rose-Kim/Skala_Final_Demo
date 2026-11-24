@@ -23,6 +23,9 @@ import { PRODUCER_HANDLING_SCENARIO } from "./producer/scenario";
 import { TACTRAS_BUNDLE, TACTRAS_TEMPLATE_ID } from "./tactras/index";
 import { createTactrasEffects } from "./tactras/effects";
 import { TACTRAS_HANDLING_SCENARIO } from "./tactras/scenario";
+import { CELLESTA_BUNDLE, CELLESTA_TEMPLATE_ID } from "./cellesta/index";
+import { createCellestaEffects } from "./cellesta/effects";
+import { CELLESTA_STANDALONE_SCENARIO } from "./cellesta/scenario";
 import { ROUTE_A_SCENARIO, ROUTE_B_SCENARIO } from "./routes/index";
 
 let registered = false;
@@ -43,8 +46,11 @@ export function registerAllEquipment(): void {
   registerEffects(PRODUCER_TEMPLATE_ID, createCcpEffects);
   registerBundle(TACTRAS_BUNDLE);
   registerEffects(TACTRAS_TEMPLATE_ID, createTactrasEffects);
+  registerBundle(CELLESTA_BUNDLE);
+  registerEffects(CELLESTA_TEMPLATE_ID, createCellestaEffects);
   registerScenario(PRODUCER_HANDLING_SCENARIO);
   registerScenario(TACTRAS_HANDLING_SCENARIO);
+  registerScenario(CELLESTA_STANDALONE_SCENARIO);
   registerScenario(CCP_STANDALONE_SCENARIO);
   registerScenario(CCP_HANDLING_SCENARIO);
   registerScenario(REMOTE_STANDALONE_SCENARIO);

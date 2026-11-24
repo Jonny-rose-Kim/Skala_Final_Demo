@@ -38,8 +38,8 @@ def build(env, P):
         sx, sy, sz = im["size"]
         aid = f"{im['moduleId'].lower().replace('-', '')}_enclosure"
         outward = "-z" if im["facing"][2] > 0 else "+z"
-        module_skin(G, P, aid, cx - sx / 2, cx + sx / 2, cz - sz / 2, cz + sz / 2, F, F + sy, cover=False, doors_on=(outward,), top_boxes=False)
-        chamber_top(G, P, aid, cx, cz, F + sy, dict(cover=False))
+        module_skin(G, P, aid, cx - sx / 2, cx + sx / 2, cz - sz / 2, cz + sz / 2, F, F + sy, cover=True, doors_on=(outward,), top_boxes=False)
+        chamber_top(G, P, aid, cx, cz, F + sy, dict(cover=True))
     for k, z in enumerate(env["idleLoadPortsZ"]):
         idle_load_port(G, P, f"lp{k + 2}", z, st["loadPort"], st["efem"], F)
     return G.finalize(MATREF)

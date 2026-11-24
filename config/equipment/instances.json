@@ -209,6 +209,35 @@
         "role": "carrier",
         "mobile": true
       }
+    ],
+    "cellesta-dev": [
+      {
+        "instanceId": "CLEAN-01",
+        "templateId": "cellesta_i_md_clean_300",
+        "displayName": "CLEAN-01 / CELLESTA-i MD wet clean (representative)",
+        "position": [
+          0,
+          0.168,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "wet_clean"
+      },
+      {
+        "instanceId": "FOUP-01",
+        "templateId": "foup_carrier_300",
+        "displayName": "FOUP-01 / 300 mm carrier",
+        "position": [
+          -2.787,
+          0.118,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "carrier",
+        "mobile": true
+      }
     ]
   },
   "bay": {

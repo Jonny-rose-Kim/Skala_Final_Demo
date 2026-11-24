@@ -28,7 +28,7 @@ def build(env, P):
         sx, sy, sz = im["size"]
         aid = f"{im['moduleId'].lower().replace('-', '')}_enclosure"
         outward = "-z" if im["facing"][2] > 0 else "+z"
-        module_skin(G, P, aid, cx - sx / 2, cx + sx / 2, cz - sz / 2, cz + sz / 2, F, F + sy, cover=False, doors_on=(outward,))
+        module_skin(G, P, aid, cx - sx / 2, cx + sx / 2, cz - sz / 2, cz + sz / 2, F, F + sy, cover=True, doors_on=(outward,))
     # idle load ports LP2 / LP3
     for k, z in enumerate(env["idleLoadPortsZ"]):
         idle_load_port(G, P, f"lp{k + 2}", z, st["loadPort"], st["efem"], F)

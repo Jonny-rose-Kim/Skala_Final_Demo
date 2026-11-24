@@ -1,0 +1,2123 @@
+{
+  "$schema_id": "pecvd-twin.glb-manifest/1",
+  "templateId": "cellesta_i_md_clean_300",
+  "generator": {
+    "tool": "Blender 4.5.16 LTS",
+    "script": "scripts/blender/tools/cellesta.py",
+    "command": "blender --background --python scripts/blender/build_equipment.py -- cellesta"
+  },
+  "export": {
+    "format": "GLB",
+    "yUp": true,
+    "extras": true,
+    "applyModifiers": true,
+    "imageFormat": "JPEG",
+    "jpegQuality": 88,
+    "units": "m"
+  },
+  "frame": "Blender (bx, by, bz) = instance (-x, -z, y); the glTF loader's __root__ maps it back (single conversion)",
+  "rawFile": "assets/source/glb-raw/cellesta_i_md_clean_300.glb",
+  "runtimeFile": "public/models/cellesta_i_md_clean_300.glb",
+  "nodes": [
+    {
+      "node": "chemical_cabinet.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          0.654,
+          -0.86,
+          -1.404
+        ],
+        "max": [
+          1.466,
+          1.1716,
+          1.404
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          0.645,
+          -0.95,
+          -1.355
+        ],
+        "max": [
+          1.475,
+          -0.938,
+          1.355
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          0.65,
+          -0.938,
+          -1.35
+        ],
+        "max": [
+          1.47,
+          -0.876,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          0.6,
+          -0.87,
+          -1.4
+        ],
+        "max": [
+          1.52,
+          1.45,
+          1.4
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 2280,
+      "boundsInstance": {
+        "min": [
+          0.6582,
+          -0.6462,
+          -1.438
+        ],
+        "max": [
+          1.532,
+          1.342,
+          1.438
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          0.65,
+          -0.93,
+          -1.35
+        ],
+        "max": [
+          1.47,
+          -0.87,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1944,
+      "boundsInstance": {
+        "min": [
+          0.62,
+          -0.868,
+          -1.38
+        ],
+        "max": [
+          1.5,
+          1.448,
+          1.38
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 324,
+      "boundsInstance": {
+        "min": [
+          0.622,
+          1.438,
+          -1.378
+        ],
+        "max": [
+          1.498,
+          1.45,
+          1.378
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 1188,
+      "boundsInstance": {
+        "min": [
+          1.512,
+          1.1391,
+          -1.25
+        ],
+        "max": [
+          1.532,
+          1.3209,
+          1.25
+        ]
+      }
+    },
+    {
+      "node": "chemical_cabinet.windows.glass_smoke",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "chemical_cabinet",
+      "partKey": "chemical_cabinet.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          0.774,
+          0.406,
+          -1.408
+        ],
+        "max": [
+          1.346,
+          1.0324,
+          -1.402
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.column.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.column.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 324,
+      "boundsInstance": {
+        "min": [
+          -2.75,
+          -0.95,
+          -0.655
+        ],
+        "max": [
+          -2.61,
+          -0.08,
+          1.16
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.deck.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.deck.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1164,
+      "boundsInstance": {
+        "min": [
+          -2.98,
+          -0.08,
+          -0.725
+        ],
+        "max": [
+          -2.54,
+          -0.038,
+          1.23
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.door.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.door.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 324,
+      "boundsInstance": {
+        "min": [
+          -2.582,
+          -0.015,
+          -0.685
+        ],
+        "max": [
+          -2.57,
+          0.285,
+          1.19
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.frame.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.frame.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 564,
+      "boundsInstance": {
+        "min": [
+          -2.57,
+          -0.83,
+          -0.745
+        ],
+        "max": [
+          -2.54,
+          0.465,
+          1.25
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_amber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_amber",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_amber"
+      ],
+      "triangles": 132,
+      "boundsInstance": {
+        "min": [
+          -2.574,
+          0.358,
+          -0.525
+        ],
+        "max": [
+          -2.57,
+          0.372,
+          1.03
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_blue",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_blue",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_blue"
+      ],
+      "triangles": 132,
+      "boundsInstance": {
+        "min": [
+          -2.574,
+          0.358,
+          -0.465
+        ],
+        "max": [
+          -2.57,
+          0.372,
+          1.09
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_green",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_green",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_green"
+      ],
+      "triangles": 132,
+      "boundsInstance": {
+        "min": [
+          -2.574,
+          0.358,
+          -0.585
+        ],
+        "max": [
+          -2.57,
+          0.372,
+          0.97
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          -0.366,
+          -0.86,
+          -0.524
+        ],
+        "max": [
+          0.546,
+          0.7316,
+          0.524
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -0.375,
+          -0.95,
+          -0.475
+        ],
+        "max": [
+          0.555,
+          -0.938,
+          0.475
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -0.37,
+          -0.938,
+          -0.47
+        ],
+        "max": [
+          0.55,
+          -0.876,
+          0.47
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -0.42,
+          -0.87,
+          -0.52
+        ],
+        "max": [
+          0.6,
+          0.95,
+          0.52
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1848,
+      "boundsInstance": {
+        "min": [
+          -0.3618,
+          -0.699,
+          -0.558
+        ],
+        "max": [
+          0.612,
+          0.842,
+          0.558
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.37,
+          -0.93,
+          -0.47
+        ],
+        "max": [
+          0.55,
+          -0.87,
+          0.47
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1080,
+      "boundsInstance": {
+        "min": [
+          -0.4,
+          -0.868,
+          -0.5
+        ],
+        "max": [
+          0.58,
+          0.948,
+          0.5
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.398,
+          0.938,
+          -0.498
+        ],
+        "max": [
+          0.578,
+          0.95,
+          0.498
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          0.592,
+          0.6391,
+          -0.37
+        ],
+        "max": [
+          0.612,
+          0.8209,
+          0.37
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.windows.glass_smoke",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.246,
+          0.131,
+          -0.528
+        ],
+        "max": [
+          0.426,
+          0.6224,
+          -0.522
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          -1.416,
+          -0.86,
+          -1.404
+        ],
+        "max": [
+          -0.464,
+          1.1716,
+          -1.382
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -1.425,
+          -0.95,
+          -1.355
+        ],
+        "max": [
+          -0.455,
+          -0.938,
+          -0.545
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -1.42,
+          -0.938,
+          -1.35
+        ],
+        "max": [
+          -0.46,
+          -0.876,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -1.47,
+          -0.87,
+          -1.4
+        ],
+        "max": [
+          -0.41,
+          1.45,
+          -0.5
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1848,
+      "boundsInstance": {
+        "min": [
+          -1.4118,
+          -0.6462,
+          -1.438
+        ],
+        "max": [
+          -0.398,
+          1.342,
+          -0.64
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.42,
+          -0.93,
+          -1.35
+        ],
+        "max": [
+          -0.46,
+          -0.87,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -1.45,
+          -0.868,
+          -1.38
+        ],
+        "max": [
+          -0.43,
+          1.448,
+          -0.52
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.448,
+          1.438,
+          -1.378
+        ],
+        "max": [
+          -0.432,
+          1.45,
+          -0.522
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -0.418,
+          1.1391,
+          -1.25
+        ],
+        "max": [
+          -0.398,
+          1.3209,
+          -0.65
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.windows.glass_smoke",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.296,
+          0.406,
+          -1.408
+        ],
+        "max": [
+          -1.064,
+          1.0324,
+          -1.402
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -0.346,
+          -0.86,
+          -1.404
+        ],
+        "max": [
+          0.546,
+          1.1716,
+          -1.382
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -0.355,
+          -0.95,
+          -1.355
+        ],
+        "max": [
+          0.555,
+          -0.938,
+          -0.545
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -0.35,
+          -0.938,
+          -1.35
+        ],
+        "max": [
+          0.55,
+          -0.876,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -0.4,
+          -0.87,
+          -1.4
+        ],
+        "max": [
+          0.6,
+          1.45,
+          -0.5
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -0.3418,
+          -0.6462,
+          -1.438
+        ],
+        "max": [
+          0.612,
+          1.342,
+          -0.64
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.35,
+          -0.93,
+          -1.35
+        ],
+        "max": [
+          0.55,
+          -0.87,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -0.38,
+          -0.868,
+          -1.38
+        ],
+        "max": [
+          0.58,
+          1.448,
+          -0.52
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.378,
+          1.438,
+          -1.378
+        ],
+        "max": [
+          0.578,
+          1.45,
+          -0.522
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          0.592,
+          1.1391,
+          -1.25
+        ],
+        "max": [
+          0.612,
+          1.3209,
+          -0.65
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.windows.glass_smoke",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.226,
+          0.406,
+          -1.408
+        ],
+        "max": [
+          0.426,
+          1.0324,
+          -1.402
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          -1.416,
+          -0.86,
+          1.382
+        ],
+        "max": [
+          -0.464,
+          1.1716,
+          1.404
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -1.425,
+          -0.95,
+          0.545
+        ],
+        "max": [
+          -0.455,
+          -0.938,
+          1.355
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -1.42,
+          -0.938,
+          0.55
+        ],
+        "max": [
+          -0.46,
+          -0.876,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -1.47,
+          -0.87,
+          0.5
+        ],
+        "max": [
+          -0.41,
+          1.45,
+          1.4
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1848,
+      "boundsInstance": {
+        "min": [
+          -1.4118,
+          -0.6462,
+          0.64
+        ],
+        "max": [
+          -0.398,
+          1.342,
+          1.438
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.42,
+          -0.93,
+          0.55
+        ],
+        "max": [
+          -0.46,
+          -0.87,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -1.45,
+          -0.868,
+          0.52
+        ],
+        "max": [
+          -0.43,
+          1.448,
+          1.38
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.448,
+          1.438,
+          0.522
+        ],
+        "max": [
+          -0.432,
+          1.45,
+          1.378
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -0.418,
+          1.1391,
+          0.65
+        ],
+        "max": [
+          -0.398,
+          1.3209,
+          1.25
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.doors.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -0.346,
+          -0.86,
+          1.382
+        ],
+        "max": [
+          0.546,
+          1.1716,
+          1.404
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.feet.rubber",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -0.355,
+          -0.95,
+          0.545
+        ],
+        "max": [
+          0.555,
+          -0.938,
+          1.355
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.feet.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -0.35,
+          -0.938,
+          0.55
+        ],
+        "max": [
+          0.55,
+          -0.876,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.frame.paint_lightgray",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -0.4,
+          -0.87,
+          0.5
+        ],
+        "max": [
+          0.6,
+          1.45,
+          1.4
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.hardware.stainless",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -0.3418,
+          -0.6462,
+          0.64
+        ],
+        "max": [
+          0.612,
+          1.342,
+          1.438
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.kick.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.35,
+          -0.93,
+          0.55
+        ],
+        "max": [
+          0.55,
+          -0.87,
+          1.35
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -0.38,
+          -0.868,
+          0.52
+        ],
+        "max": [
+          0.58,
+          1.448,
+          1.38
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.top.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.378,
+          1.438,
+          0.522
+        ],
+        "max": [
+          0.578,
+          1.45,
+          1.378
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.vents.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          0.592,
+          1.1391,
+          0.65
+        ],
+        "max": [
+          0.612,
+          1.3209,
+          1.25
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.accent.paint_graphite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.accent.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.48,
+          -0.9,
+          -0.53
+        ],
+        "max": [
+          -1.468,
+          1.4,
+          -0.47
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.corridor_panels.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.corridor_panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1512,
+      "boundsInstance": {
+        "min": [
+          -1.478,
+          -0.868,
+          -0.42
+        ],
+        "max": [
+          -0.402,
+          1.45,
+          0.42
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.tower.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.tower.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -1.7,
+          -0.95,
+          -0.9
+        ],
+        "max": [
+          -1.48,
+          1.45,
+          -0.5
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.tower_hmi.screen",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.tower_hmi.screen",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "screen"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.712,
+          0.35,
+          -0.83
+        ],
+        "max": [
+          -1.7,
+          0.65,
+          -0.57
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.upper_tier.paint_offwhite",
+      "parent": "cellesta_i_md_clean_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.upper_tier.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1728,
+      "boundsInstance": {
+        "min": [
+          -0.4,
+          0.962,
+          -0.5
+        ],
+        "max": [
+          0.578,
+          1.45,
+          0.5
+        ]
+      }
+    }
+  ]
+}

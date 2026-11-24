@@ -10,6 +10,8 @@ import { PRODUCER_LAYOUT } from "../../src/equipment/producer/layout";
 import { PRODUCER_TEMPLATE_ID } from "../../src/equipment/producer/template";
 import type { HandlingStationLayout } from "../../src/equipment/handling/stationLayout";
 import { TACTRAS_LAYOUT } from "../../src/equipment/tactras/layout";
+import { CELLESTA_LAYOUT } from "../../src/equipment/cellesta/layout";
+import { CELLESTA_TEMPLATE_ID } from "../../src/equipment/cellesta/template";
 import { TACTRAS_TEMPLATE_ID } from "../../src/equipment/tactras/template";
 
 const OUT = path.resolve("assets/source/envelopes");
@@ -53,5 +55,21 @@ function write(templateId: string, data: unknown) {
     pm01: L.tool.pm01,
     idleModules: L.tool.idleModules,
     idleLoadPortsZ: L.tool.idleLoadPortsQ.map((q) => -q),
+  });
+}
+
+{
+  const L = CELLESTA_LAYOUT;
+  const fe = L.cfg.front_end;
+  const pm = L.pm;
+  write(CELLESTA_TEMPLATE_ID, {
+    floorY: L.floorY,
+    efem: { x0: -L.efem.r1, x1: -L.efem.r0, centerZ: -L.efem.qc, halfWidth: L.efem.width / 2, topY: L.efem.topY, ffuTopY: L.efem.ffuTopY },
+    loadPort: { x0: -L.loadPort.deckR1, x1: -L.loadPort.deckR0, deckTopY: L.loadPort.deckTopY, deckWidth: L.loadPort.deckWidth, openingY0: L.loadPort.opening.y0, openingY1: L.loadPort.opening.y1, openingWidth: L.loadPort.opening.width, seatX: L.seat[0] },
+    idleLoadPortsZ: fe.load_ports_z.filter((_, i) => i !== fe.active_load_port_index),
+    corridor: { x0: fe.corridor.x0, x1: fe.corridor.x1, halfZ: fe.corridor.half_z },
+    pm: { x0: pm.box.x0, x1: pm.box.x1, z0: pm.box.z0, z1: pm.box.z1, top: pm.box.top_y },
+    shutter: { width: pm.shutter.width, y0: pm.shutter.center_y - pm.shutter.height / 2, y1: pm.shutter.center_y + pm.shutter.height / 2 },
+    tool: L.tool,
   });
 }

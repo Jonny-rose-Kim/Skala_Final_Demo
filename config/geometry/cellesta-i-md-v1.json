@@ -1,0 +1,312 @@
+{
+  "$schema_id": "pecvd-twin.geometry/cellesta-i-md/1",
+  "geometry_revision": "cellesta-i-md-clean-1.0.0",
+  "template_id": "cellesta_i_md_clean_300",
+  "title": "CELLESTA-i MD based single-wafer wet clean tool: representative process module PM-01 (clean, rinse, IPA / atmosphere-related drying)",
+  "source": {
+    "kind": "assumed",
+    "note": "Exterior proportions (front end with four load ports, tall operator tower, long process body) follow the public Tokyo Electron CELLESTA product image; the MD description (single-wafer clean, chamber atmosphere control, IPA dispenser, chemical recycle) follows the public product text. The process module interior (cup with a three-level splash guard, edge-support spin chuck, swing dispense arm, park position, supply / drain / exhaust interfaces) is a representative design for this project, not OEM CAD. Chemical kinds, concentrations, flows and the SMD drying mechanism are not modeled.",
+    "references": [
+      "https://www.tel.com/product/cellesta.html (product page, 2026-11-24: CELLESTA-i MD, chamber atmosphere control, IPA dispenser, chemical recycle; drying shown as \"IPA dry\" and \"Surface modification dry\")"
+    ]
+  },
+  "units": "m",
+  "frame": "origin on the PM-01 spin axis at the wafer support plane (process height); +Y up; front end toward -X",
+  "wafer": {
+    "diameter": 0.3,
+    "thickness": 0.000775
+  },
+  "floor_y": -0.95,
+  "process_module": {
+    "box": {
+      "x0": -0.4,
+      "x1": 0.58,
+      "z0": -0.5,
+      "z1": 0.5,
+      "top_y": 0.95
+    },
+    "shutter": {
+      "width": 0.38,
+      "height": 0.07,
+      "center_y": 0.012,
+      "travel": 0.09,
+      "thickness": 0.01
+    },
+    "cup": {
+      "inner_radius": 0.2,
+      "wall_thickness": 0.008,
+      "outer_radius": 0.25,
+      "bottom_y": -0.24,
+      "floor_thickness": 0.01,
+      "rim_y": 0.07,
+      "partition_radius": 0.218,
+      "partition_top_y": -0.02,
+      "note": "Two collection channels (inner / outer) behind a three-level splash guard (representative)."
+    },
+    "guard": {
+      "inner_radius": 0.165,
+      "outer_radius": 0.2,
+      "lip_height": 0.03,
+      "skirt_bottom_y": -0.12,
+      "levels": {
+        "transfer": -0.075,
+        "chemical": 0.0,
+        "rinse": -0.03
+      },
+      "note": "Guard top below the wafer plane for transfer; up for the chemical step (outer channel); middle for rinse / dry (inner channel)."
+    },
+    "chuck": {
+      "hub_radius": 0.11,
+      "hub_thickness": 0.018,
+      "support_pin_radius": 0.147,
+      "support_pin_count": 6,
+      "support_pin_height": 0.012,
+      "edge_pin_radius": 0.151,
+      "spindle_radius": 0.03,
+      "motor_radius": 0.075,
+      "motor_y0": -0.46,
+      "motor_y1": -0.3
+    },
+    "arm": {
+      "pivot": [
+        0.27,
+        0.0,
+        0.27
+      ],
+      "length": 0.3818,
+      "arm_height": 0.08,
+      "nozzle_drop": 0.045,
+      "park_deg": -50,
+      "center_deg": 0,
+      "sweep_edge_deg": 20,
+      "column_radius": 0.025,
+      "nozzles": [
+        "chemical",
+        "upw",
+        "ipa"
+      ]
+    },
+    "supply": {
+      "manifold_center": [
+        0.42,
+        -0.3,
+        0.34
+      ],
+      "manifold_size": [
+        0.16,
+        0.24,
+        0.12
+      ],
+      "filter_center": [
+        0.42,
+        -0.6,
+        0.34
+      ],
+      "filter_radius": 0.05,
+      "filter_height": 0.24
+    },
+    "drain": {
+      "outer_x": 0.1,
+      "inner_x": -0.1,
+      "z": -0.12,
+      "radius": 0.018
+    },
+    "exhaust": {
+      "duct_radius": 0.05,
+      "x": 0.0,
+      "z": 0.2
+    }
+  },
+  "front_end": {
+    "efem": {
+      "x_back": -1.7,
+      "depth": 0.84,
+      "center_z": 0.2525,
+      "width": 2.3,
+      "height_above_floor": 2.2,
+      "ffu_height": 0.18,
+      "panel_thickness": 0.012,
+      "frame_size": 0.04,
+      "door_zone_depth": 0.08
+    },
+    "load_port": {
+      "deck_depth": 0.44,
+      "deck_width": 0.52,
+      "deck_height_above_floor": 0.9,
+      "deck_thickness": 0.025,
+      "dock_stroke": 0.03,
+      "door_gap": 0.002,
+      "opening_width": 0.36,
+      "opening_height": 0.3,
+      "opening_bottom_above_deck": 0.035,
+      "door_pull": 0.06,
+      "door_lower": 0.34,
+      "door_plate_thickness": 0.02
+    },
+    "load_ports_z": [
+      -0.505,
+      0.0,
+      0.505,
+      1.01
+    ],
+    "active_load_port_index": 1,
+    "atm_robot": {
+      "axis_x": -2.12,
+      "axis_z": 0.0,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.44,
+      "z_margin_below": 0.012,
+      "link_length": 0.28,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.31,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [
+        0.088,
+        0.118
+      ],
+      "tip_beyond_center": 0.12
+    },
+    "pass_station": {
+      "x": -1.62,
+      "z": 0.0,
+      "plane_y": 0.0,
+      "half_x": 0.15,
+      "half_z": 0.2,
+      "pin_radius": 0.003,
+      "pin_q": 0.12,
+      "pin_r": [
+        -0.06,
+        0.06
+      ],
+      "housing_y0": -0.1,
+      "housing_y1": 0.13
+    },
+    "transfer_robot": {
+      "axis_x": -0.95,
+      "axis_z": 0.0,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.16,
+      "z_margin_below": 0.012,
+      "link_length": 0.3,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.45,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [
+        0.088,
+        0.118
+      ],
+      "tip_beyond_center": 0.13
+    },
+    "corridor": {
+      "x0": -1.48,
+      "x1": -0.4,
+      "half_z": 0.42,
+      "top_y": 0.95
+    }
+  },
+  "tool": {
+    "note": "Representative arrangement: PM-01 at the end of the transfer corridor, geometry-only module stacks along both sides, chemical supply / recycle cabinet at the rear.",
+    "idle_modules": [
+      {
+        "moduleId": "PM-02",
+        "center": [
+          -0.94,
+          0,
+          -0.95
+        ],
+        "size": [
+          1.02,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-03",
+        "center": [
+          0.1,
+          0,
+          -0.95
+        ],
+        "size": [
+          0.96,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-04",
+        "center": [
+          -0.94,
+          0,
+          0.95
+        ],
+        "size": [
+          1.02,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "moduleId": "PM-05",
+        "center": [
+          0.1,
+          0,
+          0.95
+        ],
+        "size": [
+          0.96,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "chemical_cabinet": {
+      "x0": 0.62,
+      "x1": 1.5,
+      "z0": -1.38,
+      "z1": 1.38,
+      "height": 2.4
+    },
+    "tower": {
+      "x0": -1.7,
+      "x1": -1.48,
+      "z0": -0.9,
+      "z1": -0.5,
+      "height": 2.4
+    }
+  }
+}

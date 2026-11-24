@@ -1,0 +1,26 @@
+{
+  "templateId": "cellesta_i_md_clean_300",
+  "transforms": [
+    "dedup",
+    "weld"
+  ],
+  "before": {
+    "nodes": 71,
+    "meshes": 70,
+    "materials": 10,
+    "textures": 2,
+    "accessors": 338,
+    "triangles": 47104,
+    "bytes": 4226916
+  },
+  "after": {
+    "nodes": 71,
+    "meshes": 70,
+    "materials": 10,
+    "textures": 2,
+    "accessors": 350,
+    "triangles": 47104,
+    "bytes": 4234084
+  },
+  "semanticNodesUnchanged": true
+}
