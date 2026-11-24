@@ -25,6 +25,8 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
 import type { DepthRenderer } from "@babylonjs/core/Rendering/depthRenderer";
+import { GlbLibrary } from "./glbParts";
+import type { PartGeometry } from "../geometry/chamberParts";
 import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
 import "../equipment/index";
@@ -116,7 +118,16 @@ function backdropProfile(radius: number): Vec2[] {
 
 const NO_CUT = resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []);
 
-const FAMILY_LABEL: Record<string, string> = { CCP_PECVD: "CCP PECVD", REMOTE_PECVD: "Remote ICP PECVD", STI_CMP_ROTARY: "Rotary STI CMP", OHT: "OHT", CARRIER: "FOUP" };
+const FAMILY_LABEL: Record<string, string> = {
+  CCP_PECVD: "CCP PECVD",
+  REMOTE_PECVD: "Remote ICP PECVD",
+  STI_CMP_ROTARY: "Rotary STI CMP",
+  PECVD_TWIN_CLUSTER: "PECVD (Producer SE)",
+  ETCH_CCP_RIE_CLUSTER: "Oxide Etch (Tactras)",
+  WET_CLEAN_SINGLE_WAFER: "Wet Clean (CELLESTA-i MD)",
+  OHT: "OHT",
+  CARRIER: "FOUP",
+};
 
 export class SceneHost {
   private world: World | null = null;
@@ -134,6 +145,9 @@ export class SceneHost {
   private frozenTime: number | null = null;
   private logs: string[] = [];
   private disposed = false;
+  private glbLibrary: GlbLibrary | null = null;
+  /** Templates whose required GLB failed to load (their scenarios stay blocked). */
+  private readonly glbFailed = new Set<string>();
   /** CCP layout kept for the original debug/QA API. */
   readonly layout: ChamberLayout = CHAMBER_LAYOUT;
   private options: SceneHostOptions = {};
@@ -297,6 +311,33 @@ export class SceneHost {
 
     const instances = new Map<string, EquipmentInstance>();
     const defs = this.instanceDefs();
+    // GLB geometry sources: loaded (once per template) before any instance exists, so picking, poses and
+    // the first frame never see a half-built tool. A failed optional GLB leaves the procedural parts; a
+    // failed required GLB blocks the scenario clock (see renderFrame) instead of showing a partial tool.
+    const glb = new GlbLibrary(scene);
+    this.glbLibrary = glb;
+    const glbParts = new Map<string, PartGeometry[]>();
+    this.glbFailed.clear();
+    for (const templateId of [...new Set(defs.map((d) => d.templateId))]) {
+      const b = getBundle(templateId);
+      if (!b?.glb) continue;
+      store.setRenderer({ status: "initializing", message: `장비 모델 불러오는 중: ${b.template.displayName}` });
+      const tg = performance.now();
+      try {
+        const res = await glb.load(b.glb, b.template);
+        glbParts.set(templateId, res.parts);
+        this.log(`GLB ${templateId}: ${res.parts.length} parts, ${res.status.state === "ready" ? res.status.triangles : 0} triangles, ${(performance.now() - tg).toFixed(0)} ms`);
+      } catch (e) {
+        if (this.disposed) throw e;
+        this.log(`GLB ${templateId} 로드 실패: ${String(e)}`);
+        store.setDevWarnings([...usePresentationStore.getState().devWarnings, `${templateId}: GLB load failed (${String(e)})`]);
+        if (b.glb.required) this.glbFailed.add(templateId);
+      }
+      if (this.disposed) {
+        glb.dispose();
+        throw new Error("cancelled during GLB load");
+      }
+    }
     const t0 = performance.now();
     for (const def of defs) {
       const bundle = getBundle(def.templateId);
@@ -304,7 +345,7 @@ export class SceneHost {
         this.log(`알 수 없는 template ${def.templateId} (instance ${def.instanceId}) - 건너뜀`);
         continue;
       }
-      const inst = new EquipmentInstance(scene, def, bundle, materials, lighting.shadow);
+      const inst = new EquipmentInstance(scene, def, bundle, materials, lighting.shadow, glbParts.get(def.templateId) ?? []);
       instances.set(def.instanceId, inst);
     }
     this.log(`Equipment 생성 ${instances.size}개 (${defs.map((d) => d.templateId).join(", ")}), ${(performance.now() - t0).toFixed(0)} ms, meshes=${scene.meshes.length}`);
@@ -524,6 +565,8 @@ export class SceneHost {
     w.lighting.dispose();
     w.materials.dispose();
     w.textures.dispose();
+    this.glbLibrary?.dispose();
+    this.glbLibrary = null;
     w.env.dispose();
     w.ground.dispose(false, true);
     w.environment.dispose();
@@ -533,6 +576,8 @@ export class SceneHost {
 
   dispose(): void {
     this.disposed = true;
+    // a GLB load still in flight frees its materials when it settles (GlbLibrary checks the flag)
+    this.glbLibrary?.dispose();
     if (this.cutawayTimer !== null) window.clearTimeout(this.cutawayTimer);
     const created = this.world?.created ?? this.pendingEngine;
     this.teardownWorld();
@@ -682,7 +727,9 @@ export class SceneHost {
   private coversRemovedFor(s: PresentationState, instanceId: string): boolean {
     if (s.coverMode === "closed") return false;
     if (s.coverMode === "removed") return true;
-    return instanceId === s.activeInstanceId && !s.overview;
+    if (instanceId !== s.activeInstanceId || s.overview) return false;
+    const inst = this.world?.instances.get(instanceId);
+    return inst?.bundle.coversAuto === "inspection" ? s.viewMode !== "assembled" : true;
   }
 
   private scheduleCutaway(s: PresentationState, immediate: boolean): void {
@@ -1010,6 +1057,12 @@ export class SceneHost {
     let preview: PreviewState | null = null;
     if (def) {
       preview = def.evaluate(time, s.visual.visualSeed, animTime, this.ctx);
+      // a required equipment model failed to load: hold the clock and say so (never play a partial tool)
+      const failed = [...this.glbFailed].filter((t) => def.requiredTemplateIds.includes(t) || def.templateId === t);
+      if (failed.length) {
+        preview = { ...preview, blockedReason: `Preview blocked: equipment model not loaded (${failed.join(", ")})` };
+        if (this.clock.playing) this.clock.pause();
+      }
       // exploded: robot joints, wafer holders and the carrier stay on one frozen snapshot; leaving the
       // view applies the current evaluator state again
       const exploded = s.viewMode === "exploded" && !s.overview;

@@ -1,0 +1,35 @@
+{
+  "templateId": "producer_se_ccp_twin_300",
+  "validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 7,
+    "infos": 13,
+    "hints": 0,
+    "messages": [
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/1/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "I UNUSED_MESH_TANGENT /meshes/4/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/4/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/5/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/5/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/6/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/6/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_OBJECT /meshes/8/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/9/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/11/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "I UNUSED_MESH_TANGENT /meshes/17/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/17/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_OBJECT /meshes/19/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/20/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/22/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "I UNUSED_MESH_TANGENT /meshes/28/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/28/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_OBJECT /meshes/30/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/31/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations.",
+      "W MESH_PRIMITIVE_GENERATED_TANGENT_SPACE /meshes/33/primitives/0/material Material requires a tangent space but the mesh primitive does not provide it. Runtime-generated tangent space may be non-portable across implementations."
+    ]
+  },
+  "semantic": {
+    "problems": []
+  }
+}

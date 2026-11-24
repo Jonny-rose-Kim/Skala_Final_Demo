@@ -131,6 +131,8 @@ export class EquipmentInstance {
     readonly bundle: EquipmentBundle<unknown>,
     private readonly materials: MaterialLibrary,
     shadow?: ShadowGenerator,
+    /** Parts from the bundle's GLB source (already validated against the template). */
+    extraParts: PartGeometry[] = [],
   ) {
     const template = bundle.template;
     this.templateId = template.templateId;
@@ -173,7 +175,7 @@ export class EquipmentInstance {
     }
 
     const componentById = new Map(template.components.map((c) => [c.assetId, c]));
-    const parts = bundle.buildParts(bundle.layout);
+    const parts = [...bundle.buildParts(bundle.layout), ...extraParts];
     for (const part of parts) {
       const node = this.assetNodes.get(part.assetId);
       if (!node) continue;
@@ -191,7 +193,7 @@ export class EquipmentInstance {
       applyMeshData(mesh, this.rebased(part.build(FULL), part, rebase, stretchAnchor));
       mesh.parent = node;
       if (stretchAnchor) mesh.position.set(stretchAnchor[0], stretchAnchor[1], stretchAnchor[2]);
-      const material = materials.get(part.materialRef);
+      const material = (part.glbMaterial as Material | undefined) ?? materials.get(part.materialRef);
       mesh.material = material;
       mesh.isPickable = part.pickable;
       mesh.receiveShadows = !part.isGlass;

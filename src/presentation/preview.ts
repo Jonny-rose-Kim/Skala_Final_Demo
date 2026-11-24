@@ -22,7 +22,11 @@ export type HolderKind =
   /** Vacuum-side transfer blade inside the load lock. */
   | "transfer_blade"
   /** CMP flip station jaws. */
-  | "flip_station";
+  | "flip_station"
+  /** Wafer pass station (pins) between two robots (wet-clean front end). */
+  | "transfer_buffer"
+  /** Edge-support spin chuck of a single-wafer wet process module. */
+  | "spin_chuck";
 
 export interface WaferHolder {
   kind: HolderKind;
@@ -35,8 +39,12 @@ export interface WaferHolder {
   noteKo?: string;
 }
 
-/** Liquid state of the wafer surface during the CMP sequence (presentation flag, not a measurement). */
-export type WaferWetState = "dry" | "wet_dirty" | "wet_clean";
+/**
+ * Liquid state of the wafer surface (presentation flag, never a dryness / contamination measurement).
+ * Legacy CMP: wet_dirty / wet_clean. Wet clean: wet_chemical -> wet_rinse -> drying -> dry ("dry-confirmed"
+ * in the demonstration means the scripted drying phase completed; it is not a sensor verdict).
+ */
+export type WaferWetState = "dry" | "wet_dirty" | "wet_clean" | "wet_chemical" | "wet_rinse" | "drying";
 
 export interface CarrierHolder {
   kind: "station" | "gripper";
@@ -44,7 +52,21 @@ export interface CarrierHolder {
   id: string;
 }
 
-export type FilmLayerRole = "substrate" | "active" | "pad_oxide" | "stop_layer" | "liner" | "trench_fill" | "surface_oxide" | "overcoat";
+export type FilmLayerRole =
+  | "substrate"
+  | "active"
+  | "pad_oxide"
+  | "stop_layer"
+  | "liner"
+  | "trench_fill"
+  | "surface_oxide"
+  | "overcoat"
+  /** Deposited oxide that the etch step patterns (current route). */
+  | "target_oxide"
+  /** Etch mask (photoresist or hard mask) from the external lithography step. */
+  | "mask"
+  /** Schematic post-etch residue (kind unspecified). */
+  | "residue";
 
 export interface IllustrativeFilmLayer {
   layerId: string;
@@ -53,19 +75,58 @@ export interface IllustrativeFilmLayer {
   /** Fraction of the layer's schematic thickness that is present (0..1 of its incoming/illustrated maximum). */
   presentFraction: number;
   /** Origin of the layer: external step, this demo's deposition, or incoming stack. */
-  origin: "incoming_external" | "demo_deposition" | "incoming_surface";
+  origin: "incoming_external" | "demo_deposition" | "incoming_surface" | "external_step" | "demo_etch";
   originStepId?: string;
 }
 
-export type FilmStatus = "incoming" | "depositing" | "deposited" | "polishing" | "cleared" | "overpolish_illustration" | "complete";
+/**
+ * Stage of the illustrated wafer state. Current route: incoming -> depositing -> deposited -> masked ->
+ * etching -> etched -> (stripped) -> cleaning -> rinsing -> drying -> complete. The legacy STI CMP route
+ * keeps polishing / cleared / overpolish_illustration.
+ */
+export type FilmStatus =
+  | "incoming"
+  | "depositing"
+  | "deposited"
+  | "masked"
+  | "etching"
+  | "etched"
+  | "stripped"
+  | "cleaning"
+  | "rinsing"
+  | "drying"
+  | "polishing"
+  | "cleared"
+  | "overpolish_illustration"
+  | "complete";
+
+export type MaskKind = "photoresist" | "hard_mask";
+
+/**
+ * Patterned-etch state of the wafer (schematic). The mask covers part of the target oxide; only the exposed
+ * region is etched. `exposedOxideRemaining` is a schematic fraction of the target oxide left in the exposed
+ * region (1 = untouched, 0 = cleared to the layer below); it is not an etch depth or rate.
+ */
+export interface PatternState {
+  maskKind: MaskKind;
+  /** absent = before lithography; retained = mask on the wafer; removed = stripped by the named step. */
+  mask: "absent" | "retained" | "removed";
+  /** Route step that removed the mask (an external strip for photoresist); never the wet clean animation. */
+  maskRemovedByStepId?: string;
+  exposedOxideRemaining: number;
+  /** Schematic residue in the exposed region after the etch (kind unspecified); reduced by the wet clean. */
+  residue: "none" | "present" | "reduced";
+}
 
 export interface IllustrativeFilmState {
   renderSource: "illustrative";
   waferId: string;
   layers: IllustrativeFilmLayer[];
-  /** Nitride top exposed by the illustrated clearing (presentation flag, not an endpoint detection). */
+  /** Legacy STI CMP only: nitride top exposed by the illustrated clearing (presentation flag, not an endpoint detection). */
   nitrideExposed: boolean;
   status: FilmStatus;
+  /** Patterned-etch state (current route); absent before lithography and on the legacy route. */
+  pattern?: PatternState;
   /** Scale statement that goes with any display of this state. */
   scaleNote: "Schematic · Exaggerated scale · Illustrative";
 }

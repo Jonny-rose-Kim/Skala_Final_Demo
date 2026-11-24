@@ -3,6 +3,7 @@
  * presets + measurement seed). Scene-side effect factories are registered separately so this module stays
  * free of renderer imports. Bundles are registered by `src/equipment/index.ts`.
  */
+import type { GlbSourceSpec } from "./glbSource";
 import type { AngularInterval } from "../config/geometry";
 import type { PartGeometry } from "../geometry/chamberParts";
 import type { CameraPreset } from "../scene/cameraPresets";
@@ -35,6 +36,14 @@ export interface EquipmentBundle<L = unknown> {
   plasmaLitAssets?: string[];
   /** Local plasma glow center (for the point light) when the template has a discharge region. */
   plasmaCenter?: (layout: L) => [number, number, number];
+  /**
+   * Cover rule in the "auto" cover mode: `active` (legacy single-chamber tools) removes the covers whenever
+   * the tool is the active one; `inspection` (whole tools) keeps the exterior closed in the assembled view
+   * and removes the covers only in the inspection modes (cutaway, x-ray, exploded).
+   */
+  coversAuto?: "active" | "inspection";
+  /** Blender-built GLB parts (exterior shells, vehicle body ...) merged with the procedural parts. */
+  glb?: GlbSourceSpec;
   /** Path joints: pose along the rail for a path distance (OHT). */
   pathPose?: (layout: L, jointId: string, s: number) => { position: [number, number, number]; yawRad: number };
   /** Transport equipment: seat frame of a carried FOUP, authored in the instance frame at the rest pose and following `jointId`. */

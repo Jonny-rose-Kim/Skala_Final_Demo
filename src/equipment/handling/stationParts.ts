@@ -30,6 +30,8 @@ export const STATION_IDS = {
   blade: "vacuum_blade",
   waferLL: "wafer_in_loadlock",
   waferBlade: "wafer_on_blade",
+  tc: "vacuum_transfer_chamber",
+  shuttle: "vacuum_blade_shuttle",
   slitValve: "slit_valve",
   slitGate: "slit_valve_gate",
   robot: { base: "atm_robot_base", column: "atm_robot_column", arm1: "atm_robot_link1", arm2: "atm_robot_link2", ee: "atm_robot_end_effector", wafer: "wafer_on_atm_robot" },
@@ -43,6 +45,7 @@ export const STATION_JOINTS = {
   llPins: "ll_pins",
   bladeS1: "vac_blade_s1",
   bladeS2: "vac_blade_s2",
+  shuttle: "vac_shuttle",
   slitGate: "slit_gate",
 } as const;
 
@@ -294,6 +297,31 @@ export function buildStationParts(sink: PartSink, S: HandlingStationLayout, opts
     // pin lift actuator and blade drive feedthrough below the floor (fixed)
     g.fixed("ll_pin_actuator", I.loadLock, "stainless", mergeMeshData([g.cylY(0.03, ll.bottomY - 0.11, ll.bottomY - 0.002, ll.centerR, 0, 24), g.cylY(0.02, ll.bottomY - 0.2, ll.bottomY - 0.11, ll.centerR, 0, 20)]), { cutaway: "keep", castShadow: false });
   }
+  // ---------------------------------------------------------------- vacuum transfer chamber (cluster tools)
+  if (S.tc) {
+    const tc = S.tc;
+    const ll = S.ll;
+    const hw = tc.width / 2;
+    const iw = tc.innerWidth / 2;
+    const sl = S.slit;
+    g.fixed("tc_floor", I.tc, "aluminum_machined", g.box(tc.r0, tc.r1, tc.bottomY, ll.innerBottomY, -hw, hw, 0.004), { cutaway: "keep" });
+    g.fixed("tc_end_wall", I.tc, "aluminum_machined", g.framedPlate(tc.r0, tc.innerR0, ll.innerBottomY, ll.innerTopY, -hw, hw, { y0: sl.y0 - 0.006, y1: sl.y1 + 0.006, q0: -sl.width / 2 - 0.01, q1: sl.width / 2 + 0.01 }), { cutaway: "keep" });
+    for (const sgn of [-1, 1]) g.fixed(`tc_side_${sgn > 0 ? "p" : "n"}`, I.tc, "aluminum_machined", g.box(tc.innerR0, tc.r1, ll.innerBottomY, ll.innerTopY, sgn * iw, sgn * hw, 0.003), { cutaway: "keep" });
+    const winR0 = tc.innerR0 + 0.08;
+    const winR1 = tc.r1 - 0.08;
+    const lid: MeshData[] = [g.box(tc.r0, winR0, ll.innerTopY, tc.topY, -hw, hw, 0.003), g.box(winR1, tc.r1, ll.innerTopY, tc.topY, -hw, hw, 0.003)];
+    for (const sgn of [-1, 1]) lid.push(g.box(winR0, winR1, ll.innerTopY, tc.topY, sgn * (iw - 0.06), sgn * hw, 0.002));
+    g.fixed("tc_lid", I.tc, "aluminum_machined", mergeMeshData(lid), { cutaway: "keep", cover: true });
+    if (winR1 > winR0 + 0.02) g.fixed("tc_lid_window", I.tc, "quartz", g.box(winR0 + 0.004, winR1 - 0.004, tc.topY - 0.012, tc.topY - 0.004, -(iw - 0.064), iw - 0.064, 0.001), { cutaway: "keep", cover: true, isGlass: true, castShadow: false, pickable: false });
+    const legs: MeshData[] = [];
+    const ls = S.cfg.load_lock.leg_size;
+    for (const r of [tc.r0 + 0.06, tc.r1 - 0.06]) for (const q of [-hw + 0.05, hw - 0.05]) legs.push(g.box(r - ls / 2, r + ls / 2, S.floorY + 0.02, tc.bottomY, q - ls / 2, q + ls / 2, 0.003));
+    legs.push(g.box(tc.r0 + 0.04, tc.r1 - 0.04, S.floorY + 0.22, S.floorY + 0.25, -hw + 0.03, hw - 0.03, 0.003));
+    g.fixed("tc_stand", I.tc, "painted_dark", mergeMeshData(legs), { cutaway: "keep" });
+    const pr = 0.04;
+    const portR = (tc.r0 + tc.r1) / 2;
+    g.fixed("tc_pump_line", I.tc, "stainless", mergeMeshData([g.cylY(pr + 0.02, tc.bottomY - 0.014, tc.bottomY, portR, -hw + 0.09, 24), g.tube([[portR, tc.bottomY, -hw + 0.09], [portR, S.floorY + 0.3, -hw + 0.09]], pr, 0.05, 20)]), { cutaway: "keep", castShadow: false });
+  }
   // ---------------------------------------------------------------- atmospheric gate (moving)
   {
     const ad = S.atmDoor;
@@ -325,7 +353,8 @@ export function buildStationParts(sink: PartSink, S: HandlingStationLayout, opts
     const ll = S.ll;
     const b = S.blade;
     const vb = S.cfg.vacuum_blade;
-    const rail = g.box(b.stageRestR0 - 0.005, ll.innerR1 - 0.004, b.railY0, b.railY1, -vb.rail_width / 2, vb.rail_width / 2, 0.002);
+    const railR0 = S.tc ? S.tc.innerR0 + 0.004 : b.stageRestR0 - 0.005;
+    const rail = g.box(railR0, ll.innerR1 - 0.004, b.railY0, b.railY1, -vb.rail_width / 2, vb.rail_width / 2, 0.002);
     const feedR = ll.innerR1 - 0.07;
     const seal = g.cylY(0.034, ll.bottomY - 0.06, ll.bottomY - 0.002, feedR, 0, 28);
     const motor = g.cylY(0.042, ll.bottomY - 0.17, ll.bottomY - 0.06, feedR, 0, 28, 0.006);
@@ -335,6 +364,23 @@ export function buildStationParts(sink: PartSink, S: HandlingStationLayout, opts
     g.fixed("blade_motor", I.bladeDrive, "painted_dark", mergeMeshData([motor, cable]), { cutaway: "keep", castShadow: false });
     const stage = g.box(b.stageRestR0, b.stageRestR1, b.stageY0, b.stageY1, -vb.stage_width / 2, vb.stage_width / 2, 0.0015);
     g.fixed("blade_stage", I.bladeStage, "aluminum_anodized", stage, { cutaway: "keep", jointId: J.bladeS1, castShadow: false });
+    if (S.tc) {
+      // linear shuttle: two side rails across the transfer chamber and the load lock, sled blocks under the stage ends
+      const tc = S.tc;
+      const rq = tc.railQ;
+      const sideRails: MeshData[] = [];
+      for (const sgn of [-1, 1]) sideRails.push(g.box(tc.innerR0 + 0.004, ll.innerR1 - 0.004, b.railY0, b.railY1 + 0.004, sgn * rq - 0.01, sgn * rq + 0.01, 0.002));
+      g.fixed("shuttle_rails", I.bladeDrive, "stainless", mergeMeshData(sideRails), { cutaway: "keep", castShadow: false });
+      const sled: MeshData[] = [];
+      for (const sgn of [-1, 1]) {
+        for (const r of [b.stageRestR0 + 0.03, b.stageRestR1 - 0.03]) sled.push(g.box(r - 0.025, r + 0.025, b.railY1 + 0.004, b.stageY1, sgn * rq - 0.014, sgn * rq + 0.014, 0.002));
+        // bridge from the stage edge out to the side rail
+        const qa = sgn * vb.stage_width / 2;
+        const qb = sgn * (rq + 0.014);
+        sled.push(g.box(b.stageRestR0 + 0.005, b.stageRestR1 - 0.005, b.stageY0, b.stageY1, Math.min(qa, qb), Math.max(qa, qb), 0.001));
+      }
+      g.fixed("shuttle_sled", I.shuttle, "aluminum_anodized", mergeMeshData(sled), { cutaway: "keep", jointId: J.shuttle, castShadow: false });
+    }
     const car = g.box(b.rootRestR - vb.carriage_length / 2, b.rootRestR + vb.carriage_length / 2, b.carriageY0, b.carriageY1, -vb.carriage_width / 2, vb.carriage_width / 2, 0.0015);
     const plate = g.box(b.pocketRestR - vb.tip_beyond_pocket, b.rootRestR + 0.02, b.bladeY0, b.bladeY1, -b.halfWidth, b.halfWidth, 0.001);
     const pads: MeshData[] = [];

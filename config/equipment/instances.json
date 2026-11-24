@@ -151,6 +151,35 @@
         "detailLevel": "detailed",
         "role": "cmp"
       }
+    ],
+    "producer-dev": [
+      {
+        "instanceId": "PRODUCER-01",
+        "templateId": "producer_se_ccp_twin_300",
+        "displayName": "PRODUCER-01 / Producer SE PECVD (representative)",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "deposition"
+      },
+      {
+        "instanceId": "FOUP-01",
+        "templateId": "foup_carrier_300",
+        "displayName": "FOUP-01 / 300 mm carrier",
+        "position": [
+          -2.874,
+          0.118,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "carrier",
+        "mobile": true
+      }
     ]
   },
   "bay": {

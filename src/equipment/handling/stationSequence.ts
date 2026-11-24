@@ -148,7 +148,10 @@ export function stationJointValues(plan: StationPlan, v: Record<string, number>)
   const ik = scaraIK(S.robot.scara, v.rho, v.theta);
   const b = Math.min(Math.max(v.blade, 0), S.blade.stroke);
   const k1 = S.blade.s1max / S.blade.stroke;
+  const ks = S.blade.shuttleMax / S.blade.stroke;
+  const shuttle: Record<string, number> = S.tc ? { [J.shuttle]: b * ks } : {};
   return {
+    ...shuttle,
     [J.dock]: v.dock,
     [J.doorPull]: v.doorPull,
     [J.doorLower]: v.doorLower,
@@ -159,7 +162,7 @@ export function stationJointValues(plan: StationPlan, v: Record<string, number>)
     [J.llDoor]: v.llDoor,
     [J.llPins]: v.llPins,
     [J.bladeS1]: b * k1,
-    [J.bladeS2]: b * (1 - k1),
+    [J.bladeS2]: b * (1 - k1 - ks),
     [J.slitGate]: v.slitGate,
     [plan.K.stageJoint]: v.stage,
     [plan.K.pinsJoint]: v.pins,

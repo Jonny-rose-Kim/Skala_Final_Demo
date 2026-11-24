@@ -16,7 +16,12 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "qa:screenshots": "playwright test --grep @screenshots",
-    "validate:config": "node --import tsx scripts/validate-config.ts"
+    "validate:config": "node --import tsx scripts/validate-config.ts",
+    "assets:envelopes": "node --import tsx scripts/assets/export-envelopes.ts",
+    "assets:blender": "sh scripts/blender/run.sh",
+    "assets:optimize": "node scripts/assets/optimize-glb.mjs",
+    "assets:validate": "node scripts/assets/validate-glb.mjs",
+    "assets:build": "npm run assets:envelopes && npm run assets:blender && npm run assets:optimize && npm run assets:validate"
   },
   "dependencies": {
     "@babylonjs/core": "9.34.0",
@@ -27,6 +32,10 @@
     "zustand": "5.1.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "4.5.1",
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
     "@playwright/test": "1.65.0",
     "@tailwindcss/vite": "4.3.5",
     "@types/node": "24.19.2",
@@ -34,6 +43,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.2.1",
     "@webgpu/types": "0.1.74",
+    "gltf-validator": "2.0.0-dev.3.10",
     "tailwindcss": "4.3.5",
     "tsx": "4.23.15",
     "typescript": "7.0.2",

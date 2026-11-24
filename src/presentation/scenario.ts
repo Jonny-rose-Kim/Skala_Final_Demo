@@ -14,7 +14,11 @@ import type { PreviewState } from "./preview";
 export type ScenarioPhaseId = string;
 
 /** Which equipment a phase is about (the UI follows it in linked demonstrations). */
-export type PhaseEquipment = "ccp" | "remote" | "cmp" | "oht" | "carrier" | "external";
+/**
+ * Equipment a phase belongs to (timeline color, Follow target). Current bay: deposition / etch / wet_clean
+ * / oht / carrier / external. Legacy bay: ccp / remote / cmp.
+ */
+export type PhaseEquipment = "deposition" | "etch" | "wet_clean" | "oht" | "carrier" | "external" | "ccp" | "remote" | "cmp";
 
 export interface ScenarioPhase {
   id: ScenarioPhaseId;

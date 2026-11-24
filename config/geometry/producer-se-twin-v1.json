@@ -1,0 +1,399 @@
+{
+  "$schema_id": "pecvd-twin.geometry-config/1",
+  "geometry_revision": "producer-se-ccp-cell-1.0.0",
+  "template_id": "producer_se_ccp_twin_300",
+  "title": "Producer SE based twin-module PECVD tool: representative CCP process cell A (active), cell B (idle), linear vacuum transfer and EFEM",
+  "source": {
+    "kind": "assumed",
+    "note": "Cell A interior reuses the repository's representative CCP PECVD chamber geometry (ccp-pecvd-300 v1.3.0). Whole-tool proportions and the twin-module arrangement follow public descriptions of the Applied Materials Producer platform (Twin-Chamber). The Producer SE configuration, dimensions, chamber options, robot type and pump topology of a specific installed tool are NOT known; everything here is a representative configuration, not OEM CAD.",
+    "references": [
+      "https://www.appliedmaterials.com/kr/ko/semiconductor/products/create/dielectrics-deposition/producer-cvd.html (product page; HTTP 403 when fetched on 2026-11-24, not consulted)",
+      "https://ir.appliedmaterials.com/static-files/b5ac57a5-eaf0-4613-813b-73b45d8995ea (Applied Materials 2001 report: Producer / Twin-Chamber / SE named; platform-level only)"
+    ]
+  },
+  "units": "m",
+  "coordinate_system": {
+    "up_axis": "+Y",
+    "handedness": "left (Babylon.js default)",
+    "origin": "Chamber axis at the inner floor top surface (y = 0)",
+    "azimuth": "phi in degrees measured from +X toward +Z, position = (r cos phi, y, r sin phi)",
+    "glb_import": "glTF is right-handed +Y up; Babylon's glTF loader applies the handedness conversion. Procedural geometry is authored directly in the scene frame."
+  },
+  "wafer": {
+    "diameter": 0.3,
+    "thickness": 0.000775
+  },
+  "chamber": {
+    "inner_diameter": 0.52,
+    "wall_thickness": 0.035,
+    "inner_height": 0.24,
+    "floor_thickness": 0.04,
+    "floor_bore_diameter": 0.13,
+    "top_flange_outer_diameter": 0.66,
+    "top_flange_height": 0.04,
+    "bottom_flange_outer_diameter": 0.66,
+    "bottom_flange_height": 0.03,
+    "lid_thickness": 0.05,
+    "lid_diameter": 0.67,
+    "lid_bore_diameter": 0.08,
+    "lid_oring_groove_diameter": 0.6,
+    "bolt_count": 24,
+    "bolt_circle_diameter": 0.63,
+    "bolt_head_diameter": 0.016,
+    "bolt_head_height": 0.01,
+    "liner_thickness": 0.004,
+    "liner_clearance": 0.006,
+    "liner_bottom_y": 0.082,
+    "liner_top_y": 0.232
+  },
+  "electrodes": {
+    "gap": 0.02,
+    "upper_electrode_diameter": 0.34,
+    "faceplate_thickness": 0.012,
+    "plenum_height": 0.012,
+    "plenum_diameter": 0.316,
+    "backing_plate_thickness": 0.022,
+    "blocker_plate_diameter": 0.14,
+    "blocker_plate_thickness": 0.003,
+    "hole_diameter": 0.0012,
+    "hole_pitch": 0.0055,
+    "hole_pattern_diameter": 0.31,
+    "edge_insulator_thickness": 0.012,
+    "isolator_ring_inner_diameter": 0.28,
+    "isolator_ring_outer_diameter": 0.344,
+    "rf_stem_outer_diameter": 0.056,
+    "rf_stem_inner_diameter": 0.04,
+    "rf_stem_top_y": 0.33,
+    "feedthrough_bushing_outer_diameter": 0.08,
+    "feedthrough_bushing_top_y": 0.302
+  },
+  "pedestal": {
+    "diameter": 0.34,
+    "body_height": 0.045,
+    "process_top_y": 0.15,
+    "transfer_top_y": 0.07,
+    "shaft_diameter": 0.07,
+    "shaft_bottom_y": -0.33,
+    "heater_cavity_inner_diameter": 0.07,
+    "heater_cavity_outer_diameter": 0.3,
+    "heater_cavity_height": 0.016,
+    "heater_element_diameter": 0.008,
+    "heater_turns": 7,
+    "edge_ring_inner_diameter": 0.302,
+    "edge_ring_thickness": 0.003,
+    "lift_pin_count": 3,
+    "lift_pin_circle_diameter": 0.21,
+    "lift_pin_diameter": 0.004,
+    "lift_pin_stroke": 0.044,
+    "bellows_outer_diameter": 0.11,
+    "bellows_inner_diameter": 0.084,
+    "bellows_top_y": -0.04,
+    "bellows_bottom_y": -0.2,
+    "bellows_convolutions": 18
+  },
+  "ports": {
+    "slit": {
+      "azimuth_deg": 180,
+      "width": 0.36,
+      "height": 0.05,
+      "center_y": 0.112,
+      "valve_body_size": [
+        0.47,
+        0.17,
+        0.09
+      ],
+      "door_thickness": 0.012,
+      "gate_travel": 0.065
+    },
+    "viewport": {
+      "azimuth_deg": 45,
+      "center_y": 0.161,
+      "bore_diameter": 0.06,
+      "flange_diameter": 0.12,
+      "flange_thickness": 0.014,
+      "tube_length": 0.045,
+      "window_diameter": 0.08,
+      "window_thickness": 0.008
+    },
+    "pressure_tap": {
+      "azimuth_deg": 120,
+      "center_y": 0.125,
+      "bore_diameter": 0.016,
+      "sensor_body_diameter": 0.06,
+      "sensor_body_length": 0.075,
+      "standoff_length": 0.06
+    },
+    "exhaust": {
+      "azimuth_deg": 320,
+      "center_y": 0.04,
+      "bore_diameter": 0.064,
+      "flange_diameter": 0.13,
+      "stub_length": 0.09
+    },
+    "gas_inlet": {
+      "tube_outer_diameter": 0.0127,
+      "tube_inner_diameter": 0.0095,
+      "top_y": 0.43,
+      "isolator_tube_y0": 0.345,
+      "isolator_tube_y1": 0.395,
+      "isolator_tube_diameter": 0.024
+    }
+  },
+  "pumping_baffle": {
+    "inner_diameter": 0.35,
+    "outer_diameter": 0.498,
+    "y": 0.075,
+    "thickness": 0.004,
+    "slot_count": 36,
+    "slot_fill": 0.58
+  },
+  "exhaust_line": {
+    "pipe_diameter": 0.064,
+    "throttle_valve_body_length": 0.11,
+    "throttle_valve_body_diameter": 0.1,
+    "isolation_valve_size": [
+      0.17,
+      0.07,
+      0.17
+    ],
+    "drop_to_y": -0.42,
+    "pump_size": [
+      0.3,
+      0.33,
+      0.28
+    ],
+    "pump_center_y": -0.615
+  },
+  "peripherals": {
+    "matching_network_size": [
+      0.22,
+      0.18,
+      0.16
+    ],
+    "matching_network_center": [
+      0.2,
+      0.38,
+      0.0
+    ],
+    "rf_generator_size": [
+      0.42,
+      0.18,
+      0.42
+    ],
+    "rf_generator_center": [
+      0.64,
+      -0.69,
+      0.0
+    ],
+    "gas_panel_size": [
+      0.2,
+      0.26,
+      0.16
+    ],
+    "gas_panel_center": [
+      0.0,
+      0.23,
+      0.48
+    ],
+    "mfc_block_size": [
+      0.045,
+      0.09,
+      0.02
+    ],
+    "mfc_block_pitch": 0.055,
+    "mfc_block_count": 3,
+    "mfc_block_offset_y": 0.03,
+    "frame_leg_size": 0.04,
+    "frame_leg_radius": 0.3,
+    "frame_bottom_y": -0.78
+  },
+  "process_enclosure": {
+    "note": "Process module panel enclosure around the chamber and its peripherals (instance frame). Panels are removable covers for inspection; the -Z panel carries a viewing window and the +X panel the facility interface.",
+    "x0": -0.41,
+    "x1": 0.92,
+    "z0": -0.62,
+    "z1": 0.62,
+    "top_y": 0.82,
+    "station_opening": {
+      "half_q": 0.27,
+      "y0": 0.0,
+      "y1": 0.22
+    },
+    "window": {
+      "x0": -0.22,
+      "x1": 0.38,
+      "y0": -0.02,
+      "y1": 0.42
+    },
+    "facility": {
+      "z": 0.25,
+      "y": 0.2
+    }
+  },
+  "station": {
+    "note": "Wafer handling of the active cell A: load port (LP1 of three), EFEM with an atmospheric SCARA robot, load lock with support pins and an atmospheric door, a vacuum transfer chamber crossed by a linear blade shuttle, then the cell A slit valve. Representative configuration; the Producer's actual central vacuum robot is not reproduced.",
+    "revision_note": "producer-se-ccp-cell-1.0.0: transfer chamber (0.90 m) inserted between the slit valve adapter and the load lock; EFEM widened to 1.75 m for three load ports.",
+    "gap_from_slit_valve": 0.02,
+    "transfer_plane_below_slit_center": 0.004,
+    "load_lock": {
+      "length": 0.44,
+      "width": 0.5,
+      "wall_thickness": 0.025,
+      "floor_thickness": 0.03,
+      "lid_thickness": 0.022,
+      "interior_below_plane": 0.027,
+      "interior_above_plane": 0.045,
+      "wafer_offset_from_vacuum_wall": 0.19,
+      "support_pins": {
+        "r_offsets": [
+          -0.07,
+          0.07
+        ],
+        "q_offsets": [
+          -0.055,
+          0.055
+        ],
+        "diameter": 0.006,
+        "raise_above_plane": 0.016,
+        "drop_below_plane": 0.004
+      },
+      "vacuum_opening": {
+        "width": 0.36,
+        "height": 0.05
+      },
+      "atm_door": {
+        "opening_width": 0.34,
+        "opening_height": 0.04,
+        "frame_depth": 0.03,
+        "gate_travel": 0.06,
+        "gate_thickness": 0.012
+      },
+      "pump_port_diameter": 0.05,
+      "leg_size": 0.04
+    },
+    "vacuum_blade": {
+      "thickness": 0.003,
+      "width": 0.08,
+      "pad_height": 0.0008,
+      "root_to_pocket": 0.12,
+      "tip_beyond_pocket": 0.13,
+      "carriage_length": 0.06,
+      "carriage_width": 0.07,
+      "carriage_thickness": 0.005,
+      "stage_length": 0.36,
+      "stage_width": 0.06,
+      "stage_thickness": 0.006,
+      "stage_rear_margin": 0.022,
+      "rail_width": 0.03,
+      "rail_height": 0.012
+    },
+    "efem": {
+      "depth": 0.84,
+      "width": 1.75,
+      "height_above_floor": 2.0,
+      "ffu_height": 0.18,
+      "panel_thickness": 0.012,
+      "frame_size": 0.04,
+      "door_zone_depth": 0.08
+    },
+    "atm_robot": {
+      "axis_offset_from_back_wall": 0.38,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.38,
+      "z_margin_below": 0.012,
+      "link_length": 0.28,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.31,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [
+        0.088,
+        0.118
+      ],
+      "tip_beyond_center": 0.12
+    },
+    "load_port": {
+      "deck_depth": 0.44,
+      "deck_width": 0.52,
+      "deck_height_above_floor": 0.9,
+      "deck_thickness": 0.025,
+      "dock_stroke": 0.03,
+      "door_gap": 0.002,
+      "opening_width": 0.36,
+      "opening_height": 0.3,
+      "opening_bottom_above_deck": 0.035,
+      "door_pull": 0.06,
+      "door_lower": 0.34,
+      "door_plate_thickness": 0.02
+    },
+    "transfer_chamber": {
+      "length": 0.9,
+      "width": 0.62,
+      "wall_thickness": 0.025,
+      "floor_thickness": 0.03,
+      "lid_thickness": 0.03,
+      "shuttle_rail_q": 0.2
+    }
+  },
+  "tool": {
+    "note": "Whole-tool arrangement in the instance frame (origin = cell A axis at pedestal height, station toward -X). Idle module sizes are world-aligned extents [x, height, z]; `facing` points from the module to the transfer chamber. Representative; not measured.",
+    "twin": {
+      "cell_b_offset_z": 1.05,
+      "module_x0": -0.43,
+      "module_x1": 0.96,
+      "module_z0": -0.66,
+      "module_z1": 1.72,
+      "skin_top_y": 1.02,
+      "skin_bottom_clear": 0.0
+    },
+    "idle_modules": [
+      {
+        "moduleId": "MOD-02",
+        "center": [
+          -0.98,
+          0.0,
+          -1.22
+        ],
+        "size": [
+          1.06,
+          1.78,
+          1.1
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "MOD-03",
+        "center": [
+          -0.98,
+          0.0,
+          1.22
+        ],
+        "size": [
+          1.06,
+          1.78,
+          1.1
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "idle_load_ports_q": [
+      0.505,
+      -0.505
+    ],
+    "frame_feet_inset": 0.06
+  }
+}

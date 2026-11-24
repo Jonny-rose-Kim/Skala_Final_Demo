@@ -18,6 +18,8 @@ import { OHT_BUNDLE, OHT_TEMPLATE_ID } from "./oht/index";
 import { createOhtEffects } from "./oht/effects";
 import { OHT_STANDALONE_SCENARIO } from "./oht/scenario";
 import { FOUP_BUNDLE } from "./foup/index";
+import { PRODUCER_BUNDLE, PRODUCER_TEMPLATE_ID } from "./producer/index";
+import { PRODUCER_HANDLING_SCENARIO } from "./producer/scenario";
 import { ROUTE_A_SCENARIO, ROUTE_B_SCENARIO } from "./routes/index";
 
 let registered = false;
@@ -34,6 +36,9 @@ export function registerAllEquipment(): void {
   registerBundle(OHT_BUNDLE);
   registerEffects(OHT_TEMPLATE_ID, (ctx) => createOhtEffects(ctx, ctx.stationMarkers ?? []));
   registerBundle(FOUP_BUNDLE);
+  registerBundle(PRODUCER_BUNDLE);
+  registerEffects(PRODUCER_TEMPLATE_ID, createCcpEffects);
+  registerScenario(PRODUCER_HANDLING_SCENARIO);
   registerScenario(CCP_STANDALONE_SCENARIO);
   registerScenario(CCP_HANDLING_SCENARIO);
   registerScenario(REMOTE_STANDALONE_SCENARIO);

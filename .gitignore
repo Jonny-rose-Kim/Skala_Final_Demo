@@ -48,3 +48,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Asset pipeline intermediates (re-create with `npm run assets:build`)
+assets/source/glb-raw/
+assets/source/blender/*.blend1
+__pycache__/
