@@ -1,0 +1,35 @@
+{
+  "templateId": "tactras_oxide_ccp_rie_300",
+  "validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 22,
+    "hints": 0,
+    "messages": [
+      "I UNUSED_MESH_TANGENT /meshes/4/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/4/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/5/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/5/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/6/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/6/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/9/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/9/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/19/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/19/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/22/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/22/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/32/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/32/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/35/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/35/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/45/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/45/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/48/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/48/primitives/0/attributes/TEXCOORD_0 This object may be unused."
+    ]
+  },
+  "semantic": {
+    "problems": []
+  }
+}

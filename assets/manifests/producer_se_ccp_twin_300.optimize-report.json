@@ -9,18 +9,18 @@
     "meshes": 41,
     "materials": 9,
     "textures": 2,
-    "accessors": 191,
-    "triangles": 34192,
-    "bytes": 2582564
+    "accessors": 201,
+    "triangles": 33652,
+    "bytes": 3000380
   },
   "after": {
     "nodes": 42,
     "meshes": 41,
     "materials": 9,
     "textures": 2,
-    "accessors": 195,
-    "triangles": 34192,
-    "bytes": 2585024
+    "accessors": 205,
+    "triangles": 33652,
+    "bytes": 3002300
   },
   "semanticNodesUnchanged": true
 }

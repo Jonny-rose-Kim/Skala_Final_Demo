@@ -23,6 +23,7 @@ import lib  # noqa: E402
 
 TOOLS = {
     "producer": "producer_se_ccp_twin_300",
+    "tactras": "tactras_oxide_ccp_rie_300",
 }
 
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

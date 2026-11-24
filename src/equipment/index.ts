@@ -20,6 +20,9 @@ import { OHT_STANDALONE_SCENARIO } from "./oht/scenario";
 import { FOUP_BUNDLE } from "./foup/index";
 import { PRODUCER_BUNDLE, PRODUCER_TEMPLATE_ID } from "./producer/index";
 import { PRODUCER_HANDLING_SCENARIO } from "./producer/scenario";
+import { TACTRAS_BUNDLE, TACTRAS_TEMPLATE_ID } from "./tactras/index";
+import { createTactrasEffects } from "./tactras/effects";
+import { TACTRAS_HANDLING_SCENARIO } from "./tactras/scenario";
 import { ROUTE_A_SCENARIO, ROUTE_B_SCENARIO } from "./routes/index";
 
 let registered = false;
@@ -38,7 +41,10 @@ export function registerAllEquipment(): void {
   registerBundle(FOUP_BUNDLE);
   registerBundle(PRODUCER_BUNDLE);
   registerEffects(PRODUCER_TEMPLATE_ID, createCcpEffects);
+  registerBundle(TACTRAS_BUNDLE);
+  registerEffects(TACTRAS_TEMPLATE_ID, createTactrasEffects);
   registerScenario(PRODUCER_HANDLING_SCENARIO);
+  registerScenario(TACTRAS_HANDLING_SCENARIO);
   registerScenario(CCP_STANDALONE_SCENARIO);
   registerScenario(CCP_HANDLING_SCENARIO);
   registerScenario(REMOTE_STANDALONE_SCENARIO);

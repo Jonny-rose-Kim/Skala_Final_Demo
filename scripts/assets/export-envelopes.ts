@@ -9,6 +9,8 @@ import path from "node:path";
 import { PRODUCER_LAYOUT } from "../../src/equipment/producer/layout";
 import { PRODUCER_TEMPLATE_ID } from "../../src/equipment/producer/template";
 import type { HandlingStationLayout } from "../../src/equipment/handling/stationLayout";
+import { TACTRAS_LAYOUT } from "../../src/equipment/tactras/layout";
+import { TACTRAS_TEMPLATE_ID } from "../../src/equipment/tactras/template";
 
 const OUT = path.resolve("assets/source/envelopes");
 fs.mkdirSync(OUT, { recursive: true });
@@ -38,6 +40,17 @@ function write(templateId: string, data: unknown) {
     station: stationEnvelope(L.station),
     cell: { rOuter: L.rOuter, wallTopY: L.wallTopY, cellB: L.tool.cellB },
     mod01: L.tool.mod01,
+    idleModules: L.tool.idleModules,
+    idleLoadPortsZ: L.tool.idleLoadPortsQ.map((q) => -q),
+  });
+}
+
+{
+  const L = TACTRAS_LAYOUT;
+  write(TACTRAS_TEMPLATE_ID, {
+    station: stationEnvelope(L.station),
+    chamber: { rOuter: L.rOuter, lidTopY: L.lidTopY },
+    pm01: L.tool.pm01,
     idleModules: L.tool.idleModules,
     idleLoadPortsZ: L.tool.idleLoadPortsQ.map((q) => -q),
   });

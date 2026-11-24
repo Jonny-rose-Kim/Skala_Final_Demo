@@ -163,6 +163,10 @@ def _box_uv(bm, density=1.5):
 
 
 def _link(name, bm, mat, parent):
+    # n-gons (cylinder caps) -> triangles so the exporter can build the tangent space
+    ngons = [f for f in bm.faces if len(f.verts) > 4]
+    if ngons:
+        bmesh.ops.triangulate(bm, faces=ngons)
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()

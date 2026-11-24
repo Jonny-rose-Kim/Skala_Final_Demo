@@ -180,6 +180,35 @@
         "role": "carrier",
         "mobile": true
       }
+    ],
+    "tactras-dev": [
+      {
+        "instanceId": "ETCH-01",
+        "templateId": "tactras_oxide_ccp_rie_300",
+        "displayName": "ETCH-01 / Tactras oxide etch (representative)",
+        "position": [
+          0,
+          0.068,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "etch"
+      },
+      {
+        "instanceId": "FOUP-01",
+        "templateId": "foup_carrier_300",
+        "displayName": "FOUP-01 / 300 mm carrier",
+        "position": [
+          -3.424,
+          0.118,
+          0
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "carrier",
+        "mobile": true
+      }
     ]
   },
   "bay": {

@@ -22,6 +22,8 @@ export interface ChannelSpec {
   /** Proposed crosswalk to a synthetic dataset column (documentation only, never read). */
   candidateSourceKey?: string;
   noteKo?: string;
+  /** Derived / model channels: input channel ids (the channel then has no instrument of its own). */
+  derivedFrom?: string[];
 }
 
 export interface SensorSpec {
@@ -85,7 +87,8 @@ export function buildSeed(templateId: string, seedRevision: string, prefix: stri
       const quantity = c.quantity ?? pt.quantity;
       const ch: MeasurementChannelDefV2 = {
         channelId,
-        instrumentId,
+        instrumentId: c.derivedFrom ? null : instrumentId,
+        derivedFrom: c.derivedFrom,
         name: c.name,
         quantity,
         canonicalUnit: c.unit,
