@@ -26,6 +26,7 @@ import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
 import type { DepthRenderer } from "@babylonjs/core/Rendering/depthRenderer";
 import { GlbLibrary } from "./glbParts";
+import { diagnosisFor, type AgentEvent, type DiagnosisHighlight } from "../domain/agentContract";
 import { WaferSurfaceLibrary } from "../materials/waferSurface";
 import type { PartGeometry } from "../geometry/chamberParts";
 import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
@@ -709,7 +710,7 @@ export class SceneHost {
       }
       this.refreshHighlight(s);
     }
-    if (changed("selectedAssetId") || changed("hoveredAssetId") || changed("activeInstanceId")) this.refreshHighlight(s);
+    if (changed("selectedAssetId") || changed("hoveredAssetId") || changed("activeInstanceId") || changed("diagnosis")) this.refreshHighlight(s);
     if (changed("lightingPreset")) w.lighting.setPreset(s.lightingPreset);
     if (changed("qualityPreset") || changed("effectiveQuality")) this.applyQuality(s);
     if (changed("overlays") || modeChanged || changed("activeInstanceId") || changed("selectedMeasurement")) {
@@ -775,6 +776,16 @@ export class SceneHost {
     const w = this.world;
     if (!w) return;
     w.highlight.removeAllMeshes();
+    // diagnosis highlight first (amber / red by severity); the selection and hover below win on shared meshes
+    if (s.diagnosis) {
+      const col = s.diagnosis.severity === "critical" || s.diagnosis.severity === "major" ? new Color3(0.86, 0.2, 0.16) : s.diagnosis.severity === "warning" || s.diagnosis.severity === "prediction" ? new Color3(0.93, 0.62, 0.12) : new Color3(0.62, 0.45, 0.85);
+      const covered = new Set([s.selectedAssetId, s.hoveredAssetId]);
+      for (const t of s.diagnosis.targets) {
+        const di = w.instances.get(t.instanceId);
+        if (!di) continue;
+        for (const a of t.assetIds) if (!(t.instanceId === s.activeInstanceId && covered.has(a))) for (const m of di.highlightMeshes(a)) w.highlight.addMesh(m, col);
+      }
+    }
     const inst = this.activeInstance(s);
     if (!inst) return;
     if (s.hoveredAssetId && s.hoveredAssetId !== s.selectedAssetId) {
@@ -934,6 +945,25 @@ export class SceneHost {
     const extent = Vector3.Distance(b.min, b.max);
     const radius = Math.min(Math.max(extent * 1.6, 0.18), 3.5);
     w.camera.interpolateTo(w.camera.alpha, w.camera.beta, radius, b.center);
+  }
+
+  /** Agent event -> diagnosis highlight (+ Focus on the first resolved target). Returns the resolved highlight. */
+  applyAgentEvent(e: AgentEvent): DiagnosisHighlight | null {
+    const st = usePresentationStore.getState();
+    if (e.kind === "detection" && e.state === "cleared") {
+      if (st.diagnosis?.eventId === e.eventId) st.setDiagnosis(null);
+      return null;
+    }
+    const d = diagnosisFor(e, this.instanceDefs(), (tid) => getBundle(tid)?.template);
+    st.setDiagnosis(d);
+    const first = d?.targets[0];
+    if (first) {
+      st.setOverview(false);
+      st.setActiveInstance(first.instanceId);
+      if (first.assetIds.length) st.select(first.assetIds[0]);
+      st.requestFocusSelected();
+    }
+    return d;
   }
 
   /** Programmatic camera for QA screenshots (world frame). */
@@ -1210,6 +1240,9 @@ export class SceneHost {
       setCameraLocal: (id: string, a: number, b: number, r: number, t: [number, number, number]) => this.setCameraLocal(id, a, b, r, t),
       freezeTime: (t: number | null) => this.freezeTime(t),
       preview: () => this.lastPreview,
+      /** Integration hook: apply an agent event (contract in src/domain/agentContract.ts) and focus its first target. */
+      applyAgentEvent: (e: AgentEvent) => this.applyAgentEvent(e),
+      clearDiagnosis: () => usePresentationStore.getState().setDiagnosis(null),
       scenario: () => this.scenarioDef?.id ?? null,
       stations: () => this.stations,
       stats: () => {
