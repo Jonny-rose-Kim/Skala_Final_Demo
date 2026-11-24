@@ -65,3 +65,15 @@ asset_templates, template_revisions, assets, coordinate_frames, ports, connectio
 ## 에셋 매니페스트
 
 `assets/manifests/ccp-pecvd-300.manifest.json`은 CCP용이다. 새 템플릿은 모두 procedural이며 GLB 교체 시 같은 방식으로 `assetId`를 유지하면 된다.
+
+## 현재 bay 추가 계약 (2026-11-24)
+
+- **`ComponentScope`:** `{ moduleId?, chamberId?, activity: active | idle | geometry_only }`. `ToolModuleDef`는 module / chamber 계층이고, `ReferenceNote`는 `basis`(official_public / public_secondary / design_assumption / measured)와 `scope`(family / platform / model / configuration), sourceUrls, dimensionBasis를 갖는다.
+- **`ChannelRole`:** `setpoint`와 `command`를 추가했다. 같은 물리량이라도 setpoint와 command는 측정값(PV)과 다른 채널이다.
+- **Quantity 추가:** `flow_liquid_mass`(mg/min), `speed_linear`(mm/s), `acceleration_linear`, `drive_output_percent`.
+- **측정 seed 선언:** `src/domain/measurementKit.ts`. Mount와 target이 분리되어 있고, 각각 joint frame을 갖는다. `candidateSourceKey`는 문서용 제안이며 binding이 아니다.
+- **`IllustrativeFilmState`:** `pattern`(maskKind, mask absent / retained / removed, maskRemovedByStepId, exposedOxideRemaining, residue)을 추가했다. 역할 `target_oxide`, `mask`, `residue`와 상태 `masked`, `etching`, `etched`, `stripped`, `cleaning`, `rinsing`, `drying`도 추가했다. `nitrideExposed`는 legacy CMP 전용이다.
+- **`WaferHolder.kind`:** `transfer_buffer`(pass station)와 `spin_chuck`을 추가했다. `WaferWetState`에 `wet_chemical`, `wet_rinse`, `drying`을 추가했다.
+- **Route:** `ProcessRouteDef`와 `ProcessRouteStep`(process / transport / external, tool scope, recipe)을 추가했다. Legacy `RouteDef`(A/B)는 legacy-v1 fixture 전용이다.
+- **추적성:** `WaferTraceContext`(`src/domain/traceability.ts`). 시연에서는 provenance가 `demo`이고 processRunId와 eventTime은 null이다.
+- **Agent 이벤트:** `DetectionEvent`, `PredictionEvent`, `RcaEvent`, `TargetScope`, `DiagnosisHighlight`(`src/domain/agentContract.ts`).

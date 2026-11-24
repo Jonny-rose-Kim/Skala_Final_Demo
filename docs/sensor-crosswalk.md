@@ -126,3 +126,117 @@ FOUP(`foup_carrier_300`)에는 instrument가 없다. Slot 점유와 door 상태�
 - CMP의 rinse flow meter와 dry spindle feedback은 cleaner와 spin dryer가 새 위치로 옮겨지면서 mount 위치가 함께 바뀌었다(`L.clean`, `L.dry`가 front end config에서 나온다). Instrument id, channel id, point id는 그대로다.
 - CCP와 Remote의 thermocouple은 pedestal, stage lift joint를 따라 움직인다. 이전과 같다.
 - 새 component(EFEM robot, load lock, vacuum blade, CMP dry robot, flip station, wet robot, cleaner shutter, dryer shutter, OHT 상세 부품)는 계측 point의 대상이 아니며 instrument가 달려 있지 않다.
+
+## 현재 bay (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2, 2026-11-24)
+
+아래 표는 코드(`src/equipment/*/measurement.ts`, `src/domain/measurementKit.ts`)에서 생성했다.
+
+**상태 구분:**
+- `planned`: 팀의 합성 데이터셋(`db/JAVAS`, v2.0 통합, git 미추적)이 설계한 채널이다.
+- `candidate`: 이 configuration에 있을 법하지만 데이터셋에 없는 항목이다.
+- 어느 것도 `installed`가 아니고 모든 채널이 **Data unbound**다(`sourceBindings` 비어 있음).
+
+**마지막 열(제안 crosswalk):**
+- 문서화된 매핑 제안일 뿐이다. 런타임에서 읽지 않으며 `ChannelSourceBinding`도 아니다.
+- 합성 데이터셋은 `PHYSICS_INFORMED_SYNTHETIC_NOT_RAW_FAB_DATA`이고 `is_oem_verified: false`다. 네 장비 사이 wafer / carrier 연결은 `UNLINKED`다.
+- 이 표는 장비 제조사의 기본 센서 목록이 아니다.
+
+**규칙:**
+- 기존 Remote 채널을 Tactras 채널로, CMP zone pressure를 CELLESTA pressure로 alias하지 않았다.
+- Setpoint와 command는 측정값(PV)과 다른 채널이다.
+- 파생 채널은 OES endpoint, hoist following error, 가속도다. 입력 채널을 `derivedFrom`에 적고 instrument가 없다.
+- Pedestal과 chuck 온도는 wafer 온도가 아니다.
+- Dryness 센서는 없다. 시연의 dry-confirmed는 scripted 상태다.
+
+**단위:** 데이터셋 단위(mTorr / Torr, sccm, mg/min, mL/min, L/min, kPa, rpm, mm, mm/s, % rated)를 canonical unit으로 그대로 두었다.
+- 변환은 binding을 만들 때 데이터 경계(`ChannelSourceBindingDef.unitConversion`)에서 한다.
+- CELLESTA nozzle 위치: 데이터셋은 직선 축(mm)이고 화면 arm은 회전축이라, 각도에서 반경 mm로 바꾸는 변환을 경계에서 해야 한다.
+- OHT 가속도(mm/s2): 속도에서 계산되는 derived 채널로 두었다.
+
+### Producer SE PECVD (representative) (`producer_se_ccp_twin_300`, seed `producer-meas-seed-1`)
+
+| Channel | Role | Quantity / unit | Instrument (status) | Mount asset (joint) | Point target (joint) | Proposed synthetic column (not bound) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `producer.ch.chamber_pressure.pv` | measurement | pressure / Torr | Chamber pressure gauge (capacitance manometer, representative) (planned) | pressure_sensor | chamber_body | PECVD_SIO2_SIM_A_CHAMBER_PRESSURE |
+| `producer.ch.chamber_pressure.sp` | setpoint | pressure / Torr | Chamber pressure gauge (capacitance manometer, representative) (planned) | pressure_sensor | chamber_body | APC/pressure_setpoint |
+| `producer.ch.throttle_valve.pv` | measurement | valve_position / % | Throttle valve position (APC actuator) (planned) | throttle_valve | throttle_valve | PECVD_SIO2_SIM_A_THROTTLE_VALVE_POS |
+| `producer.ch.throttle_valve.cmd` | command | valve_position / % | Throttle valve position (APC actuator) (planned) | throttle_valve | throttle_valve | APC/throttle_open_command |
+| `producer.ch.teos_flow.pv` | measurement | flow_liquid_mass / mg/min | TEOS liquid flow controller (LFC, representative) (planned) | mfc_01 | gas_line | PECVD_SIO2_SIM_A_TEOS_LIQUID_FLOW |
+| `producer.ch.teos_flow.sp` | setpoint | flow_liquid_mass / mg/min | TEOS liquid flow controller (LFC, representative) (planned) | mfc_01 | gas_line | TEOS_LFC/teos_liquid_flow_command |
+| `producer.ch.o2_flow.pv` | measurement | flow_gas / sccm | O2 mass flow controller (planned) | mfc_01 | gas_line | PECVD_SIO2_SIM_A_O2_FLOW |
+| `producer.ch.o2_flow.sp` | setpoint | flow_gas / sccm | O2 mass flow controller (planned) | mfc_01 | gas_line | O2_MFC/o2_flow_command |
+| `producer.ch.ar_flow.pv` | measurement | flow_gas / sccm | AR mass flow controller (planned) | mfc_01 | gas_line | PECVD_SIO2_SIM_A_AR_FLOW |
+| `producer.ch.ar_flow.sp` | setpoint | flow_gas / sccm | AR mass flow controller (planned) | mfc_01 | gas_line | AR_MFC/ar_flow_command |
+| `producer.ch.pedestal_temperature.pv` | measurement | temperature / degC | Pedestal thermocouple (candidate) | thermocouple (pedestal_z) | pedestal (pedestal_z) | - |
+| `producer.ch.rf_power.fwd` | measurement | rf_power / W | RF forward / reflected power (directional coupler) (candidate) | rf_generator | matching_network | - |
+| `producer.ch.rf_power.refl` | measurement | rf_power / W | RF forward / reflected power (directional coupler) (candidate) | rf_generator | matching_network | - |
+| `producer.ch.rf_state.on` | status | status_binary / bool | RF generator output state (planned) | rf_generator | rf_generator | - |
+| `producer.ch.oes.spectrum` | measurement | optical_spectrum / counts | Optical emission spectrometer (viewport, not installed) (candidate) | viewport | viewport | - |
+
+### Tactras Oxide Etch (representative) (`tactras_oxide_ccp_rie_300`, seed `tactras-meas-seed-1`)
+
+| Channel | Role | Quantity / unit | Instrument (status) | Mount asset (joint) | Point target (joint) | Proposed synthetic column (not bound) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tactras.ch.chamber_pressure.pv` | measurement | pressure / mTorr | Chamber pressure gauge (representative) (planned) | pressure_sensor | chamber_body | ETCH_SIM_A_PRESSURE_FB |
+| `tactras.ch.chamber_pressure.sp` | setpoint | pressure / mTorr | Chamber pressure gauge (representative) (planned) | pressure_sensor | chamber_body | ETCH_SIM_A_PRESSURE_SP (controller ETCH_SIM_A_APC_CONTROLLER) |
+| `tactras.ch.throttle_valve.pv` | measurement | valve_position / % | Throttle valve position (planned) | throttle_valve | throttle_valve | ETCH_SIM_A_THROTTLE_POS_FB |
+| `tactras.ch.throttle_valve.cmd` | command | valve_position / % | Throttle valve position (planned) | throttle_valve | throttle_valve | ETCH_SIM_A_THROTTLE_CMD |
+| `tactras.ch.cf4_flow.pv` | measurement | flow_gas / sccm | MFC 1 (CF4 candidate line) (planned) | mfc_cf4 | gas_line | ETCH_SIM_A_CF4_FB |
+| `tactras.ch.cf4_flow.sp` | setpoint | flow_gas / sccm | MFC 1 (CF4 candidate line) (planned) | mfc_cf4 | gas_line | ETCH_SIM_A_CF4_SP |
+| `tactras.ch.o2_flow.pv` | measurement | flow_gas / sccm | MFC 2 (O2 candidate line) (planned) | mfc_o2 | gas_line | ETCH_SIM_A_O2_FB |
+| `tactras.ch.o2_flow.sp` | setpoint | flow_gas / sccm | MFC 2 (O2 candidate line) (planned) | mfc_o2 | gas_line | ETCH_SIM_A_O2_SP |
+| `tactras.ch.ar_flow.pv` | measurement | flow_gas / sccm | MFC 3 (AR candidate line) (planned) | mfc_ar | gas_line | ETCH_SIM_A_AR_FB |
+| `tactras.ch.ar_flow.sp` | setpoint | flow_gas / sccm | MFC 3 (AR candidate line) (planned) | mfc_ar | gas_line | ETCH_SIM_A_AR_SP |
+| `tactras.ch.rf_power.fwd` | measurement | rf_power / W | RF forward / reflected power (planned) | rf_generator | matching_network | ETCH_SIM_A_RF_FORWARD_FB |
+| `tactras.ch.rf_power.sp` | setpoint | rf_power / W | RF forward / reflected power (planned) | rf_generator | matching_network | ETCH_SIM_A_RF_POWER_SP |
+| `tactras.ch.rf_power.refl` | measurement | rf_power / W | RF forward / reflected power (planned) | rf_generator | matching_network | ETCH_SIM_A_RF_REFLECTED_FB (component MATCHING_NETWORK) |
+| `tactras.ch.esc_clamp.v_cmd` | command | voltage / V | ESC clamp supply (candidate) | lower_electrode_column | esc_puck | - |
+| `tactras.ch.esc_clamp.v_mon` | measurement | voltage / V | ESC clamp supply (candidate) | lower_electrode_column | esc_puck | - |
+| `tactras.ch.esc_state.state` | status | status_enum / enum | ESC chuck state (candidate) | lower_electrode_column | esc_puck | - |
+| `tactras.ch.backside_he.pv` | measurement | pressure / Torr | Backside He pressure controller (candidate) | backside_he_line | esc_puck | - |
+| `tactras.ch.backside_he.sp` | setpoint | pressure / Torr | Backside He pressure controller (candidate) | backside_he_line | esc_puck | - |
+| `tactras.ch.chuck_temperature.pv` | measurement | temperature / degC | Lower electrode temperature sensor (candidate) | lower_electrode_base | lower_electrode_base | - |
+| `tactras.ch.coolant.flow` | measurement | flow_liquid / L/min | Chiller supply temperature / flow (candidate) | coolant_lines | coolant_lines | - |
+| `tactras.ch.oes.spectrum` | measurement | optical_spectrum / counts | Optical emission spectrometer (not installed) (candidate) | oes_mount | viewport | - |
+| `tactras.ch.oes.endpoint` | derived_estimate | status_enum / enum | derived from `tactras.ch.oes.spectrum` | - | - | - |
+
+### CELLESTA-i MD Wet Clean (representative) (`cellesta_i_md_clean_300`, seed `cellesta-meas-seed-1`)
+
+| Channel | Role | Quantity / unit | Instrument (status) | Mount asset (joint) | Point target (joint) | Proposed synthetic column (not bound) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `cellesta.ch.chem_flow.pv` | measurement | flow_liquid / mL/min | Chemical flow controller (planned) | supply_manifold | supply_chemical | WCLEAN_SIM_A_CHEM_FLOW_FB |
+| `cellesta.ch.chem_flow.sp` | setpoint | flow_liquid / mL/min | Chemical flow controller (planned) | supply_manifold | supply_chemical | WCLEAN_SIM_A_CHEM_FLOW_SP (FLOW_CONTROL) |
+| `cellesta.ch.chem_temp.pv` | measurement | temperature / degC | Chemical heater temperature (planned) | supply_manifold | supply_chemical | WCLEAN_SIM_A_CHEM_TEMP_FB |
+| `cellesta.ch.chem_temp.sp` | setpoint | temperature / degC | Chemical heater temperature (planned) | supply_manifold | supply_chemical | WCLEAN_SIM_A_CHEM_TEMP_SP |
+| `cellesta.ch.chem_line_pressure.pv` | measurement | pressure / kPa | Chemical line pressure (planned) | supply_manifold | supply_chemical | WCLEAN_SIM_A_CHEM_LINE_PRESSURE_FB |
+| `cellesta.ch.diw_flow.pv` | measurement | flow_liquid / L/min | UPW (DIW) flow controller (planned) | supply_manifold | supply_upw | WCLEAN_SIM_A_DIW_FLOW_FB |
+| `cellesta.ch.diw_flow.sp` | setpoint | flow_liquid / L/min | UPW (DIW) flow controller (planned) | supply_manifold | supply_upw | WCLEAN_SIM_A_DIW_FLOW_SP |
+| `cellesta.ch.nozzle_position.pv` | measurement | position_linear / mm | Dispense arm position feedback (planned) | dispense_arm_drive | dispense_arm (dispense_arm) | WCLEAN_SIM_A_NOZZLE_POSITION_FB |
+| `cellesta.ch.nozzle_position.cmd` | command | position_linear / mm | Dispense arm position feedback (planned) | dispense_arm_drive | dispense_arm (dispense_arm) | WCLEAN_SIM_A_NOZZLE_POSITION_CMD |
+| `cellesta.ch.spin_speed.pv` | measurement | speed_rotational / rpm | Spindle speed feedback (planned) | spindle_drive | spin_chuck | WCLEAN_SIM_A_SPIN_RPM_FB |
+| `cellesta.ch.spin_speed.cmd` | command | speed_rotational / rpm | Spindle speed feedback (planned) | spindle_drive | spin_chuck | WCLEAN_SIM_A_SPIN_RPM_CMD |
+| `cellesta.ch.drain_flow.pv` | measurement | flow_liquid / L/min | Drain flow (planned) | drain_outer | drain_outer | WCLEAN_SIM_A_DRAIN_FLOW_FB |
+| `cellesta.ch.ipa_flow.pv` | measurement | flow_liquid / mL/min | IPA flow (candidate) | supply_manifold | supply_ipa | - |
+| `cellesta.ch.cup_exhaust.pv` | measurement | pressure / Pa | Cup exhaust pressure (candidate) | cup_exhaust | cup_exhaust | - |
+| `cellesta.ch.leak.wet` | status | presence / bool | Leak sensor (leak pan) (candidate) | leak_pan | leak_pan | - |
+| `cellesta.ch.wafer_presence.present` | status | presence / bool | Wafer presence on the chuck (candidate) | cup | spin_chuck | - |
+| `cellesta.ch.shutter_state.closed` | status | status_binary / bool | Shutter closed switch (candidate) | pm_shutter | pm_shutter | - |
+| `cellesta.ch.spindle_current.a` | measurement | motor_current / A | Spindle motor current (candidate) | spindle_drive | spindle_drive | - |
+
+### Cleanway CLW-08v2 OHT (representative) (`clw08v2_oht`, seed `clw-meas-seed-1`)
+
+| Channel | Role | Quantity / unit | Instrument (status) | Mount asset (joint) | Point target (joint) | Proposed synthetic column (not bound) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `clw.ch.front_drive.torque_pct` | command | drive_output_percent / % | Front drive motor output (planned) | bogies (travel) | bogies (travel) | OHT_SIM_01_FRONT_MOTOR_TORQUE |
+| `clw.ch.rear_drive.torque_pct` | command | drive_output_percent / % | Rear drive motor output (planned) | bogies (travel) | bogies (travel) | OHT_SIM_01_REAR_MOTOR_TORQUE |
+| `clw.ch.travel.pos` | measurement | position_linear / mm | Travel position / speed (planned) | bogies (travel) | bogies (travel) | OHT_SIM_01 drive trace rail_position_mm |
+| `clw.ch.speed.v` | measurement | speed_linear / mm/s | Travel speed (planned) | bogies (travel) | bogies (travel) | OHT_SIM_01_SPEED |
+| `clw.ch.speed.a` | derived_estimate | speed_linear / mm/s | derived from `clw.ch.speed.v` | - | bogies (travel) | - |
+| `clw.ch.hoist.pos` | measurement | position_linear / mm | Hoist position (planned) | hoist_drive (travel) | gripper_plate (hoist) | OHT_SIM_01_HOIST_POSITION |
+| `clw.ch.hoist.cmd` | command | position_linear / mm | Hoist position (planned) | hoist_drive (travel) | gripper_plate (hoist) | OHT_SIM_01 hoist trace hoist_command_mm |
+| `clw.ch.hoist.follow_err` | derived_estimate | position_linear / mm | derived from `clw.ch.hoist.pos`, `clw.ch.hoist.cmd` | - | gripper_plate (hoist) | OHT_SIM_01_HOIST_FOLLOWING_ERROR |
+| `clw.ch.carrier_present.present` | status | presence / bool | Carrier presence (gripper) (planned) | gripper_plate (hoist) | gripper_plate (hoist) | OHT_SIM_01_CARRIER_PRESENT |
+| `clw.ch.gripper.closed` | status | status_binary / bool | Gripper closed (planned) | gripper_plate (hoist) | gripper_finger_a (hoist) | OHT_SIM_01 hoist trace gripper_closed |
+| `clw.ch.hoist_upper_limit.at_limit` | status | status_binary / bool | Hoist upper limit (planned) | hoist_drive (travel) | hoist_drive (travel) | OHT_SIM_01 hoist trace upper_limit |
+| `clw.ch.e84.state` | status | status_enum / enum | E84 load-port handshake (candidate) | vehicle_body (travel) | vehicle_body (travel) | OHT_SIM_01 10_e84_transitions (protocol simplified, synthetic) |
+| `clw.ch.hoist_current.a` | measurement | motor_current / A | Hoist motor current (candidate) | hoist_drive (travel) | hoist_drive (travel) | - |

@@ -45,3 +45,12 @@ Joint 값은 config와 layout에서 나온 목표 값을 motion track이 보간�
 ## 엔진
 
 `src/scene/engineFactory.ts`: WebGPU 시도 후 실패하면 새 canvas로 WebGL2. `?renderer=webgl2`로 강제할 수 있다.
+
+## 현재 bay 추가 구조 (2026-11-24)
+
+- **장비 계층:** Tool -> Module -> Chamber는 instance 하나 안의 scope가 붙은 component(`ComponentDef.scope`)와 `EquipmentTemplate.modules`로 표현한다. 결정과 ID 대응은 `docs/equipment-migration.md`에 있다.
+- **Geometry source:** `EquipmentBundle.glb`가 있으면 `SceneHost.buildWorld`가 인스턴스를 만들기 전에 `GlbLibrary`(`src/scene/glbParts.ts`)로 GLB를 로드한다. GLB node는 extras와 manifest로 binding된 `PartGeometry`가 되어 procedural part와 같은 경로를 지난다. Pipeline은 `docs/asset-pipeline.md`에 있다.
+- **Cover 규칙:** `EquipmentBundle.coversAuto`가 `inspection`이면 조립 상태에서는 외장이 닫혀 있고, 점검 모드(cutaway, x-ray, exploded)에서만 숨는다.
+- **웨이퍼 표면:** `WaferSurfaceLibrary`(`src/materials/waferSurface.ts`)가 표시 중인 웨이퍼의 `IllustrativeFilmState`로 앞면 재질을 고른다(iridescence, 개념 패턴).
+- **진단 하이라이트:** store `diagnosis`(agent 이벤트 해석 결과)를 선택 하이라이트 아래 층으로 그린다(`src/domain/agentContract.ts`).
+- **환경:** instance 구성별로 bay 환경을 고른다(`instances.json`의 `environments`: 기본 `fab-bay-v2`, legacy는 `fab-bay-v1`). IBL은 `public/env/white_studio_05.env`이며, 실패하면 절차적 panorama를 쓴다.

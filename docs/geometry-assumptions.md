@@ -98,3 +98,14 @@ CMP front end는 `sti-cmp-rotary-300-v1.json`의 `front_end` 블록이다. Dry E
 Bay 배치(`config/equipment/instances.json`, instances-v4)는 seat가 바깥으로 나온 만큼 rail을 x = -1.974 m로, CMP instance를 x = 0.443 m로 옮겼다. `npm run validate:config`가 세 load port 모두 lateral 0.0 mm, hoist extension 1.093 m로 닿는 것을 출력한다.
 
 Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-bay-v1.json`에 있고 시각용이다. 바닥 높이는 instances의 `bay.floor_y`를 쓴다.
+
+## 현재 bay 배치 (2026-11-24)
+
+**인스턴스 원점:** 각 장비의 active chamber 축이다.
+- y=0: Producer pedestal 상면, Tactras ESC 상면, CELLESTA 웨이퍼 지지면.
+- 바닥 높이: 각 config의 local floor y(Producer -0.782, Tactras -0.85, CELLESTA -0.95).
+- 인스턴스 y는 world 바닥(-0.782)에 맞춘다(PRODUCER 0, ETCH 0.068, CLEAN 0.168).
+
+**Load port seat:** 모두 rail 선 x = -1.974, deck 높이 0.9 m다. OHT로 계산하면 세 station 모두 측면 오차 0 mm, hoist 1.081 m다(`npm run validate:config`).
+
+**Z 배치:** PRODUCER -4.3, ETCH 0, CLEAN 3.6. Bay 환경은 `config/environment/fab-bay-v2.json`이다.

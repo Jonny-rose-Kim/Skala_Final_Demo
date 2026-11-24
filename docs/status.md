@@ -1,4 +1,78 @@
-# 진행 상황 (상세 장비 모델, 2026-11-16)
+# 진행 상황 (장비 교체 2026-11-24, legacy 상세 장비 모델 2026-11-16)
+
+## 장비 교체: Producer SE / Tactras / CELLESTA-i MD / CLW-08v2 (2026-11-24)
+
+브랜치 `equipment-migration`. 결정, ID 대응, 근거 구분은 `docs/equipment-migration.md`, asset 명령과 결과는 `docs/asset-pipeline.md`, 센서 후보는 `docs/sensor-crosswalk.md`에 있다. 아래 절(2026-11-16 이전)은 legacy V1 장비 기록이며 지금은 `?fixture=legacy-v1`에서만 그 장비가 나온다.
+
+**실행 환경(직접 실행):**
+- Linux 6.8.0(Ubuntu 22.04), RTX 4070 SUPER, NVIDIA driver 550.163.01
+- Google Chrome 148.0.7778.215 headed(Playwright 1.65 `channel: chrome`), Node 22.18.0
+- 렌더 경로: WebGPU(`--enable-unsafe-webgpu --enable-features=Vulkan`), WebGL2(`?renderer=webgl2`, ANGLE OpenGL 4.5). WebGPU 실패 시 WebGL2로 바꾸는 경로는 기존 e2e가 확인한다.
+- **확인하지 못한 환경:** macOS, Safari, 내장 GPU.
+
+**검증:**
+- `npm run typecheck` 통과
+- `npm test`: 9 files, 146 tests 통과. 새 `tests/unit/currentBay.test.ts` 24개 포함
+- `npm run build` 통과
+- `npm run validate:config`: 모든 bundle 통과. 기본 bay와 legacy-v1의 station 6개 모두 측면 0 mm, hoist 1.081 m
+- `npm run assets:validate`: GLB 4개 모두 validator error 0, warning 0, manifest 일치
+- `npm run test:e2e`: 62 passed (chrome-webgl2, chrome-webgpu 각 31; 새 `tests/e2e/current-bay.spec.ts` 5개 x 2 포함, legacy spec은 `fixture=legacy-v1`)
+
+**이번에 고친 것:**
+- **Plasma depth pass 성능:** `renderListPredicate`를 쓰면 Babylon이 depth RTT의 render list를 매 프레임 다시 만든다. 이때 push마다 장면 전체 mesh의 light define이 dirty가 되어, plasma가 보이는 동안 모든 재질이 매 프레임 effect를 다시 준비했다.
+  - Producer 근접 화면에서 frame time은 17.5 ms(57 fps)였다.
+  - 목록을 직접 할당하고 구성이 바뀔 때만 다시 할당하도록 고친 뒤 3.7 ms(271 fps, WebGL2)가 되었다.
+  - Legacy CCP 단면(plasma 켜짐)도 같은 날 8.4 ms에서 2.1 ms(WebGL2)로 줄었다.
+  - Depth 대상은 카메라에서 glow volume까지의 원기둥에 닿는 mesh로 줄였다.
+- **IBL fallback:** `.env`를 받은 뒤 magic byte를 검사하고 나서 decode한다. 해제된 mount(StrictMode, renderer fallback)에서는 절차적 환경의 prefilter를 시작하지 않는다.
+  - 이전에는 `.env`가 없을 때 WebGL2에서 `Cannot read properties of null (reading 'program')` 예외가 났다.
+  - WebGL2에서 `texParameter: no texture bound` 경고도 2개 나왔는데, 둘 다 없어졌다.
+- **CLW-08v2 외장:** 점검 모드에서 차체가 FOUP 단면을 가렸다. `coversAuto: "inspection"`으로 바꿨다.
+- **Tree dock e2e:** 접힌 rail 폭 기대값을 디자인 시스템 커밋(697dbea)의 20 px로 바꿨다(이 브랜치와 무관한 기존 실패).
+
+### 검토용 캡처
+
+`node qa/shoot.mjs webgpu qa/out/current/webgpu qa/views/current.json`(16장)과 `node qa/shoot.mjs webgl2 qa/out/current/webgl2 qa/views/current-webgl2.json`(대표 6장). 두 경로 모두 console error와 warning이 0개다.
+
+| 파일 | 내용 |
+| --- | --- |
+| `01_fab_overview` | Bay 전경: 장비 3대, OHT rail, FOUP |
+| `02_producer_exterior`, `03_producer_twin_interior` | Producer 외장, cell A 단면과 transfer shuttle, cell B |
+| `04_tactras_exterior`, `05_tactras_pm01_cutaway`, `06_tactras_lower_feeds` | Tactras 외장, main etch 중 PM-01 단면, 하부 RF / He / coolant feed |
+| `07_cellesta_exterior`, `08_cellesta_chemical`, `09_cellesta_drying`, `10_cellesta_transfer_robot` | CELLESTA 외장, 약액 dispense, IPA·분위기 건조, transfer robot과 pass station |
+| `11_oht_pickup`, `12_oht_dropoff` | Producer LP에서 pickup, Tactras LP에 dropoff |
+| `13_foup_section` | FOUP 단면과 slot 13의 W-01 |
+| `14_select_focus`, `15_covers_removed`, `16_exploded_cellesta` | 선택과 Focus(focus ring), cover 제거, 분해 보기 |
+
+**캡처에서 남은 문제:**
+- `03`은 cell A plasma가 화면에서 작다.
+- `10`은 transfer robot 일부가 module 벽에 가린다.
+
+### 성능
+
+`node qa/perf-current.mjs webgl2|webgpu`. 창 모드 Chrome, vsync 끔, 캔버스 1686×911, DPR 1, High(마지막 행만 Balanced), 각 상태 3초.
+- 위 수정을 적용한 뒤 잰 값이다.
+- RTX 4070 SUPER의 값이므로 내장 GPU나 MacBook의 60 fps를 보장하지 않는다.
+- Draw call은 shadow, SSAO, plasma depth pass를 포함한다.
+
+| 상태 | WebGL2 fps / 평균 / p95 | WebGPU fps / 평균 / p95 | Draw call | 삼각형 |
+| --- | --- | --- | --- | --- |
+| Bay overview (3 tools + OHT, GLB exteriors), high | 241 / 4.15 ms / 5.00 ms | 140 / 7.13 ms / 11.90 ms | 1560 | 2.18 M |
+| Bay inside at the rail, high | 242 / 4.14 ms / 7.70 ms | 146 / 6.84 ms / 11.70 ms | 1566 | 2.20 M |
+| Producer exterior, assembled | 271 / 3.69 ms / 5.30 ms | 163 / 6.14 ms / 10.70 ms | 1642 | 2.46 M |
+| Producer twin cutaway, plasma on | 292 / 3.42 ms / 4.30 ms | 175 / 5.72 ms / 10.30 ms | 1495 | 1.97 M |
+| Tactras PM-01 cutaway, main etch, plasma fills view | 420 / 2.38 ms / 3.10 ms | 256 / 3.90 ms / 6.10 ms | 1003 | 1.03 M |
+| CELLESTA PM-01 cutaway, chemical dispense | 681 / 1.47 ms / 2.00 ms | 444 / 2.25 ms / 3.00 ms | 566 | 0.73 M |
+| CELLESTA spin + dispense (playing) | 659 / 1.52 ms / 2.00 ms | 425 / 2.35 ms / 3.30 ms | 566 | 0.73 M |
+| OHT loaded travel, leg 1 (playing) | 276 / 3.62 ms / 4.50 ms | 155 / 6.45 ms / 11.30 ms | 1579 | 2.20 M |
+| Producer handling, covers removed (playing) | 368 / 2.72 ms / 3.30 ms | 210 / 4.77 ms / 8.70 ms | 1084 | 1.86 M |
+| CELLESTA exploded | 686 / 1.46 ms / 1.70 ms | 442 / 2.26 ms / 2.80 ms | 590 | 0.77 M |
+| FOUP section at LP.PRODUCER-01 | 275 / 3.64 ms / 4.90 ms | 157 / 6.36 ms / 10.60 ms | 1563 | 2.18 M |
+| Bay overview, balanced | 235 / 4.26 ms / 5.40 ms | 138 / 7.25 ms / 11.30 ms | 1555 | 2.18 M |
+
+- 이 PC에서는 두 경로의 모든 상태가 60 fps 위다. WebGPU p95가 가장 큰 상태는 bay overview로, 11.9 ms다.
+- WebGPU가 WebGL2보다 느린 것은 기존 기록과 같은 경향이다.
+- Legacy 상태는 `node qa/perf.mjs`로 잰다. 이제 `?fixture=legacy-v1`로 연다.
 
 ## 이번 작업 범위
 
