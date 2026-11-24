@@ -26,6 +26,7 @@ import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
 import type { DepthRenderer } from "@babylonjs/core/Rendering/depthRenderer";
 import { GlbLibrary } from "./glbParts";
+import { WaferSurfaceLibrary } from "../materials/waferSurface";
 import type { PartGeometry } from "../geometry/chamberParts";
 import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
@@ -146,6 +147,7 @@ export class SceneHost {
   private logs: string[] = [];
   private disposed = false;
   private glbLibrary: GlbLibrary | null = null;
+  private waferSurfaces: WaferSurfaceLibrary | null = null;
   /** Templates whose required GLB failed to load (their scenarios stay blocked). */
   private readonly glbFailed = new Set<string>();
   /** CCP layout kept for the original debug/QA API. */
@@ -308,6 +310,7 @@ export class SceneHost {
     const textures = createProceduralTextures(scene);
     const materials = new MaterialLibrary(scene, textures);
     const lighting = new LightingRig(scene, env);
+    this.waferSurfaces = new WaferSurfaceLibrary(scene, materials.get("wafer_front") as PBRMaterial);
 
     const instances = new Map<string, EquipmentInstance>();
     const defs = this.instanceDefs();
@@ -567,6 +570,8 @@ export class SceneHost {
     w.textures.dispose();
     this.glbLibrary?.dispose();
     this.glbLibrary = null;
+    this.waferSurfaces?.dispose();
+    this.waferSurfaces = null;
     w.env.dispose();
     w.ground.dispose(false, true);
     w.environment.dispose();
@@ -992,6 +997,11 @@ export class SceneHost {
           const shown = ip.presentedWaferId ? (ip.presentedWaferAssetId ?? st?.waferPresentationAssetId ?? all[0]) : null;
           inst.setPreviewHidden(cp ? new Set() : new Set(all.filter((a) => a !== shown)));
         }
+      }
+      // wafer front faces follow the illustrative film state of the wafer this instance presents
+      if (this.waferSurfaces) {
+        const wid = cp ? Object.values(cp.slots).find((x): x is string => !!x) : ip?.presentedWaferId;
+        inst.setWaferSurface(this.waferSurfaces.materialFor(wid ? preview.wafers[wid]?.film : undefined));
       }
       // mobile carriers follow their presented holder (one mesh entity, world pose set directly)
       if (cp) this.placeCarrier(inst, cp);

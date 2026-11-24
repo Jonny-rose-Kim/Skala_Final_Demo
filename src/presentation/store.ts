@@ -132,6 +132,8 @@ export interface OverlaySettings {
   markers: boolean;
   /** OHT: rail / hoist reference frames and station regions. */
   railFrames: boolean;
+  /** Current route: concept cross-section of the demonstration wafer (UI inset). */
+  waferSection: boolean;
 }
 
 export type OverlayKey = keyof OverlaySettings;
@@ -243,6 +245,7 @@ export const DEFAULT_OVERLAYS: OverlaySettings = {
   opticalPath: true,
   markers: false,
   railFrames: false,
+  waferSection: true,
 };
 
 export const DEFAULT_SCENARIO_ID = "route-dep-etch-clean-v1";

@@ -1,0 +1,6 @@
+[
+  { "id": "w01_dep_cell", "instance": "PRODUCER-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 265, "sweepDeg": 95 }, "scenario": "route-dep-etch-clean-v1", "time": 38, "local": true, "cam": [250, 72, 0.7, [0.02, 0.05, 0]], "ui": true },
+  { "id": "w02_litho_card", "overview": true, "scenario": "route-dep-etch-clean-v1", "time": 74, "cam": [205, 58, 15, [-0.2, 0.3, -0.4]], "ui": true },
+  { "id": "w03_etch_pm", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 152, "local": true, "cam": [262, 70, 0.6, [0.03, 0.02, 0]], "ui": true },
+  { "id": "w04_clean_chem", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 263, "local": true, "cam": [190, 52, 1.0, [0.0, 0.0, 0.0]], "ui": true }
+]
