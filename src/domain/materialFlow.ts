@@ -98,7 +98,11 @@ export type ValidationStatus = "not_qualified" | "assumed_demo" | "qualified";
 export interface RecipeRevisionDef {
   recipeId: string;
   revision: string;
-  operation: "deposition" | "cmp" | "cleaning" | "drying" | "carrier_transport";
+  /**
+   * deposition / etch / wet_clean (clean + rinse + dry in one module) / carrier_transport, and the two external
+   * steps of the current route that no tool in the scene performs. Legacy V1: cmp / cleaning / drying.
+   */
+  operation: "deposition" | "etch" | "wet_clean" | "external_lithography" | "external_resist_strip" | "cmp" | "cleaning" | "drying" | "carrier_transport";
   equipmentTemplateId: string;
   filmMaterial?: string;
   intendedRole?: FilmLayerRole;
@@ -117,6 +121,7 @@ export interface RouteStep {
   labelKo: string;
 }
 
+/** Legacy V1 route (CCP / Remote deposition -> OHT -> STI CMP); kept for the legacy-v1 fixture only. */
 export interface RouteDef {
   routeId: "A" | "B";
   title: string;
@@ -235,4 +240,71 @@ export function routeById(id: "A" | "B"): RouteDef {
 
 export function recipeById(id: string): RecipeRevisionDef | undefined {
   return RECIPES.find((r) => r.recipeId === id);
+}
+
+// ------------------------------------------------------------------------------------------------ current bay
+
+/** One step of a versioned process route (current bay). Tool scope names the module / chamber that runs it. */
+export interface ProcessRouteStep {
+  stepId: string;
+  kind: "process" | "transport" | "external";
+  labelKo: string;
+  instanceId?: string;
+  moduleId?: string;
+  chamberId?: string;
+  recipeId?: string;
+  fromStationId?: string;
+  toStationId?: string;
+  /** External steps happen outside the scene; the wafer state changes at an explicit demonstration transition. */
+  externalKind?: "lithography" | "resist_strip";
+}
+
+export interface ProcessRouteDef {
+  routeId: string;
+  revision: string;
+  title: string;
+  titleKo: string;
+  lotId: string;
+  carrierId: string;
+  waferId: string;
+  slotId: string;
+  maskKind: "photoresist" | "hard_mask";
+  steps: ProcessRouteStep[];
+  noteKo: string;
+}
+
+export const CURRENT_RECIPES: RecipeRevisionDef[] = [
+  { recipeId: "rcp.producer.pecvd_oxide_demo", revision: "demo-1", operation: "deposition", equipmentTemplateId: "producer_se_ccp_twin_300", filmMaterial: "SiO2 (representative)", intendedRole: "target_oxide", configurationRevision: "producer-se-ccp-cell-1.0.0", validationStatus: "assumed_demo", preconditionsKo: ["Bare Si wafer in FOUP slot", "Cell A (MOD-01) 사용, cell B idle"], noteKo: "Illustrative / not process-qualified. Gas recipe, RF, 온도·압력 setpoint와 막 두께를 정하지 않는다." },
+  { recipeId: "rcp.external.lithography_demo", revision: "demo-1", operation: "external_lithography", equipmentTemplateId: "(external)", configurationRevision: "-", validationStatus: "assumed_demo", preconditionsKo: ["증착 후 FOUP 복귀"], noteKo: "장면 밖 외부 공정. Photoresist mask가 생기는 시연 전환으로만 표현한다." },
+  { recipeId: "rcp.tactras.oxide_etch_demo", revision: "demo-1", operation: "etch", equipmentTemplateId: "tactras_oxide_ccp_rie_300", filmMaterial: "SiO2 (exposed region)", intendedRole: "target_oxide", configurationRevision: "tactras-oxide-rie-1.0.0", validationStatus: "assumed_demo", preconditionsKo: ["Patterned mask retained", "PM-01 ESC clamp 후 process-ready"], noteKo: "Illustrative. Etch rate, profile, endpoint를 계산하지 않는다." },
+  { recipeId: "rcp.external.resist_strip_demo", revision: "demo-1", operation: "external_resist_strip", equipmentTemplateId: "(external)", configurationRevision: "-", validationStatus: "assumed_demo", preconditionsKo: ["Photoresist mask (hard mask이면 이 단계가 mask를 지우지 않는다)"], noteKo: "Recipe-dependent 외부 strip. Integration 가정이며 장면 밖 공정이다." },
+  { recipeId: "rcp.cellesta.post_etch_clean_demo", revision: "demo-1", operation: "wet_clean", equipmentTemplateId: "cellesta_i_md_clean_300", configurationRevision: "cellesta-i-md-clean-1.0.0", validationStatus: "assumed_demo", preconditionsKo: ["Dry wafer in", "Selected post-etch residue (schematic)"], noteKo: "약액 종류·농도·혼합 순서·유량을 정하지 않는다. CMP 평탄화가 아니며 mask / oxide를 지우지 않는다." },
+  { recipeId: "rcp.clw.foup_transfer_demo", revision: "demo-1", operation: "carrier_transport", equipmentTemplateId: "clw08v2_oht", configurationRevision: "clw08v2-oht-1.0.0", validationStatus: "assumed_demo", preconditionsKo: ["FOUP door closed", "Destination load port empty"], noteKo: "Scripted presentation. E84 / E87 compliant 구현이 아니다." },
+];
+
+/** Default route of the current bay (versioned). Lot / carrier / wafer ids are demonstration ids. */
+export const ROUTE_DEP_ETCH_CLEAN: ProcessRouteDef = {
+  routeId: "RT-DEP-ETCH-CLEAN",
+  revision: "v1",
+  title: "Producer deposition -> external lithography -> Tactras oxide etch -> external resist strip -> CELLESTA post-etch clean",
+  titleKo: "증착(Producer) → 외부 노광 → 산화막 식각(Tactras) → 외부 resist strip → 세정(CELLESTA)",
+  lotId: "LOT-DEMO-01",
+  carrierId: "FOUP-01",
+  waferId: "W-01",
+  slotId: "slot-13",
+  maskKind: "photoresist",
+  steps: [
+    { stepId: "S10_PRODUCER_DEPOSITION", kind: "process", instanceId: "PRODUCER-01", moduleId: "MOD-01", chamberId: "CELL-A", recipeId: "rcp.producer.pecvd_oxide_demo", labelKo: "Producer SE cell A 증착" },
+    { stepId: "S20_EXTERNAL_LITHOGRAPHY", kind: "external", externalKind: "lithography", recipeId: "rcp.external.lithography_demo", labelKo: "외부 노광 / mask 준비 (장면 밖)" },
+    { stepId: "S30_OHT_LEG_1", kind: "transport", instanceId: "OHT-01", recipeId: "rcp.clw.foup_transfer_demo", fromStationId: "LP.PRODUCER-01", toStationId: "LP.ETCH-01", labelKo: "OHT: Producer → Tactras" },
+    { stepId: "S40_TACTRAS_OXIDE_ETCH", kind: "process", instanceId: "ETCH-01", moduleId: "PM-01", chamberId: "CH-01", recipeId: "rcp.tactras.oxide_etch_demo", labelKo: "Tactras PM-01 산화막 식각" },
+    { stepId: "S50_EXTERNAL_RESIST_STRIP", kind: "external", externalKind: "resist_strip", recipeId: "rcp.external.resist_strip_demo", labelKo: "외부 resist strip (장면 밖, recipe-dependent)" },
+    { stepId: "S60_OHT_LEG_2", kind: "transport", instanceId: "OHT-01", recipeId: "rcp.clw.foup_transfer_demo", fromStationId: "LP.ETCH-01", toStationId: "LP.CLEAN-01", labelKo: "OHT: Tactras → CELLESTA" },
+    { stepId: "S70_CELLESTA_POST_ETCH_CLEAN", kind: "process", instanceId: "CLEAN-01", moduleId: "PM-01", chamberId: "PM-01", recipeId: "rcp.cellesta.post_etch_clean_demo", labelKo: "CELLESTA PM-01 세정·rinse·건조" },
+  ],
+  noteKo: "시연 route다. 팀의 합성 데이터셋(v2.0)은 네 장비 사이 wafer / carrier 연결을 UNLINKED로 두므로, 이 연결은 데이터에서 온 것이 아니다. 외부 단계는 장면에 장비가 없고 시연 전환으로만 표시한다.",
+};
+
+export function currentRecipeById(id: string): RecipeRevisionDef | undefined {
+  return CURRENT_RECIPES.find((r) => r.recipeId === id);
 }

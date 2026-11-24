@@ -1,54 +1,54 @@
 {
   "$schema_id": "pecvd-twin.equipment-instances/1",
-  "config_revision": "instances-v4",
+  "config_revision": "instances-v5",
   "default": [
     {
-      "instanceId": "PECVD-01.CH-A",
-      "templateId": "ccp_pecvd_single_wafer_300",
-      "displayName": "PECVD-01 / Process Chamber A",
+      "instanceId": "PRODUCER-01",
+      "templateId": "producer_se_ccp_twin_300",
+      "displayName": "PRODUCER-01 / Producer SE PECVD (representative)",
       "position": [
-        0,
-        0,
-        0
+        0.9,
+        0.0,
+        -4.3
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
       "role": "deposition"
     },
     {
-      "instanceId": "REMOTE-01",
-      "templateId": "remote_pecvd_upstream_icp",
-      "displayName": "REMOTE-01 / Remote ICP PECVD",
+      "instanceId": "ETCH-01",
+      "templateId": "tactras_oxide_ccp_rie_300",
+      "displayName": "ETCH-01 / Tactras oxide etch (representative)",
       "position": [
-        -0.035,
-        0,
-        -3.4
+        1.45,
+        0.068,
+        0.0
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
-      "role": "deposition"
+      "role": "etch"
     },
     {
-      "instanceId": "CMP-01",
-      "templateId": "sti_cmp_rotary_single_platen",
-      "displayName": "CMP-01 / Rotary STI CMP",
+      "instanceId": "CLEAN-01",
+      "templateId": "cellesta_i_md_clean_300",
+      "displayName": "CLEAN-01 / CELLESTA-i MD wet clean (representative)",
       "position": [
-        0.443,
-        -0.782,
+        0.813,
+        0.168,
         3.6
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
-      "role": "cmp"
+      "role": "wet_clean"
     },
     {
       "instanceId": "OHT-01",
-      "templateId": "oht_single_vehicle",
-      "displayName": "OHT-01 / Overhead hoist transport",
+      "templateId": "clw08v2_oht",
+      "displayName": "OHT-01 / Cleanway CLW-08v2 (representative)",
       "position": [
         -1.974,
         -0.782,
-        0
+        0.0
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
@@ -61,7 +61,7 @@
       "position": [
         -1.974,
         0.118,
-        0
+        -4.3
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
@@ -152,11 +152,11 @@
         "role": "cmp"
       }
     ],
-    "producer-dev": [
+    "legacy-v1": [
       {
-        "instanceId": "PRODUCER-01",
-        "templateId": "producer_se_ccp_twin_300",
-        "displayName": "PRODUCER-01 / Producer SE PECVD (representative)",
+        "instanceId": "PECVD-01.CH-A",
+        "templateId": "ccp_pecvd_single_wafer_300",
+        "displayName": "PECVD-01 / Process Chamber A",
         "position": [
           0,
           0,
@@ -167,69 +167,50 @@
         "role": "deposition"
       },
       {
-        "instanceId": "FOUP-01",
-        "templateId": "foup_carrier_300",
-        "displayName": "FOUP-01 / 300 mm carrier",
+        "instanceId": "REMOTE-01",
+        "templateId": "remote_pecvd_upstream_icp",
+        "displayName": "REMOTE-01 / Remote ICP PECVD",
         "position": [
-          -2.874,
-          0.118,
-          0
-        ],
-        "rotationYDeg": 0,
-        "detailLevel": "detailed",
-        "role": "carrier",
-        "mobile": true
-      }
-    ],
-    "tactras-dev": [
-      {
-        "instanceId": "ETCH-01",
-        "templateId": "tactras_oxide_ccp_rie_300",
-        "displayName": "ETCH-01 / Tactras oxide etch (representative)",
-        "position": [
+          -0.035,
           0,
-          0.068,
+          -3.4
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "deposition"
+      },
+      {
+        "instanceId": "CMP-01",
+        "templateId": "sti_cmp_rotary_single_platen",
+        "displayName": "CMP-01 / Rotary STI CMP",
+        "position": [
+          0.443,
+          -0.782,
+          3.6
+        ],
+        "rotationYDeg": 0,
+        "detailLevel": "detailed",
+        "role": "cmp"
+      },
+      {
+        "instanceId": "OHT-01",
+        "templateId": "oht_single_vehicle",
+        "displayName": "OHT-01 / Overhead hoist transport",
+        "position": [
+          -1.974,
+          -0.782,
           0
         ],
         "rotationYDeg": 0,
         "detailLevel": "detailed",
-        "role": "etch"
+        "role": "transport"
       },
       {
         "instanceId": "FOUP-01",
         "templateId": "foup_carrier_300",
         "displayName": "FOUP-01 / 300 mm carrier",
         "position": [
-          -3.424,
-          0.118,
-          0
-        ],
-        "rotationYDeg": 0,
-        "detailLevel": "detailed",
-        "role": "carrier",
-        "mobile": true
-      }
-    ],
-    "cellesta-dev": [
-      {
-        "instanceId": "CLEAN-01",
-        "templateId": "cellesta_i_md_clean_300",
-        "displayName": "CLEAN-01 / CELLESTA-i MD wet clean (representative)",
-        "position": [
-          0,
-          0.168,
-          0
-        ],
-        "rotationYDeg": 0,
-        "detailLevel": "detailed",
-        "role": "wet_clean"
-      },
-      {
-        "instanceId": "FOUP-01",
-        "templateId": "foup_carrier_300",
-        "displayName": "FOUP-01 / 300 mm carrier",
-        "position": [
-          -2.787,
+          -1.974,
           0.118,
           0
         ],
@@ -244,5 +225,13 @@
     "note": "World frame: fab floor at y = -0.782 (the CCP chamber frame origin is 0.782 m above it). Load ports face -X toward the aisle; the OHT rail runs along Z above x = -1.974 so every load-port seat lies on the rail line within the lateral tolerance. instances-v4: the EFEM / load lock front ends moved the seats to x = -1.974 (CCP, CMP) and -1.974 (Remote, instance x -0.035); the CMP instance and the rail moved with them.",
     "floor_y": -0.782,
     "rail_x": -1.974
+  },
+  "note": "instances-v5: the default bay is the current equipment set (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2 based, representative). The former V1 bay (CCP / Remote PECVD / STI CMP / OHT) is kept as the legacy-v1 fixture with its own environment; its ids are not reused for the new tools.",
+  "environments": {
+    "default": "fab-bay-v2",
+    "legacy-v1": "fab-bay-v1",
+    "two-chambers": "fab-bay-v1",
+    "two-remotes": "fab-bay-v1",
+    "two-cmps": "fab-bay-v1"
   }
 }

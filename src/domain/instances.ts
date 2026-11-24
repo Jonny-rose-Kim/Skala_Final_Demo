@@ -24,3 +24,9 @@ export const INSTANCES_CONFIG_REVISION: string = instancesConfig.config_revision
 export function sceneKey(instanceId: string, assetId: string): string {
   return `${instanceId}::${assetId}`;
 }
+
+/** Bay environment config name of an instance set (default bay or a fixture). */
+export function environmentFor(fixture: string | undefined): string {
+  const env = (instancesConfig as unknown as { environments?: Record<string, string> }).environments ?? {};
+  return (fixture && env[fixture]) || env.default || "fab-bay-v2";
+}

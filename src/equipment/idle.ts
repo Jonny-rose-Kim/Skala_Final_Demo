@@ -10,6 +10,7 @@ import { stationIdleJoints } from "./handling/stationScenario";
 import { PRODUCER_STATION_PLAN } from "./producer/handling";
 import { TACTRAS_STATION_PLAN } from "./tactras/handling";
 import { cellestaIdleJoints } from "./cellesta/scenario";
+import { CLW_LAYOUT } from "./clw/layout";
 
 let cache: Record<string, Record<string, number>> | null = null;
 
@@ -19,6 +20,7 @@ export function idleToolPose(templateId: string): Record<string, number> {
       producer_se_ccp_twin_300: stationIdleJoints(PRODUCER_STATION_PLAN),
       tactras_oxide_ccp_rie_300: stationIdleJoints(TACTRAS_STATION_PLAN),
       cellesta_i_md_clean_300: cellestaIdleJoints(),
+      clw08v2_oht: { travel: CLW_LAYOUT.vehicle.parkS, hoist: 0, gripper_a: 0, gripper_b: 0 },
       ccp_pecvd_single_wafer_300: stationIdleJoints(CCP_STATION_PLAN),
       remote_pecvd_upstream_icp: stationIdleJoints(REMOTE_STATION_PLAN),
       sti_cmp_rotary_single_platen: cmpIdleJoints(),

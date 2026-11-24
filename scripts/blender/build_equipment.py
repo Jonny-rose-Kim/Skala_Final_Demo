@@ -25,6 +25,7 @@ TOOLS = {
     "producer": "producer_se_ccp_twin_300",
     "tactras": "tactras_oxide_ccp_rie_300",
     "cellesta": "cellesta_i_md_clean_300",
+    "clw": "clw08v2_oht",
 }
 
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

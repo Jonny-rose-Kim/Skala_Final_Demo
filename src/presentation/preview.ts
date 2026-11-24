@@ -173,6 +173,14 @@ export interface InstancePreview {
   phaseLabelKo: string;
 }
 
+/** Explicit demonstration transition for a route step that happens outside the scene. */
+export interface RouteCard {
+  stepId: string;
+  kind: "external";
+  titleKo: string;
+  bodyKo: string;
+}
+
 export interface PreviewState {
   scenarioId: string;
   t: number;
@@ -188,6 +196,10 @@ export interface PreviewState {
   plasma: { intensity: number; flicker: number };
   /** Reason a scripted handoff is blocked (config validation), if any. */
   blockedReason: string | null;
+  /** Route step card for explicit external transitions (current route only). */
+  routeCard?: RouteCard | null;
+  /** Wafer traceability of the demonstration (provenance "demo", processRunId / eventTime null). */
+  trace?: import("../domain/traceability").WaferTraceContext | null;
 }
 
 export function emptyInstancePreview(instanceId: string): InstancePreview {

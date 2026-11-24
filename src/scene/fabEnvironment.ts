@@ -16,6 +16,7 @@ import { Constants } from "@babylonjs/core/Engines/constants";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import envConfig from "../../config/environment/fab-bay-v1.json";
+import envConfigV2 from "../../config/environment/fab-bay-v2.json";
 import type { Vec3Tuple } from "../config/geometry";
 import { chamferedBox, createMeshData, mergeMeshData, pushTriangleFacing, pushVertex, revolveProfile, rectProfile, translateMeshData, tubeAlongPath, type MeshData, type Vec3 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
@@ -24,6 +25,8 @@ import type { EnvironmentSettings } from "../presentation/store";
 
 export type FabEnvironmentConfig = typeof envConfig;
 export const FAB_ENVIRONMENT_CONFIG: FabEnvironmentConfig = envConfig;
+/** Environment configs by name (instances.json `environments`): v2 = current bay, v1 = legacy V1 bay. */
+export const FAB_ENVIRONMENTS: Record<string, FabEnvironmentConfig> = { "fab-bay-v1": envConfig, "fab-bay-v2": envConfigV2 };
 
 /** Facility interface of a placed tool in world coordinates: plate center and outward normal. */
 export interface FacilityDrop {

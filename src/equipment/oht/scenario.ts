@@ -42,7 +42,7 @@ export interface OhtTransferPlan {
 }
 
 /** Project the two stations into the OHT frame and check reachability with the implemented DOF. */
-export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: Record<string, StationWorldFrame>, sourceId: string, destId: string): OhtTransferPlan {
+export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: Record<string, StationWorldFrame>, sourceId: string, destId: string, opts: { startS?: number } = {}): OhtTransferPlan {
   const toLocal = (w: [number, number, number]): [number, number, number] => {
     // instance rotation about Y (rotationYDeg) then translation
     const yaw = (oht.rotationYDeg * Math.PI) / 180;
@@ -68,7 +68,8 @@ export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: 
   else if (Math.abs(src.lateral) > tol || Math.abs(dst.lateral) > tol) blocked = `Preview blocked: load port seat is ${(Math.max(Math.abs(src.lateral), Math.abs(dst.lateral)) * 1000).toFixed(0)} mm off the rail line (no lateral axis implemented)`;
   else if (src.s < 0 || src.s > L.rail.length || dst.s < 0 || dst.s > L.rail.length) blocked = "Preview blocked: station outside the rail";
   else if (src.ext < 0 || src.ext > L.hoist.stroke || dst.ext < 0 || dst.ext > L.hoist.stroke) blocked = "Preview blocked: load port height outside the hoist stroke";
-  return { ohtInstanceId: oht.instanceId, sourceStationId: sourceId, destinationStationId: destId, src: src ?? { s: 0, ext: 0, lateral: 0 }, dst: dst ?? { s: 0, ext: 0, lateral: 0 }, parkS: L.vehicle.parkS, blockedReason: blocked };
+  // a leg that follows another one starts where the vehicle stopped (opts.startS); a first leg starts at park
+  return { ohtInstanceId: oht.instanceId, sourceStationId: sourceId, destinationStationId: destId, src: src ?? { s: 0, ext: 0, lateral: 0 }, dst: dst ?? { s: 0, ext: 0, lateral: 0 }, parkS: opts.startS ?? L.vehicle.parkS, blockedReason: blocked };
 }
 
 export interface OhtState {

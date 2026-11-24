@@ -1,0 +1,17 @@
+{
+  "templateId": "clw08v2_oht",
+  "validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 2,
+    "hints": 0,
+    "messages": [
+      "I UNUSED_MESH_TANGENT /meshes/5/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/5/primitives/0/attributes/TEXCOORD_0 This object may be unused."
+    ]
+  },
+  "semantic": {
+    "problems": []
+  }
+}

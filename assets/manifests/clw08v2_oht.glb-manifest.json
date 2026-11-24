@@ -1,0 +1,203 @@
+{
+  "$schema_id": "pecvd-twin.glb-manifest/1",
+  "templateId": "clw08v2_oht",
+  "generator": {
+    "tool": "Blender 4.5.16 LTS",
+    "script": "scripts/blender/tools/clw.py",
+    "command": "blender --background --python scripts/blender/build_equipment.py -- clw"
+  },
+  "export": {
+    "format": "GLB",
+    "yUp": true,
+    "extras": true,
+    "applyModifiers": true,
+    "imageFormat": "JPEG",
+    "jpegQuality": 88,
+    "units": "m"
+  },
+  "frame": "Blender (bx, by, bz) = instance (-x, -z, y); the glTF loader's __root__ maps it back (single conversion)",
+  "rawFile": "assets/source/glb-raw/clw08v2_oht.glb",
+  "runtimeFile": "public/models/clw08v2_oht.glb",
+  "nodes": [
+    {
+      "node": "carrier_bay_guard.handles.stainless",
+      "parent": "clw08v2_oht__root",
+      "assetId": "carrier_bay_guard",
+      "partKey": "carrier_bay_guard.handles.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -0.23,
+          2.1055,
+          -7.434
+        ],
+        "max": [
+          0.23,
+          2.2655,
+          -6.566
+        ]
+      }
+    },
+    {
+      "node": "carrier_bay_guard.lips.paint_lightgray",
+      "parent": "clw08v2_oht__root",
+      "assetId": "carrier_bay_guard",
+      "partKey": "carrier_bay_guard.lips.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.24,
+          1.931,
+          -7.395
+        ],
+        "max": [
+          0.24,
+          1.955,
+          -6.605
+        ]
+      }
+    },
+    {
+      "node": "carrier_bay_guard.walls.paint_offwhite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "carrier_bay_guard",
+      "partKey": "carrier_bay_guard.walls.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          -0.27,
+          1.931,
+          -7.42
+        ],
+        "max": [
+          0.27,
+          2.44,
+          -6.58
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.bumpers.paint_graphite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.bumpers.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.25,
+          2.475,
+          -7.444
+        ],
+        "max": [
+          0.25,
+          2.525,
+          -6.556
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.housing.paint_offwhite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.housing.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 600,
+      "boundsInstance": {
+        "min": [
+          -0.27,
+          2.44,
+          -7.42
+        ],
+        "max": [
+          0.27,
+          2.8579,
+          -6.58
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.lamp.lamp_green",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.lamp.lamp_green",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "fine",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_green"
+      ],
+      "triangles": 44,
+      "boundsInstance": {
+        "min": [
+          0.269,
+          2.795,
+          -6.808
+        ],
+        "max": [
+          0.275,
+          2.825,
+          -6.688
+        ]
+      }
+    }
+  ]
+}

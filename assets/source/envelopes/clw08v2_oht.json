@@ -1,0 +1,20 @@
+{
+  "templateId": "clw08v2_oht",
+  "generatedBy": "scripts/assets/export-envelopes.ts",
+  "units": "m",
+  "frame": "instance (+Y up, Babylon left-handed)",
+  "z0": -7,
+  "bodySize": [
+    0.5,
+    0.42,
+    0.8
+  ],
+  "bodyY0": 2.44,
+  "bodyY1": 2.86,
+  "seatY": 1.9810000000000003,
+  "foupSize": [
+    0.42,
+    0.335,
+    0.39
+  ]
+}

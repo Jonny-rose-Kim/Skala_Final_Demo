@@ -1,0 +1,5 @@
+[
+  { "id": "b01_overview", "overview": true, "scenario": "route-dep-etch-clean-v1", "time": 100, "cam": [205, 58, 15, [-0.2, 0.3, -0.4]], "ui": true },
+  { "id": "b02_route_leg1", "instance": "OHT-01", "scenario": "route-dep-etch-clean-v1", "mode": "assembled", "time": 95, "cam": [215, 66, 4.0, [-1.97, 1.3, -2.5]] },
+  { "id": "b03_route_litho_card", "overview": true, "scenario": "route-dep-etch-clean-v1", "time": 74, "cam": [205, 58, 15, [-0.2, 0.3, -0.4]], "ui": true }
+]

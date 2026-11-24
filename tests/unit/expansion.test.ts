@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import "../../src/equipment/index";
 import { listBundles, validateAllBundles, measurementIndex } from "../../src/domain/registry";
 import { validateMeasurementSeed, type MeasurementSeed } from "../../src/domain/measurement";
-import { DEFAULT_INSTANCES, instanceFixture } from "../../src/domain/instances";
+import { instanceFixture } from "../../src/domain/instances";
+// these tests cover the legacy V1 bay (CCP / Remote / STI CMP / OHT): its instance set is the legacy-v1 fixture
+const DEFAULT_INSTANCES = instanceFixture("legacy-v1")!;
 import { getScenario, listScenarios } from "../../src/presentation/scenarioRegistry";
 import type { ScenarioContext, StationWorldFrame } from "../../src/presentation/scenario";
 import { CMP_LAYOUT, conditionerDiscXZ, opticalFootprint, validateCmpConfig, CMP_CONFIG } from "../../src/equipment/cmp/layout";
@@ -40,7 +42,7 @@ const ctx: ScenarioContext = { instances: DEFAULT_INSTANCES, stations: stationsF
 describe("equipment registry", () => {
   it("registers the legacy V1 templates, the current-bay templates and the carrier", () => {
     const ids = listBundles().map((b) => b.template.templateId).sort();
-    expect(ids).toEqual(["ccp_pecvd_single_wafer_300", "cellesta_i_md_clean_300", "foup_carrier_300", "oht_single_vehicle", "producer_se_ccp_twin_300", "remote_pecvd_upstream_icp", "sti_cmp_rotary_single_platen", "tactras_oxide_ccp_rie_300"]);
+    expect(ids).toEqual(["ccp_pecvd_single_wafer_300", "cellesta_i_md_clean_300", "clw08v2_oht", "foup_carrier_300", "oht_single_vehicle", "producer_se_ccp_twin_300", "remote_pecvd_upstream_icp", "sti_cmp_rotary_single_platen", "tactras_oxide_ccp_rie_300"]);
   });
   it("every bundle validates: template references, measurement seed semantics, geometry", () => {
     for (const r of validateAllBundles()) expect(r.errors, r.templateId).toEqual([]);

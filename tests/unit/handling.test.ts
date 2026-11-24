@@ -4,7 +4,9 @@ import { CHAMBER_LAYOUT, GEOMETRY_CONFIG, validateGeometryConfig, type Vec3Tuple
 import { listBundles } from "../../src/domain/registry";
 import { attachedPoint, jointGraphErrors } from "../../src/domain/kinematics";
 import type { JointDef } from "../../src/domain/types";
-import { DEFAULT_INSTANCES } from "../../src/domain/instances";
+import { instanceFixture } from "../../src/domain/instances";
+// these tests cover the legacy V1 bay (CCP / Remote / STI CMP / OHT): its instance set is the legacy-v1 fixture
+const DEFAULT_INSTANCES = instanceFixture("legacy-v1")!;
 import { DEMO_CARRIER, DEMO_WAFER } from "../../src/domain/materialFlow";
 import { evaluateTrack, trackHandoffs } from "../../src/presentation/motionTrack";
 import { smoothstep, smoothstepInverse } from "../../src/presentation/preview";

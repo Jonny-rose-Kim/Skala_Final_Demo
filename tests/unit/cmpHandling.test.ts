@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import "../../src/equipment/index";
 import { TAU, type Vec3Tuple } from "../../src/config/geometry";
 import { attachedDirection, attachedPoint, jointGraphErrors } from "../../src/domain/kinematics";
-import { DEFAULT_INSTANCES } from "../../src/domain/instances";
+import { instanceFixture } from "../../src/domain/instances";
+// these tests cover the legacy V1 bay (CCP / Remote / STI CMP / OHT): its instance set is the legacy-v1 fixture
+const DEFAULT_INSTANCES = instanceFixture("legacy-v1")!;
 import { DEMO_CARRIER, DEMO_WAFER } from "../../src/domain/materialFlow";
 import { listBundles } from "../../src/domain/registry";
 import { meshDataBounds } from "../../src/geometry/meshlib/types";

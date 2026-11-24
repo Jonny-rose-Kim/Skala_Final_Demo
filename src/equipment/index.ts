@@ -26,6 +26,9 @@ import { TACTRAS_HANDLING_SCENARIO } from "./tactras/scenario";
 import { CELLESTA_BUNDLE, CELLESTA_TEMPLATE_ID } from "./cellesta/index";
 import { createCellestaEffects } from "./cellesta/effects";
 import { CELLESTA_STANDALONE_SCENARIO } from "./cellesta/scenario";
+import { CLW_BUNDLE, CLW_TEMPLATE_ID } from "./clw/index";
+import { CLW_STANDALONE_SCENARIO } from "./clw/scenario";
+import { CURRENT_ROUTE_SCENARIO } from "./routes/current";
 import { ROUTE_A_SCENARIO, ROUTE_B_SCENARIO } from "./routes/index";
 
 let registered = false;
@@ -48,9 +51,14 @@ export function registerAllEquipment(): void {
   registerEffects(TACTRAS_TEMPLATE_ID, createTactrasEffects);
   registerBundle(CELLESTA_BUNDLE);
   registerEffects(CELLESTA_TEMPLATE_ID, createCellestaEffects);
+  registerBundle(CLW_BUNDLE);
+  registerEffects(CLW_TEMPLATE_ID, (ctx) => createOhtEffects(ctx, ctx.stationMarkers ?? []));
+  // current bay first (default route, then the standalone flows); legacy V1 scenarios follow
+  registerScenario(CURRENT_ROUTE_SCENARIO);
   registerScenario(PRODUCER_HANDLING_SCENARIO);
   registerScenario(TACTRAS_HANDLING_SCENARIO);
   registerScenario(CELLESTA_STANDALONE_SCENARIO);
+  registerScenario(CLW_STANDALONE_SCENARIO);
   registerScenario(CCP_STANDALONE_SCENARIO);
   registerScenario(CCP_HANDLING_SCENARIO);
   registerScenario(REMOTE_STANDALONE_SCENARIO);

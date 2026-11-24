@@ -31,7 +31,7 @@ import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeT
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
 import "../equipment/index";
 import { getBundle, listBundles, measurementIndex, validateAllBundles, type EquipmentBundle } from "../domain/registry";
-import { DEFAULT_INSTANCES, instanceFixture } from "../domain/instances";
+import { DEFAULT_INSTANCES, environmentFor, instanceFixture } from "../domain/instances";
 import type { EquipmentInstanceDef } from "../domain/types";
 import { revolveProfile, rectProfile, type Vec2 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
@@ -52,7 +52,7 @@ import { createEffects } from "./effectsRegistry";
 import { createCanvas, readForceWebGL2, tryCreateWebGL2, tryCreateWebGPU, type CreatedEngine } from "./engineFactory";
 import { LightingRig } from "./lighting";
 import { MeasurementOverlay } from "./measurementOverlay";
-import { FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
+import { FAB_ENVIRONMENTS, FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
 import { QUALITY, QualityManager, RenderPipeline } from "./renderPipeline";
 
 export interface SceneHostOptions {
@@ -495,7 +495,7 @@ export class SceneHost {
       const fi = inst.bundle.facilityInterface?.(inst.bundle.layout);
       if (fi && !inst.def.mobile) drops.push(facilityDropFor(inst.def.instanceId, inst.def.position, inst.def.rotationYDeg, fi));
     }
-    const environment = new FabEnvironment(scene, materials, floorY, drops);
+    const environment = new FabEnvironment(scene, materials, floorY, drops, FAB_ENVIRONMENTS[environmentFor(this.options.fixture ?? undefined)] ?? FAB_ENVIRONMENTS["fab-bay-v2"]);
     this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius, instrumentation, lodCenters, environment };
 
     // Report loaded instances and pick a valid active instance / scenario

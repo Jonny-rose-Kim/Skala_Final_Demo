@@ -1,0 +1,82 @@
+{
+  "$schema_id": "pecvd-twin.fab-environment/1",
+  "revision": "fab-bay-v2.0.0",
+  "note": "Visual-only bay surroundings of the current bay (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2), generic design assumption: raised floor tiles, operator aisle under the OHT rail with floor markings, ceiling grid with FFU and light panels, bay walls, rear utility chase with cable tray, process piping, exhaust duct and drops to each tool's facility interface. Nothing here is equipment, a measurement or a DB entity; dimensions are not from a real fab.",
+  "units": "m",
+  "frame": "World X / Z (Babylon left-handed, +Y up). Heights are above the bay floor (bay.floor_y in config/equipment/instances.json).",
+  "floor": {
+    "x0": -4.4,
+    "x1": 3.7,
+    "z0": -7.4,
+    "z1": 6.6,
+    "tile": 0.6,
+    "thickness": 0.03
+  },
+  "aisle": {
+    "x0": -3.9,
+    "x1": -2.45,
+    "stripe_width": 0.06
+  },
+  "service": {
+    "x0": 2.65,
+    "x1": 3.7
+  },
+  "ceiling": {
+    "height": 3.4,
+    "module": [
+      1.2,
+      0.6
+    ],
+    "tbar_width": 0.04,
+    "tbar_depth": 0.05,
+    "ffu_pattern": [
+      1,
+      1,
+      0
+    ],
+    "light_every": 3
+  },
+  "walls": {
+    "height": 3.4,
+    "thickness": 0.12,
+    "back_x": 3.7,
+    "front_x": -4.4,
+    "z0": -7.4,
+    "z1": 6.6,
+    "base_height": 0.1
+  },
+  "utilities": {
+    "tray": {
+      "x": 2.95,
+      "height": 2.85,
+      "width": 0.45,
+      "depth": 0.08
+    },
+    "duct": {
+      "x": 3.4,
+      "height": 2.95,
+      "radius": 0.16
+    },
+    "pipes": {
+      "x": [
+        2.75,
+        2.85,
+        2.95
+      ],
+      "height": 2.7,
+      "radius": 0.014
+    },
+    "drops": {
+      "lateral": [
+        -0.09,
+        0.0,
+        0.09
+      ],
+      "radius": [
+        0.022,
+        0.016,
+        0.03
+      ]
+    }
+  }
+}

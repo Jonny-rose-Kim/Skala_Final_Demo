@@ -12,6 +12,8 @@ import type { HandlingStationLayout } from "../../src/equipment/handling/station
 import { TACTRAS_LAYOUT } from "../../src/equipment/tactras/layout";
 import { CELLESTA_LAYOUT } from "../../src/equipment/cellesta/layout";
 import { CELLESTA_TEMPLATE_ID } from "../../src/equipment/cellesta/template";
+import { CLW_LAYOUT } from "../../src/equipment/clw/layout";
+import { CLW_TEMPLATE_ID } from "../../src/equipment/clw/template";
 import { TACTRAS_TEMPLATE_ID } from "../../src/equipment/tactras/template";
 
 const OUT = path.resolve("assets/source/envelopes");
@@ -71,5 +73,17 @@ function write(templateId: string, data: unknown) {
     pm: { x0: pm.box.x0, x1: pm.box.x1, z0: pm.box.z0, z1: pm.box.z1, top: pm.box.top_y },
     shutter: { width: pm.shutter.width, y0: pm.shutter.center_y - pm.shutter.height / 2, y1: pm.shutter.center_y + pm.shutter.height / 2 },
     tool: L.tool,
+  });
+}
+
+{
+  const L = CLW_LAYOUT;
+  write(CLW_TEMPLATE_ID, {
+    z0: L.rail.z0,
+    bodySize: L.vehicle.size,
+    bodyY0: L.vehicle.bodyY0,
+    bodyY1: L.vehicle.bodyY1,
+    seatY: L.hoist.originY + L.carrierSeatInHoistFrame[1],
+    foupSize: L.cfg.foup.body_size,
   });
 }

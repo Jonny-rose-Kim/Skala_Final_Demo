@@ -245,11 +245,11 @@ export const DEFAULT_OVERLAYS: OverlaySettings = {
   railFrames: false,
 };
 
-export const DEFAULT_SCENARIO_ID = "ccp-illustrative-cycle-v1";
+export const DEFAULT_SCENARIO_ID = "route-dep-etch-clean-v1";
 
 export const usePresentationStore = create<PresentationState>((set) => ({
   appMode: "visual-inspection",
-  activeInstanceId: "PECVD-01.CH-A",
+  activeInstanceId: "PRODUCER-01",
   instances: [],
   overview: false,
   scenarioId: DEFAULT_SCENARIO_ID,
@@ -274,7 +274,7 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   cameraPresetId: "overview",
   renderer: { backend: null, status: "idle", message: null, gpu: null, fallbackReason: null, forceWebGL2: false },
   perf: null,
-  timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "ccp", phaseFocusInstanceId: null },
+  timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "deposition", phaseFocusInstanceId: null },
   preview: null,
   devWarnings: [],
   panels: { tree: true, timeline: true },
