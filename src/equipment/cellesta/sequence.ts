@@ -243,11 +243,13 @@ export interface CellestaProcessSample {
 export function cellestaProcessAt(plan: CellestaPlan, tp: number): CellestaProcessSample {
   const L = plan.L;
   const t = Math.min(Math.max(tp, 0), CELLESTA_PROCESS_DURATION);
+  // phase containing t; the last phase also owns the exact end time (u = 1 there, not 0)
   let t0 = 0;
   let phase = CELLESTA_PROCESS_PHASES[0];
-  for (const p of CELLESTA_PROCESS_PHASES) {
+  for (let i = 0; i < CELLESTA_PROCESS_PHASES.length; i++) {
+    const p = CELLESTA_PROCESS_PHASES[i];
     phase = p;
-    if (t < t0 + p.duration) break;
+    if (t < t0 + p.duration || i === CELLESTA_PROCESS_PHASES.length - 1) break;
     t0 += p.duration;
   }
   const u = Math.min(1, Math.max(0, (t - t0) / phase.duration));

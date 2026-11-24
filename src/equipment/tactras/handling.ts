@@ -9,7 +9,4 @@ import { TACTRAS_LAYOUT } from "./layout";
 
 const le = TACTRAS_LAYOUT.cfg.lower_electrode;
 
-/** Joint id the station writes the (zero) stage offset to; the template has no such joint on purpose. */
-export const TACTRAS_FIXED_STAGE = "lower_electrode_fixed";
-
-export const TACTRAS_STATION_PLAN: StationPlan = planStation(TACTRAS_LAYOUT.station, chamberKinematics(TACTRAS_LAYOUT.station, TACTRAS_FIXED_STAGE, 0, 0, le.lift_pin_stroke, TACTRAS_LAYOUT.cfg.ports.slit.gate_travel), slotIndex(DEMO_RESERVED_SLOT.slotId));
+export const TACTRAS_STATION_PLAN: StationPlan = planStation(TACTRAS_LAYOUT.station, chamberKinematics(TACTRAS_LAYOUT.station, null, 0, 0, le.lift_pin_stroke, TACTRAS_LAYOUT.cfg.ports.slit.gate_travel), slotIndex(DEMO_RESERVED_SLOT.slotId));

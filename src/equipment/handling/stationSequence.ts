@@ -45,7 +45,8 @@ export const STATION_TIMING: StationTiming = timing.station;
 
 /** Chamber kinematics the sequence needs (offsets of the stage lift and the lift pins). */
 export interface ChamberKinematics {
-  stageJoint: string;
+  /** Stage lift joint; null for a fixed lower electrode (wafer exchanged by the lift pins only). */
+  stageJoint: string | null;
   pinsJoint: string;
   /** Stage joint value at the transfer position (negative = down). */
   transferOffset: number;
@@ -56,7 +57,7 @@ export interface ChamberKinematics {
   gateTravel: number;
 }
 
-export function chamberKinematics(S: HandlingStationLayout, stageJoint: string, processTopY: number, transferTopY: number, pinStroke: number, gateTravel: number): ChamberKinematics {
+export function chamberKinematics(S: HandlingStationLayout, stageJoint: string | null, processTopY: number, transferTopY: number, pinStroke: number, gateTravel: number): ChamberKinematics {
   const contact = S.planeY - transferTopY;
   return { stageJoint, pinsJoint: "lift_pins_z", transferOffset: transferTopY - processTopY, pinsContact: contact, pinsUp: Math.min(pinStroke, contact + 0.006), gateTravel };
 }
@@ -164,7 +165,7 @@ export function stationJointValues(plan: StationPlan, v: Record<string, number>)
     [J.bladeS1]: b * k1,
     [J.bladeS2]: b * (1 - k1 - ks),
     [J.slitGate]: v.slitGate,
-    [plan.K.stageJoint]: v.stage,
+    ...(plan.K.stageJoint ? { [plan.K.stageJoint]: v.stage } : {}),
     [plan.K.pinsJoint]: v.pins,
   };
 }
