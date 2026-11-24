@@ -97,7 +97,7 @@ export function buildSeed(templateId: string, seedRevision: string, prefix: stri
       // a channel binds to the point only when it observes the point's quantity (setpoints / commands too)
       if (quantity === pt.quantity) seed.pointBindings.push({ bindingId: `${prefix}.bind.${s.key}.${c.suffix}`, channelId, pointId, role: "primary", configurationRevision });
     }
-    seed.calibrations.push({ calibrationId: `${prefix}.cal.${s.key}`, instrumentId, status: "unconfigured" });
+    seed.calibrations.push({ calibrationId: `${prefix}.cal.${s.key}`, instrumentId, status: "unknown" });
   }
   return seed;
 }

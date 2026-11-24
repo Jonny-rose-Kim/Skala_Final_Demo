@@ -38,9 +38,9 @@ function stationsFor(instances = DEFAULT_INSTANCES): Record<string, StationWorld
 const ctx: ScenarioContext = { instances: DEFAULT_INSTANCES, stations: stationsFor() };
 
 describe("equipment registry", () => {
-  it("registers the four equipment templates plus the carrier", () => {
+  it("registers the legacy V1 templates, the current-bay templates and the carrier", () => {
     const ids = listBundles().map((b) => b.template.templateId).sort();
-    expect(ids).toEqual(["ccp_pecvd_single_wafer_300", "foup_carrier_300", "oht_single_vehicle", "remote_pecvd_upstream_icp", "sti_cmp_rotary_single_platen"]);
+    expect(ids).toEqual(["ccp_pecvd_single_wafer_300", "foup_carrier_300", "oht_single_vehicle", "producer_se_ccp_twin_300", "remote_pecvd_upstream_icp", "sti_cmp_rotary_single_platen"]);
   });
   it("every bundle validates: template references, measurement seed semantics, geometry", () => {
     for (const r of validateAllBundles()) expect(r.errors, r.templateId).toEqual([]);
