@@ -113,18 +113,34 @@ export function createCleanroomEnvironment(scene: Scene, opts: EnvironmentOption
  * so a missing asset never blocks the scene.
  */
 export const INDOOR_ENV_URL = "/env/white_studio_05.env";
+/** First 8 bytes of every Babylon .env file. */
+const ENV_MAGIC = [0x86, 0x16, 0x87, 0x96, 0xf6, 0xd6, 0x96, 0x36];
 
 export async function createIndoorEnvironment(scene: Scene, log: (m: string) => void = () => {}): Promise<BaseTexture> {
   try {
-    const tex = await new Promise<CubeTexture>((resolve, reject) => {
-      const t = CubeTexture.CreateFromPrefilteredData(INDOOR_ENV_URL, scene);
-      t.name = "indoorEnvironment";
-      if (t.isReady()) resolve(t);
-      t.onLoadObservable.addOnce(() => resolve(t));
-      setTimeout(() => (t.isReady() ? resolve(t) : reject(new Error("timeout"))), 15000);
-    });
-    return tex;
+    // Verify the bytes before Babylon decodes them: a failed .env decode on WebGL2 leaves GL state that breaks the
+    // procedural fallback's prefilter pass, so only a well-formed file reaches CubeTexture.
+    const res = await fetch(INDOOR_ENV_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!ENV_MAGIC.every((b, i) => bytes[i] === b)) throw new Error("not a Babylon .env file");
+    const url = URL.createObjectURL(new Blob([bytes as unknown as BlobPart]));
+    try {
+      return await new Promise<CubeTexture>((resolve, reject) => {
+        const t = new CubeTexture(url, scene, null, false, null, null, (message) => {
+          t.dispose();
+          reject(new Error(message ?? "load error"));
+        }, undefined, true, ".env");
+        t.name = "indoorEnvironment";
+        if (t.isReady()) resolve(t);
+        t.onLoadObservable.addOnce(() => resolve(t));
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   } catch (e) {
+    // a torn-down mount (StrictMode, renderer fallback) must not start the fallback prefilter on a disposed engine
+    if (scene.isDisposed) throw e;
     log(`IBL ${INDOOR_ENV_URL} 로드 실패 (${String(e)}): 절차적 환경 사용`);
     return createCleanroomEnvironment(scene);
   }

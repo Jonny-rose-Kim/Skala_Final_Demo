@@ -34,5 +34,6 @@ export const CLW_BUNDLE: EquipmentBundle<OhtLayout> = {
   },
   pathPose: (L, jointId, s) => ohtPathPose(L, jointId, s),
   carrierAttach: { jointId: "hoist", seatLocal: [0, CLW_LAYOUT.hoist.originY + CLW_LAYOUT.carrierSeatInHoistFrame[1], CLW_LAYOUT.rail.z0] },
+  coversAuto: "inspection",
   glb: { url: "/models/clw08v2_oht.glb", manifest: glbManifest as unknown as GlbManifest, required: true },
 };

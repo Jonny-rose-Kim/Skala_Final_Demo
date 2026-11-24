@@ -15,6 +15,7 @@ import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
 import "@babylonjs/core/Materials/Textures/Loaders/hdrTextureLoader";
 import "@babylonjs/core/Culling/ray";
 import { Scene } from "@babylonjs/core/scene";
+import type { RenderTargetTexture } from "@babylonjs/core/Materials/Textures/renderTargetTexture";
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
@@ -160,7 +161,7 @@ export class SceneHost {
   private scenarioDef: ScenarioDefinition | null = null;
   private ctx: ScenarioContext = { instances: [], stations: {} };
   /** Instances with a visible glow volume and camera-to-glow segments (limits the opaque depth pass). */
-  private depthFocus: { instances: Set<string>; segments: { a: Vector3; b: Vector3 }[] } = { instances: new Set(), segments: [] };
+  private depthFocus: { segments: { a: Vector3; b: Vector3; r: number }[] } = { segments: [] };
   private lastPreview: PreviewState | null = null;
   private lastFocusInstance: string | null = null;
   private activeTemplateId: string | null = null;
@@ -308,6 +309,10 @@ export class SceneHost {
     camera.attachControl(created.canvas, true);
 
     const env = await createIndoorEnvironment(scene, (m) => this.log(m));
+    if (this.disposed) {
+      env.dispose();
+      throw new Error("cancelled during environment load");
+    }
     const textures = createProceduralTextures(scene);
     const materials = new MaterialLibrary(scene, textures);
     const lighting = new LightingRig(scene, env);
@@ -430,19 +435,10 @@ export class SceneHost {
     const depth = scene.enableDepthRenderer(camera, false, true, Constants.TEXTURE_NEAREST_SAMPLINGMODE, true);
     depth.useOnlyInActiveCamera = true;
     const depthMap = depth.getDepthMap();
-    depthMap.renderListPredicate = (m: AbstractMesh) => {
-      const meta = m.metadata as (InstanceMeshMetadata & { isOverlay?: boolean; isGround?: boolean }) | undefined;
-      if (!m.isEnabled() || !m.isVisible) return false;
-      if (meta?.isPlasma || meta?.isOverlay) return false;
-      const mat = m.material;
-      if (mat && mat.needAlphaBlending()) return false;
-      // only what can hide a glow volume: the meshes of the tool that owns it, and anything between the camera and it
-      const focus = this.depthFocus;
-      if (meta?.instanceId && focus.instances.has(meta.instanceId)) return true;
-      const bs = m.getBoundingInfo().boundingSphere;
-      for (const seg of focus.segments) if (segmentSphereHit(seg.a, seg.b, bs.centerWorld, bs.radiusWorld)) return true;
-      return false;
-    };
+    // The list is assigned explicitly (refreshDepthList), never through renderListPredicate: with a predicate Babylon
+    // rebuilds the list every frame and each push marks the light defines of every mesh in the scene dirty, which
+    // re-prepared all materials each frame while a glow was shown (about 14 ms per frame on the Producer view).
+    depthMap.renderList = [];
     for (const inst of instances.values()) for (const p of inst.effects?.plasmas ?? []) p.setDepthTexture(depthMap);
 
     // Backdrop sphere: an explicit unlit background so both backends produce the same tone-mapped color.
@@ -1061,6 +1057,31 @@ export class SceneHost {
     if (!w.instances.get(s.activeInstanceId)?.plasma || s.overview) w.lighting.updatePlasmaLight(Vector3.Zero(), 0, presetColor.core, false);
   }
 
+  /**
+   * Opaque meshes that can hide or cut a glow volume: meshes touching the cylinder from the camera to the volume
+   * (radius = the volume's bounding radius, a superset of the view cone), which includes everything overlapping the
+   * volume. Reassigned only when the membership changes, so the depth pass does not dirty materials every frame.
+   */
+  private refreshDepthList(scene: Scene, depthMap: RenderTargetTexture): void {
+    const next: AbstractMesh[] = [];
+    for (const m of scene.meshes) {
+      const meta = m.metadata as (InstanceMeshMetadata & { isOverlay?: boolean; isGround?: boolean }) | undefined;
+      if (!m.isEnabled() || !m.isVisible || m.getTotalVertices() === 0) continue;
+      if (meta?.isPlasma || meta?.isOverlay) continue;
+      const mat = m.material;
+      if (mat && mat.needAlphaBlending()) continue;
+      const bs = m.getBoundingInfo().boundingSphere;
+      for (const seg of this.depthFocus.segments)
+        if (segmentSphereHit(seg.a, seg.b, bs.centerWorld, bs.radiusWorld + seg.r)) {
+          next.push(m);
+          break;
+        }
+    }
+    const cur = depthMap.renderList ?? [];
+    if (cur.length === next.length && next.every((m, i) => cur[i] === m)) return;
+    depthMap.renderList = next;
+  }
+
   private placeCarrier(inst: EquipmentInstance, cp: { holder: { kind: "station" | "gripper"; id: string }; yawFromStationId?: string; dockOffset?: number }): void {
     const w = this.world!;
     const frames = inst.bundle.carrierFrames ?? { seatLocal: [0, 0, 0], flangeLocal: [0, 0.3, 0], doorFacingLocal: [0, 0, 1] };
@@ -1130,16 +1151,16 @@ export class SceneHost {
     w.environment.update(w.camera.globalPosition, s.environment);
     // the opaque depth map only feeds the plasma ray march: stop refreshing it while no glow volume is drawn
     let glowVisible = false;
-    this.depthFocus.instances.clear();
     this.depthFocus.segments.length = 0;
-    for (const [id, inst] of w.instances)
+    for (const inst of w.instances.values())
       for (const p of inst.effects?.plasmas ?? [])
         if (p.mesh.isEnabled() && p.mesh.isVisible) {
           glowVisible = true;
-          this.depthFocus.instances.add(id);
-          this.depthFocus.segments.push({ a: w.camera.globalPosition.clone(), b: p.mesh.getBoundingInfo().boundingSphere.centerWorld.clone() });
+          const bs = p.mesh.getBoundingInfo().boundingSphere;
+          this.depthFocus.segments.push({ a: w.camera.globalPosition.clone(), b: bs.centerWorld.clone(), r: bs.radiusWorld });
         }
     const depthMap = w.depth.getDepthMap();
+    if (glowVisible) this.refreshDepthList(w.scene, depthMap);
     const wantRefresh = glowVisible ? 1 : 0;
     if (depthMap.refreshRate !== wantRefresh) {
       depthMap.refreshRate = wantRefresh;
