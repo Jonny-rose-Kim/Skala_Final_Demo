@@ -1,0 +1,5 @@
+[
+  { "id": "l01_producer_front", "instance": "PRODUCER-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 30, "local": true, "cam": [160, 70, 4.6, [-1.6, 0.3, 0.3]] },
+  { "id": "l02_tactras_pm", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 152, "local": true, "cam": [262, 72, 0.9, [0.0, 0.0, 0]] },
+  { "id": "l03_bay", "overview": true, "scenario": "route-dep-etch-clean-v1", "time": 100, "cam": [205, 58, 15, [-0.2, 0.3, -0.4]] }
+]

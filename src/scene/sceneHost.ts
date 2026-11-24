@@ -29,7 +29,7 @@ import { GlbLibrary } from "./glbParts";
 import { diagnosisFor, type AgentEvent, type DiagnosisHighlight } from "../domain/agentContract";
 import { WaferSurfaceLibrary } from "../materials/waferSurface";
 import type { PartGeometry } from "../geometry/chamberParts";
-import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
+import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
 import "../equipment/index";
 import { getBundle, listBundles, measurementIndex, validateAllBundles, type EquipmentBundle } from "../domain/registry";
@@ -37,7 +37,7 @@ import { DEFAULT_INSTANCES, environmentFor, instanceFixture } from "../domain/in
 import type { EquipmentInstanceDef } from "../domain/types";
 import { revolveProfile, rectProfile, type Vec2 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
-import { createCleanroomEnvironment } from "../materials/environment";
+import { createIndoorEnvironment } from "../materials/environment";
 import { MaterialLibrary } from "../materials/materialLibrary";
 import { createProceduralTextures, type ProceduralTextureSet } from "../materials/proceduralTextures";
 import { resolveCutaway, type ResolvedCutaway, FULL } from "../presentation/cutaway";
@@ -68,7 +68,7 @@ interface World {
   created: CreatedEngine;
   scene: Scene;
   camera: ArcRotateCamera;
-  env: HDRCubeTexture;
+  env: BaseTexture;
   textures: ProceduralTextureSet;
   materials: MaterialLibrary;
   lighting: LightingRig;
@@ -307,7 +307,7 @@ export class SceneHost {
     camera.useNaturalPinchZoom = true;
     camera.attachControl(created.canvas, true);
 
-    const env = await createCleanroomEnvironment(scene);
+    const env = await createIndoorEnvironment(scene, (m) => this.log(m));
     const textures = createProceduralTextures(scene);
     const materials = new MaterialLibrary(scene, textures);
     const lighting = new LightingRig(scene, env);

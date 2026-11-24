@@ -21,7 +21,8 @@
     "assets:blender": "sh scripts/blender/run.sh",
     "assets:optimize": "node scripts/assets/optimize-glb.mjs",
     "assets:validate": "node scripts/assets/validate-glb.mjs",
-    "assets:build": "npm run assets:envelopes && npm run assets:blender && npm run assets:optimize && npm run assets:validate"
+    "assets:build": "npm run assets:envelopes && npm run assets:blender && npm run assets:optimize && npm run assets:validate",
+    "assets:env": "node scripts/assets/make-env.mjs"
   },
   "dependencies": {
     "@babylonjs/core": "9.34.0",

@@ -12,7 +12,7 @@ import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
+import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
 import type { LightingPreset } from "../presentation/store";
 
 export class LightingRig {
@@ -25,7 +25,7 @@ export class LightingRig {
 
   constructor(
     private readonly scene: Scene,
-    env: HDRCubeTexture,
+    env: BaseTexture,
   ) {
     scene.environmentTexture = env;
     scene.environmentIntensity = 0.75;

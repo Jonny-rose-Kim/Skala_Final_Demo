@@ -5,6 +5,9 @@
  */
 import type { Scene } from "@babylonjs/core/scene";
 import { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
+import { CubeTexture } from "@babylonjs/core/Materials/Textures/cubeTexture";
+import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
+import "@babylonjs/core/Materials/Textures/Loaders/envTextureLoader";
 
 function float2rgbe(r: number, g: number, b: number, out: Uint8Array, o: number): void {
   const v = Math.max(r, g, b);
@@ -102,4 +105,27 @@ export function createCleanroomEnvironment(scene: Scene, opts: EnvironmentOption
     );
     tex.name = "cleanroomEnvironment";
   });
+}
+
+/**
+ * Prefiltered indoor IBL (Poly Haven "White Studio 05", CC0; built by `npm run assets:env` into
+ * public/env/white_studio_05.env). Falls back to the procedural clean-room panorama when the file cannot load,
+ * so a missing asset never blocks the scene.
+ */
+export const INDOOR_ENV_URL = "/env/white_studio_05.env";
+
+export async function createIndoorEnvironment(scene: Scene, log: (m: string) => void = () => {}): Promise<BaseTexture> {
+  try {
+    const tex = await new Promise<CubeTexture>((resolve, reject) => {
+      const t = CubeTexture.CreateFromPrefilteredData(INDOOR_ENV_URL, scene);
+      t.name = "indoorEnvironment";
+      if (t.isReady()) resolve(t);
+      t.onLoadObservable.addOnce(() => resolve(t));
+      setTimeout(() => (t.isReady() ? resolve(t) : reject(new Error("timeout"))), 15000);
+    });
+    return tex;
+  } catch (e) {
+    log(`IBL ${INDOOR_ENV_URL} 로드 실패 (${String(e)}): 절차적 환경 사용`);
+    return createCleanroomEnvironment(scene);
+  }
 }
