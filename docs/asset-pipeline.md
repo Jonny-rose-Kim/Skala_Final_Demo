@@ -6,11 +6,12 @@
 
 | 단계 | 명령 | 결과 |
 | --- | --- | --- |
+| 0. Livery | `npm run assets:livery` (system Python + Pillow) | `assets/source/textures/livery/clw08v2_livery.png`(1024² decal atlas, RGBA), `clw08v2_display.png`(LED 창 emissive map), `clw08v2_livery.json`(atlas 좌표) |
 | 1. Envelope | `npm run assets:envelopes` | `assets/source/envelopes/<templateId>.json`: TS layout에서 계산한 외곽 치수(인스턴스 frame). Blender가 같은 config를 따른다 |
 | 2. Blender | `npm run assets:blender` (= `sh scripts/blender/run.sh [tool ...]`, Blender 4.5.16 LTS; 다른 경로는 `BLENDER=...`) | `assets/source/blender/<id>.blend`(편집용), `assets/source/glb-raw/<id>.glb`(git 제외), `assets/manifests/<id>.glb-manifest.json` |
 | 3. 최적화 | `npm run assets:optimize` | `public/models/<id>.glb`, `assets/manifests/<id>.optimize-report.json` |
 | 4. 검증 | `npm run assets:validate` | `assets/manifests/<id>.validation.json` (validator error가 있거나 manifest가 어긋나면 실패) |
-| 전체 | `npm run assets:build` | 1-4 순서대로 |
+| 전체 | `npm run assets:build` | 0-4 순서대로 |
 | IBL | `npm run assets:env` (dev server 필요) | `public/env/white_studio_05.env` |
 
 Blender 직접 실행: `blender --background --factory-startup --python scripts/blender/build_equipment.py -- producer tactras cellesta clw`.
@@ -58,7 +59,7 @@ Blender 직접 실행: `blender --background --factory-startup --python scripts/
 | producer_se_ccp_twin_300 | 41 + root | 33,652 | 9 / 2 | 3.0 MB | error 0, warning 0 |
 | tactras_oxide_ccp_rie_300 | 72 + root | 44,892 | 10 / 2 | 3.8 MB | error 0, warning 0 |
 | cellesta_i_md_clean_300 | 70 + root | 47,104 | 10 / 2 | 4.2 MB | error 0, warning 0 |
-| clw08v2_oht | 6 + root | 1,884 | 5 / 2 | 0.2 MB | error 0, warning 0 |
+| clw08v2_oht | 20 + root | 4,772 | 10 / 4 | 0.7 MB | error 0, warning 0 |
 
 크기의 대부분은 bevel이 들어간 geometry다. 다음 단계 후보는 bevel segment 줄이기와 quantization 오차 검사다.
 
@@ -72,6 +73,19 @@ Blender 직접 실행: `blender --background --factory-startup --python scripts/
 - **색공간:** base color는 sRGB, normal은 Non-Color.
 - **재질 공유:** GLB 재질과 텍스처는 template마다 `GlbLibrary`가 소유하고 scene teardown 때 해제한다. Highlight는 layer로, x-ray는 복제 variant로 처리하므로 한 장비가 공유 재질을 바꾸지 않는다.
 - **Cover:** 외장 node는 `cover`이고 `coversAuto: "inspection"`을 따른다. 조립 상태에서는 닫혀 있고, 단면 / x-ray / 분해 보기에서 숨는다. Idle module 외장도 점검 모드에서 숨어서 내부를 가리지 않는다.
+
+## Decal과 사진 기반 외장 (CLW-08v2, 2026-11-25)
+
+- **참고 사진:** OHT 차체는 SK hynix 팹 OHT 공개 사진을 보고 형상과 배치를 맞췄다.
+  - 형상: 평면 모서리가 크게 둥근 앞뒤 end shell이 옆으로 감겨 들어가고, 위에 검은 cap, 아래에 ledge가 있다.
+  - 앞뒤 면 배치: 센서 창, 로고, 호기 번호, 센서 창과 명판, LED 표시창과 비상정지, 하단 센서 창. 경고 라벨은 왼쪽 가장자리에 있다.
+  - 높이는 사진에서 읽은 비율(shell 높이 기준)이고, 폭과 높이는 config의 vehicle envelope을 따른다. 사진에서 잰 치수가 아니다.
+- **Decal 방식:** 면에서 1.5 mm 띄운 평면 quad에 atlas UV를 준다. 재질은 `alphaMode: MASK`(cutoff 0.5)다.
+  - Blender에서는 Image Alpha를 Math:Round를 거쳐 BSDF Alpha에 연결한다. Exporter는 Alpha가 연결된 텍스처를 PNG로 내보내므로 전역 JPEG 설정과 충돌하지 않는다.
+  - Decal은 pick되지 않고 그림자를 만들지 않는다. 작은 라벨은 `lod: fine`이다.
+- **재질:** 차체 흰색에 `KHR_materials_clearcoat`(0.5)를 쓰고, 센서 창은 clearcoat 1.0의 검은 아크릴이다. LED 창은 `emissiveTexture`와 `KHR_materials_emissive_strength`(1.6)를 쓴다.
+- **표시창 내용:** 호기 번호와 instance id만 정적으로 보여 준다. 사진의 cycle 수 같은 운행 값은 넣지 않았다(가짜 관측 금지).
+- **센서 창:** 위쪽 센서 창과 하향 센서는 `obstruction_sensor` asset의 GLB node다. 그래서 CLW bundle은 공통 OHT의 procedural obstruction sensor를 쓰지 않는다.
 
 ## Cutaway 정책
 

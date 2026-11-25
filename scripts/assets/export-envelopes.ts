@@ -85,5 +85,9 @@ function write(templateId: string, data: unknown) {
     bodyY1: L.vehicle.bodyY1,
     seatY: L.hoist.originY + L.carrierSeatInHoistFrame[1],
     foupSize: L.cfg.foup.body_size,
+    // hoist belt exits (the underside window) and the forward obstruction sensor window
+    beltOffsets: L.cfg.hoist.belt_offsets,
+    beltWidth: L.cfg.hoist.belt_width,
+    frontSensorSize: L.cfg.vehicle.front_sensor_size,
   });
 }

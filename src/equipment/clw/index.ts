@@ -1,6 +1,7 @@
 /**
- * Cleanway CLW-08v2 based OHT bundle (current bay): shared OHT mechanism parts without the procedural body
- * (the vehicle shell and carrier-bay end walls come from the GLB), path pose and carrier attach frame.
+ * Cleanway CLW-08v2 based OHT bundle (current bay): shared OHT mechanism parts without the procedural body and
+ * obstruction sensor (the housing, end shells, face fittings and sensor windows come from the GLB), path pose and
+ * carrier attach frame.
  */
 import type { EquipmentBundle } from "../../domain/registry";
 import type { GlbManifest } from "../../domain/glbSource";
@@ -14,8 +15,11 @@ import { buildClwTemplate, CLW_TEMPLATE_ID } from "./template";
 
 export { CLW_TEMPLATE_ID };
 
+/** The GLB supplies the vehicle housing and the obstruction sensor windows (placed on the end face layout). */
+const GLB_ASSETS = new Set(["vehicle_body", "obstruction_sensor"]);
+
 export function buildClwParts(L: OhtLayout) {
-  return buildOhtParts(L).filter((p) => p.assetId !== "vehicle_body");
+  return buildOhtParts(L).filter((p) => !GLB_ASSETS.has(p.assetId));
 }
 
 export const CLW_BUNDLE: EquipmentBundle<OhtLayout> = {

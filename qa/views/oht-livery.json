@@ -1,0 +1,6 @@
+[
+  { "id": "17_oht_livery_front", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 5, "cam": [100, 100, 1.9, [-1.974, 1.6, -6.3]] },
+  { "id": "18_oht_livery_loaded_side", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 100, "cam": [158, 92, 2.2, [-1.974, 1.4, -0.733]] },
+  { "id": "19_oht_face_detail", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 5, "cam": [92, 93, 0.8, [-1.974, 1.5, -5.88]] },
+  { "id": "20_oht_pickup_livery", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 89.5, "cam": [120, 78, 2.8, [-1.974, 1.2, -4.3]], "ui": true }
+]

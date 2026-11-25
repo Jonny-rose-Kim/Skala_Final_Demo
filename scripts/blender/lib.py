@@ -84,8 +84,8 @@ def _tex_node(nt, path, colorspace, scale):
     return tex
 
 
-def material(key, base, metallic=0.0, roughness=0.5, detail=None, normal_strength=0.3, emissive=None, alpha=1.0, tex_scale=1.0):
-    """detail: None | "paint" | "brushed" (adds the CC0 normal + roughness maps)."""
+def material(key, base, metallic=0.0, roughness=0.5, detail=None, normal_strength=0.3, emissive=None, alpha=1.0, tex_scale=1.0, coat=0.0, coat_roughness=0.08):
+    """detail: None | "paint" | "brushed" (adds the CC0 normal map). coat > 0 exports KHR_materials_clearcoat."""
     if key in _mats:
         return _mats[key]
     m = bpy.data.materials.new(key)
@@ -105,6 +105,9 @@ def material(key, base, metallic=0.0, roughness=0.5, detail=None, normal_strengt
         ntex = _tex_node(nt, os.path.join(TEX, f"{stem}_NormalGL.jpg"), "Non-Color", tex_scale)
         nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
         nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
+    if coat > 0:
+        bsdf.inputs["Coat Weight"].default_value = coat
+        bsdf.inputs["Coat Roughness"].default_value = coat_roughness
     if emissive is not None:
         bsdf.inputs["Emission Color"].default_value = (*emissive, 1.0)
         bsdf.inputs["Emission Strength"].default_value = 1.0
@@ -112,6 +115,56 @@ def material(key, base, metallic=0.0, roughness=0.5, detail=None, normal_strengt
         bsdf.inputs["Alpha"].default_value = alpha
         m.blend_method = "BLEND" if hasattr(m, "blend_method") else m.blend_method
         m.surface_render_method = "BLENDED" if hasattr(m, "surface_render_method") else None
+    _mats[key] = m
+    return m
+
+
+def _full_img(path, colorspace):
+    """Image used at its own resolution (decal atlas / display map): no downscale, no tiling."""
+    img = bpy.data.images.load(path, check_existing=True)
+    img.colorspace_settings.name = colorspace
+    return img
+
+
+def decal_material(key, path, roughness=0.4):
+    """Alpha-tested decal (glTF alphaMode MASK, cutoff 0.5 via Math:Round): base colour and alpha from the atlas."""
+    if key in _mats:
+        return _mats[key]
+    m = bpy.data.materials.new(key)
+    m.use_nodes = True
+    m.use_backface_culling = True
+    nt = m.node_tree
+    bsdf = nt.nodes.get("Principled BSDF")
+    bsdf.inputs["Roughness"].default_value = roughness
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = _full_img(path, "sRGB")
+    tex.interpolation = "Linear"
+    rnd = nt.nodes.new("ShaderNodeMath")
+    rnd.operation = "ROUND"
+    nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    nt.links.new(tex.outputs["Alpha"], rnd.inputs[0])
+    nt.links.new(rnd.outputs[0], bsdf.inputs["Alpha"])
+    if hasattr(m, "surface_render_method"):
+        m.surface_render_method = "DITHERED"
+    _mats[key] = m
+    return m
+
+
+def emissive_map_material(key, path, base=(0.01, 0.012, 0.012), roughness=0.12, strength=1.0):
+    """Dark glossy window whose emission comes from an image (status display)."""
+    if key in _mats:
+        return _mats[key]
+    m = bpy.data.materials.new(key)
+    m.use_nodes = True
+    m.use_backface_culling = True
+    nt = m.node_tree
+    bsdf = nt.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = (*base, 1.0)
+    bsdf.inputs["Roughness"].default_value = roughness
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = _full_img(path, "sRGB")
+    nt.links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+    bsdf.inputs["Emission Strength"].default_value = strength
     _mats[key] = m
     return m
 
@@ -214,6 +267,98 @@ def cyl(name, center, radius, length, axis, mat, parent=None, segments=24, bevel
     for p in ob.data.polygons:
         p.use_smooth = abs(p.normal.dot(Vector((0, 0, 1)) if axis == "y" else Vector((1, 0, 0)) if axis == "x" else Vector((0, 1, 0)))) < 0.9
     return ob
+
+
+def decal(name, center, normal, size, uv_rect, atlas_size, mat, parent=None):
+    """Flat quad on a vertical face (instance frame). normal: outward unit vector in the XZ plane; size = (w, h)
+    as the viewer sees it; uv_rect = (x0, y0, x1, y1) atlas pixels, top-left origin. The text reads correctly from
+    outside: u runs to the viewer's right (up x forward in the left-handed frame), v up."""
+    nx, nz = normal
+    rx, rz = -nz, nx  # right = up x (-normal)  (left-handed, +Y up)
+    w, h = size
+    cx, cy, cz = center
+    W, H = atlas_size
+    x0, y0, x1, y1 = uv_rect
+    u0, u1 = x0 / W, x1 / W
+    v0, v1 = 1 - y1 / H, 1 - y0 / H
+    corners = [(-1, -1, u0, v0), (1, -1, u1, v0), (1, 1, u1, v1), (-1, 1, u0, v1)]
+    bm = bmesh.new()
+    verts = [bm.verts.new(B(cx + sx * rx * w / 2, cy + sy * h / 2, cz + sx * rz * w / 2)) for sx, sy, _, _ in corners]
+    f = bm.faces.new(verts)
+    uv = bm.loops.layers.uv.verify()
+    for loop, (_, _, u, v) in zip(f.loops, corners):
+        loop[uv].uv = (u, v)
+    bm.normal_update()
+    want = B(nx, 0, nz)
+    if f.normal.dot(want) < 0:
+        bmesh.ops.reverse_faces(bm, faces=[f])
+    return _link(name, bm, mat, parent)
+
+
+def prism(name, outline, y0, y1, mat, parent=None, smooth_sides=True):
+    """Vertical prism from a closed outline [(x, z), ...] (instance frame, any winding, may be concave) between
+    heights y0 and y1. Side faces are smooth-shaded (rounded outlines), the caps flat."""
+    bm = bmesh.new()
+    bot = [bm.verts.new(B(x, y0, z)) for x, z in outline]
+    top = [bm.verts.new(B(x, y1, z)) for x, z in outline]
+    n = len(outline)
+    sides = []
+    for i in range(n):
+        j = (i + 1) % n
+        sides.append(bm.faces.new((bot[i], bot[j], top[j], top[i])))
+    bm.faces.new(top)
+    bm.faces.new(list(reversed(bot)))
+    bm.normal_update()
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    _box_uv(bm)
+    ob = _link(name, bm, mat, parent)
+    if smooth_sides:
+        for p in ob.data.polygons:
+            p.use_smooth = abs(p.normal.z) < 0.5  # Blender Z = instance Y: side walls smooth, caps flat
+    return ob
+
+
+def rounded_rect(hx, hz, r, cx=0.0, cz=0.0, seg=10, inset=0.003):
+    """Closed rounded-rectangle outline (half sizes hx, hz, corner radius r). `inset` adds a short straight piece
+    at each arc end so the smooth normals of the arcs do not tint the flat faces."""
+    pts = []
+    for (sx, sz, a0) in ((1, 1, 0.0), (-1, 1, 90.0), (-1, -1, 180.0), (1, -1, 270.0)):
+        ox, oz = cx + sx * (hx - r), cz + sz * (hz - r)
+        for k in range(seg + 1):
+            a = math.radians(a0 + 90.0 * k / seg)
+            pts.append((ox + r * math.cos(a), oz + r * math.sin(a)))
+        if inset > 0:
+            a = math.radians(a0 + 90.0)
+            # step along the next straight edge
+            tx, tz = -math.sin(a), math.cos(a)
+            pts.append((ox + r * math.cos(a) + tx * inset, oz + r * math.sin(a) + tz * inset))
+    return pts
+
+
+def u_shell(hx, zf, depth, r, t, seg=10, inset=0.003):
+    """Plan outline of an end shell: the face at z = zf (sign of zf = outward side) with rounded corners wrapping
+    back by `depth` along both sides, wall thickness t. Returns a closed (concave) outline."""
+    s = 1.0 if zf > 0 else -1.0
+
+    def path(hx_, r_, zf_):
+        pts = [(hx_, zf_ - s * depth)]
+        ox, oz = hx_ - r_, zf_ - s * r_
+        pts.append((hx_, oz - s * inset))
+        for k in range(seg + 1):
+            a = math.radians(90.0 * k / seg)
+            pts.append((ox + r_ * math.cos(a), oz + s * r_ * math.sin(a)))
+        pts.append((ox - inset, zf_))
+        pts.append((-ox + inset, zf_))
+        for k in range(seg + 1):
+            a = math.radians(90.0 - 90.0 * k / seg)
+            pts.append((-ox - r_ * math.cos(a), oz + s * r_ * math.sin(a)))
+        pts.append((-hx_, oz - s * inset))
+        pts.append((-hx_, zf_ - s * depth))
+        return pts
+
+    outer = path(hx, r, zf)
+    inner = path(hx - t, r - t, zf - s * t)
+    return outer + list(reversed(inner))
 
 
 def join(objs, name):

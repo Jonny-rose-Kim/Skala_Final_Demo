@@ -20,32 +20,32 @@
   "runtimeFile": "public/models/clw08v2_oht.glb",
   "nodes": [
     {
-      "node": "carrier_bay_guard.handles.stainless",
+      "node": "carrier_bay_guard.ledge.paint_lightgray",
       "parent": "clw08v2_oht__root",
       "assetId": "carrier_bay_guard",
-      "partKey": "carrier_bay_guard.handles.stainless",
-      "materialRef": "stainless",
+      "partKey": "carrier_bay_guard.ledge.paint_lightgray",
+      "materialRef": "polymer_gray",
       "cutaway": "keep",
       "cover": false,
-      "lod": "fine",
+      "lod": "",
       "jointId": "travel",
       "pickable": true,
       "castShadow": true,
       "isGlass": false,
       "materials": [
-        "stainless"
+        "paint_lightgray"
       ],
-      "triangles": 432,
+      "triangles": 440,
       "boundsInstance": {
         "min": [
-          -0.23,
-          2.1055,
-          -7.434
+          -0.275,
+          1.931,
+          -7.425
         ],
         "max": [
-          0.23,
-          2.2655,
-          -6.566
+          0.275,
+          1.953,
+          -6.575
         ]
       }
     },
@@ -68,22 +68,22 @@
       "triangles": 216,
       "boundsInstance": {
         "min": [
-          -0.24,
-          1.931,
-          -7.395
+          -0.23,
+          1.953,
+          -7.4
         ],
         "max": [
-          0.24,
-          1.955,
-          -6.605
+          0.23,
+          1.977,
+          -6.6
         ]
       }
     },
     {
-      "node": "carrier_bay_guard.walls.paint_offwhite",
+      "node": "carrier_bay_guard.shell.vehicle_white",
       "parent": "clw08v2_oht__root",
       "assetId": "carrier_bay_guard",
-      "partKey": "carrier_bay_guard.walls.paint_offwhite",
+      "partKey": "carrier_bay_guard.shell.vehicle_white",
       "materialRef": "painted_offwhite",
       "cutaway": "keep",
       "cover": false,
@@ -93,27 +93,177 @@
       "castShadow": true,
       "isGlass": false,
       "materials": [
-        "paint_offwhite"
+        "vehicle_white"
       ],
-      "triangles": 376,
+      "triangles": 440,
       "boundsInstance": {
         "min": [
           -0.27,
-          1.931,
+          1.953,
           -7.42
         ],
         "max": [
           0.27,
-          2.44,
+          2.825,
           -6.58
         ]
       }
     },
     {
-      "node": "vehicle_body.bumpers.paint_graphite",
+      "node": "obstruction_sensor.window.acrylic_black",
+      "parent": "clw08v2_oht__root",
+      "assetId": "obstruction_sensor",
+      "partKey": "obstruction_sensor.window.acrylic_black",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "acrylic_black"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.0375,
+          2.41,
+          -6.685
+        ],
+        "max": [
+          0.23,
+          2.8142,
+          -6.568
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.cap.vehicle_black",
       "parent": "clw08v2_oht__root",
       "assetId": "vehicle_body",
-      "partKey": "vehicle_body.bumpers.paint_graphite",
+      "partKey": "vehicle_body.cap.vehicle_black",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "vehicle_black"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -0.274,
+          2.825,
+          -7.424
+        ],
+        "max": [
+          0.274,
+          2.86,
+          -6.576
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.labels.livery_decal",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.labels.livery_decal",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "fine",
+      "jointId": "travel",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "livery_decal"
+      ],
+      "triangles": 4,
+      "boundsInstance": {
+        "min": [
+          -0.2715,
+          2.5495,
+          -7.18
+        ],
+        "max": [
+          0.2715,
+          2.6955,
+          -6.98
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.livery.livery_decal",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.livery.livery_decal",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "livery_decal"
+      ],
+      "triangles": 4,
+      "boundsInstance": {
+        "min": [
+          -0.2715,
+          2.6895,
+          -6.925
+        ],
+        "max": [
+          0.2715,
+          2.7305,
+          -6.795
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.side_panels.vehicle_white",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.side_panels.vehicle_white",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "vehicle_white"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.27,
+          2.44,
+          -7.262
+        ],
+        "max": [
+          0.27,
+          2.825,
+          -6.738
+        ]
+      }
+    },
+    {
+      "node": "vehicle_body.underside.paint_graphite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_body",
+      "partKey": "vehicle_body.underside.paint_graphite",
       "materialRef": "painted_dark",
       "cutaway": "keep",
       "cover": true,
@@ -125,26 +275,26 @@
       "materials": [
         "paint_graphite"
       ],
-      "triangles": 216,
+      "triangles": 432,
       "boundsInstance": {
         "min": [
           -0.25,
-          2.475,
-          -7.444
+          2.44,
+          -7.335
         ],
         "max": [
           0.25,
-          2.525,
-          -6.556
+          2.455,
+          -6.665
         ]
       }
     },
     {
-      "node": "vehicle_body.housing.paint_offwhite",
+      "node": "vehicle_body.yoke.paint_graphite",
       "parent": "clw08v2_oht__root",
       "assetId": "vehicle_body",
-      "partKey": "vehicle_body.housing.paint_offwhite",
-      "materialRef": "painted_offwhite",
+      "partKey": "vehicle_body.yoke.paint_graphite",
+      "materialRef": "painted_dark",
       "cutaway": "keep",
       "cover": true,
       "lod": "",
@@ -153,49 +303,319 @@
       "castShadow": true,
       "isGlass": false,
       "materials": [
-        "paint_offwhite"
+        "paint_graphite"
       ],
-      "triangles": 600,
+      "triangles": 108,
       "boundsInstance": {
         "min": [
-          -0.27,
-          2.44,
-          -7.42
+          -0.03,
+          2.86,
+          -7.3
         ],
         "max": [
-          0.27,
-          2.8579,
-          -6.58
+          0.03,
+          2.9,
+          -6.7
         ]
       }
     },
     {
-      "node": "vehicle_body.lamp.lamp_green",
+      "node": "vehicle_face_fittings.bezel.paint_graphite",
       "parent": "clw08v2_oht__root",
-      "assetId": "vehicle_body",
-      "partKey": "vehicle_body.lamp.lamp_green",
-      "materialRef": "polymer_white",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.bezel.paint_graphite",
+      "materialRef": "painted_dark",
       "cutaway": "keep",
-      "cover": true,
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.105,
+          2.0931,
+          -7.428
+        ],
+        "max": [
+          0.105,
+          2.1591,
+          -6.572
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.breaker.paint_graphite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.breaker.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -0.181,
+          2.3333,
+          -7.435
+        ],
+        "max": [
+          0.181,
+          2.3833,
+          -6.565
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.breaker_lever.paint_offwhite",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.breaker_lever.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
       "lod": "fine",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 88,
+      "boundsInstance": {
+        "min": [
+          -0.173,
+          2.3583,
+          -7.44
+        ],
+        "max": [
+          0.173,
+          2.3743,
+          -6.56
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.display.status_display",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.display.status_display",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
       "jointId": "travel",
       "pickable": true,
       "castShadow": false,
       "isGlass": false,
       "materials": [
-        "lamp_green"
+        "status_display"
       ],
-      "triangles": 44,
+      "triangles": 4,
       "boundsInstance": {
         "min": [
-          0.269,
-          2.795,
-          -6.808
+          -0.095,
+          2.1017,
+          -7.4285
         ],
         "max": [
-          0.275,
-          2.825,
-          -6.688
+          0.095,
+          2.1505,
+          -6.5715
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.estop.estop_red",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.estop.estop_red",
+      "materialRef": "safety_marking",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "estop_red"
+      ],
+      "triangles": 664,
+      "boundsInstance": {
+        "min": [
+          -0.09,
+          2.1111,
+          -7.441
+        ],
+        "max": [
+          0.09,
+          2.1411,
+          -6.559
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.estop_base.paint_lightgray",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.estop_base.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 664,
+      "boundsInstance": {
+        "min": [
+          -0.097,
+          2.1041,
+          -7.428
+        ],
+        "max": [
+          0.097,
+          2.1481,
+          -6.572
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.labels.livery_decal",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.labels.livery_decal",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "travel",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "livery_decal"
+      ],
+      "triangles": 20,
+      "boundsInstance": {
+        "min": [
+          -0.18,
+          1.9671,
+          -7.4225
+        ],
+        "max": [
+          0.18,
+          2.4992,
+          -6.5775
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.livery.livery_decal",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.livery.livery_decal",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "livery_decal"
+      ],
+      "triangles": 8,
+      "boundsInstance": {
+        "min": [
+          -0.14,
+          2.413,
+          -7.4215
+        ],
+        "max": [
+          0.14,
+          2.6764,
+          -6.5785
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.nameplate.stainless",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.nameplate.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 88,
+      "boundsInstance": {
+        "min": [
+          -0.116,
+          2.3231,
+          -7.422
+        ],
+        "max": [
+          0.116,
+          2.3471,
+          -6.578
+        ]
+      }
+    },
+    {
+      "node": "vehicle_face_fittings.windows.acrylic_black",
+      "parent": "clw08v2_oht__root",
+      "assetId": "vehicle_face_fittings",
+      "partKey": "vehicle_face_fittings.windows.acrylic_black",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "travel",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "acrylic_black"
+      ],
+      "triangles": 540,
+      "boundsInstance": {
+        "min": [
+          -0.0375,
+          1.961,
+          -7.432
+        ],
+        "max": [
+          0.0375,
+          2.8142,
+          -6.568
         ]
       }
     }

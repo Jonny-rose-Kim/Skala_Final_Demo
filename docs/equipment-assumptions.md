@@ -105,3 +105,8 @@ Front end는 새로 만들었다. 이전에는 wafer가 FOUP slot에서 load cup
 **CLW-08v2 기반 (`clw08v2-oht-v1.json`):**
 - 기존 OHT 기구를 쓰고, rail은 z -7.0에서 5.8 m까지다.
 - 차체와 carrier bay end wall은 GLB다.
+- 2026-11-25부터 차체는 SK hynix 팹 OHT 공개 사진을 참고한 외형이다.
+  - SK hynix 로고와 호기 번호 V001(instance OHT-01)을 넣었다.
+  - 경고 라벨, LED 표시창, 비상정지, 센서 창 3개가 있다.
+  - Template revision은 1.1.0이고, `vehicle_face_fittings` asset을 추가했다.
+  - 앞뒤 면 배치와 둥근 shell은 사진을 따랐다. 크기는 config envelope(0.54 x 0.93 x 0.84 m)에 맞춘 가정이고, 사진의 실제 차량과 높이·폭 비율이 다르다.
