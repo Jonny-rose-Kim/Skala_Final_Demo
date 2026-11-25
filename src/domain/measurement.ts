@@ -34,7 +34,12 @@ export type Quantity =
   | "motor_current"
   | "torque_estimate"
   | "presence"
-  | "identity";
+  | "identity"
+  // added for the current bay (liquid mass flow, linear speed / acceleration, drive output in % of rating)
+  | "flow_liquid_mass"
+  | "speed_linear"
+  | "acceleration_linear"
+  | "drive_output_percent";
 
 /** Canonical units accepted per quantity (validation refuses silent mismatches). */
 export const QUANTITY_UNITS: Record<Quantity, string[]> = {
@@ -55,6 +60,10 @@ export const QUANTITY_UNITS: Record<Quantity, string[]> = {
   torque_estimate: ["N·m"],
   presence: ["bool"],
   identity: ["string"],
+  flow_liquid_mass: ["mg/min", "g/min"],
+  speed_linear: ["mm/s", "m/min"],
+  acceleration_linear: ["mm/s2"],
+  drive_output_percent: ["%"],
 };
 
 export type InstallationStatus = "installed" | "planned" | "not_installed" | "candidate";
@@ -137,7 +146,12 @@ export interface MeasurementPointDefV2 {
 }
 
 export type DataShape = "scalar" | "boolean" | "enum" | "vector" | "spectrum" | "waveform" | "image";
-export type ChannelRole = "measurement" | "status" | "derived_estimate" | "model_output";
+/**
+ * measurement = measured process value (PV); setpoint = controller target; command = actuator command /
+ * controller output; status = discrete state; derived_estimate = computed from other channels; model_output
+ * = ML / model result. A setpoint or command is never the measured value of the same quantity.
+ */
+export type ChannelRole = "measurement" | "setpoint" | "command" | "status" | "derived_estimate" | "model_output";
 
 export interface MeasurementChannelDefV2 {
   channelId: string;
@@ -314,7 +328,7 @@ export function validateMeasurementSeed(seed: MeasurementSeed, template: Equipme
   }
   for (const c of seed.channels) {
     if (c.instrumentId !== null && !instrumentIds.has(c.instrumentId)) errors.push(`channel ${c.channelId}: unknown instrument ${c.instrumentId}`);
-    if (c.instrumentId === null && (c.channelRole === "measurement" || c.channelRole === "status")) errors.push(`channel ${c.channelId}: physical channel must reference an instrument`);
+    if (c.instrumentId === null && (c.channelRole === "measurement" || c.channelRole === "status" || c.channelRole === "setpoint" || c.channelRole === "command")) errors.push(`channel ${c.channelId}: physical / controller channel must reference an instrument`);
     if (c.instrumentId === null && !(c.derivedFrom && c.derivedFrom.length)) errors.push(`channel ${c.channelId}: derived channel must list its input lineage`);
     const units = QUANTITY_UNITS[c.quantity];
     if (!units || !units.includes(c.canonicalUnit)) errors.push(`channel ${c.channelId}: unit ${c.canonicalUnit} not valid for ${c.quantity}`);

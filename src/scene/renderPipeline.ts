@@ -1,5 +1,7 @@
 /**
- * Post-processing and quality presets. Default view: FXAA/MSAA + ACES tone mapping, no bloom, no DOF,
+ * Post-processing and quality presets. Default view: FXAA/MSAA + Khronos PBR Neutral tone mapping (the one
+ * place exposure / tone mapping are set; neutral keeps painted white and metal colours closer to their base
+ * colour than ACES), no bloom, no DOF,
  * no chromatic aberration. Quality tiers adjust DPR cap, MSAA, plasma sample count, shadow map size
  * and SSAO without ever removing core components or observation modes.
  */
@@ -46,8 +48,8 @@ export class RenderPipeline {
     this.main.sharpenEnabled = false;
     this.main.imageProcessingEnabled = true;
     this.main.imageProcessing.toneMappingEnabled = true;
-    this.main.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-    this.main.imageProcessing.exposure = 0.88;
+    this.main.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL;
+    this.main.imageProcessing.exposure = 0.92;
     this.main.imageProcessing.contrast = 1.05;
     this.main.imageProcessing.vignetteEnabled = false;
   }

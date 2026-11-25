@@ -587,13 +587,22 @@ export const COMPONENTS: ComponentDef<ChamberLayout>[] = [
   },
 ];
 
-export const STATION_COMPONENTS: ComponentDef<ChamberLayout>[] = stationComponents<ChamberLayout>((L) => L.station, CHAMBER_LAYOUT.station, { enclosure: "process_enclosure", facility: "facility_interface" });
+export interface EnclosureIds {
+  enclosure: string;
+  facility: string;
+}
+const CCP_ENCLOSURE: EnclosureIds = { enclosure: "process_enclosure", facility: "facility_interface" };
+
+export const STATION_COMPONENTS: ComponentDef<ChamberLayout>[] = stationComponents<ChamberLayout>((L) => L.station, CHAMBER_LAYOUT.station, CCP_ENCLOSURE);
 
 /** Stage lift and lift pins (process position = 0; parts authored there). */
-export const CCP_CHAMBER_JOINTS: JointDef[] = [
-  { jointId: "pedestal_z", name: "Pedestal lift", kind: "prismatic", origin: [0, CHAMBER_LAYOUT.pedestalTopY, 0], axis: [0, 1, 0], range: [CHAMBER_LAYOUT.cfg.pedestal.transfer_top_y - CHAMBER_LAYOUT.cfg.pedestal.process_top_y, 0], unit: "m", homeNote: "0 = process 위치(상면 150 mm), 음수 = transfer 위치로 하강. Scripted pose이며 위치 feedback이 아니다" },
-  { jointId: "lift_pins_z", name: "Lift pins", parentJointId: "pedestal_z", kind: "prismatic", origin: [0, 0, 0], axis: [0, 1, 0], range: [0, CHAMBER_LAYOUT.cfg.pedestal.lift_pin_stroke], unit: "m", homeNote: "0 = pin top이 pedestal 표면과 같은 높이, 양수 = pedestal 위로 돌출" },
-];
+export function ccpChamberJoints(L: ChamberLayout): JointDef[] {
+  return [
+    { jointId: "pedestal_z", name: "Pedestal lift", kind: "prismatic", origin: [0, L.pedestalTopY, 0], axis: [0, 1, 0], range: [L.cfg.pedestal.transfer_top_y - L.cfg.pedestal.process_top_y, 0], unit: "m", homeNote: "0 = process 위치(상면 150 mm), 음수 = transfer 위치로 하강. Scripted pose이며 위치 feedback이 아니다" },
+    { jointId: "lift_pins_z", name: "Lift pins", parentJointId: "pedestal_z", kind: "prismatic", origin: [0, 0, 0], axis: [0, 1, 0], range: [0, L.cfg.pedestal.lift_pin_stroke], unit: "m", homeNote: "0 = pin top이 pedestal 표면과 같은 높이, 양수 = pedestal 위로 돌출" },
+  ];
+}
+export const CCP_CHAMBER_JOINTS: JointDef[] = ccpChamberJoints(CHAMBER_LAYOUT);
 
 export const PORTS: PortDef[] = [
   { portId: "gas_out", assetId: "gas_panel", medium: "gas", role: "outlet", name: "Gas panel outlet" },
@@ -641,7 +650,7 @@ export const PORTS: PortDef[] = [
   { portId: "supply", assetId: "gas_panel", medium: "gas", role: "inlet", name: "Facility gas supply" },
   { portId: "ac_in", assetId: "rf_generator", medium: "electrical", role: "inlet", name: "AC power" },
   { portId: "exhaust", assetId: "vacuum_pump", medium: "vacuum", role: "outlet", name: "Pump exhaust" },
-  ...stationPorts({ enclosure: "process_enclosure", facility: "facility_interface" }),
+  ...stationPorts(CCP_ENCLOSURE),
 ];
 
 export const CONNECTIONS: ConnectionDef[] = [
@@ -706,6 +715,20 @@ export const CCP_LABELS: Record<string, { text: string; priority: number }> = {
 };
 
 const ALL_COMPONENTS: ComponentDef<ChamberLayout>[] = [...COMPONENTS.map((c) => ({ ...c, shell: CCP_SHELL_ASSETS.has(c.assetId), label: CCP_LABELS[c.assetId] })), ...STATION_COMPONENTS];
+
+/**
+ * The CCP chamber + handling station pieces for another layout (the CCP cell reused inside a whole tool).
+ * Ports and connections keep the CCP ids; `enclosureIds` names the tool's enclosure and facility assets.
+ */
+export function ccpChamberPieces(L: ChamberLayout, enclosureIds: EnclosureIds): Pick<EquipmentTemplate<ChamberLayout>, "components" | "ports" | "connections" | "joints"> {
+  const rename = (a: string) => (a === CCP_ENCLOSURE.enclosure ? enclosureIds.enclosure : a === CCP_ENCLOSURE.facility ? enclosureIds.facility : a);
+  return {
+    components: [...COMPONENTS.map((c) => ({ ...c, shell: CCP_SHELL_ASSETS.has(c.assetId), label: CCP_LABELS[c.assetId] })), ...stationComponents<ChamberLayout>((T) => T.station, L.station, null)],
+    ports: PORTS.map((p) => ({ ...p, assetId: rename(p.assetId) })),
+    connections: CONNECTIONS.map((c) => ({ ...c, from: { ...c.from, assetId: rename(c.from.assetId) }, to: { ...c.to, assetId: rename(c.to.assetId) } })),
+    joints: [...ccpChamberJoints(L), ...stationJoints(L.station, L.cfg.ports.slit.gate_travel)],
+  };
+}
 
 export const CCP_CHAMBER_TEMPLATE: EquipmentTemplate<ChamberLayout> = {
   templateId: "ccp_pecvd_single_wafer_300",

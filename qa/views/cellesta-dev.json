@@ -1,0 +1,6 @@
+[
+  { "id": "c01_tool", "instance": "CLEAN-01", "mode": "assembled", "scenario": "cellesta-clean-cycle-v1", "time": 5, "local": true, "cam": [215, 62, 6.6, [-0.7, 0.3, 0]], "ui": true },
+  { "id": "c02_pm_chem", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "cellesta-clean-cycle-v1", "time": 31, "local": true, "cam": [190, 58, 1.3, [0.05, 0.0, 0.0]] },
+  { "id": "c03_pm_ipa", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "cellesta-clean-cycle-v1", "time": 42, "local": true, "cam": [190, 58, 1.3, [0.05, 0.0, 0.0]] },
+  { "id": "c04_transfer_in", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "cellesta-clean-cycle-v1", "time": 19, "local": true, "cam": [300, 50, 2.2, [-0.9, 0.0, 0]] }
+]

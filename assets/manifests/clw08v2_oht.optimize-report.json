@@ -1,0 +1,26 @@
+{
+  "templateId": "clw08v2_oht",
+  "transforms": [
+    "dedup",
+    "weld"
+  ],
+  "before": {
+    "nodes": 22,
+    "meshes": 21,
+    "materials": 10,
+    "textures": 4,
+    "accessors": 100,
+    "triangles": 4772,
+    "bytes": 703472
+  },
+  "after": {
+    "nodes": 22,
+    "meshes": 21,
+    "materials": 10,
+    "textures": 4,
+    "accessors": 105,
+    "triangles": 4772,
+    "bytes": 702304
+  },
+  "semanticNodesUnchanged": true
+}

@@ -123,6 +123,8 @@ export class EquipmentInstance {
   private fineVisible = true;
   /** Presence keys currently presented (e.g. occupied carrier slots); keyed parts outside it stay hidden. */
   private presentKeys = new Set<string>();
+  private readonly waferUvCenter = new Map<string, [number, number]>();
+  private waferSurface: Material | null = null;
   readonly hasCovers: boolean;
 
   constructor(
@@ -131,6 +133,8 @@ export class EquipmentInstance {
     readonly bundle: EquipmentBundle<unknown>,
     private readonly materials: MaterialLibrary,
     shadow?: ShadowGenerator,
+    /** Parts from the bundle's GLB source (already validated against the template). */
+    extraParts: PartGeometry[] = [],
   ) {
     const template = bundle.template;
     this.templateId = template.templateId;
@@ -173,7 +177,7 @@ export class EquipmentInstance {
     }
 
     const componentById = new Map(template.components.map((c) => [c.assetId, c]));
-    const parts = bundle.buildParts(bundle.layout);
+    const parts = [...bundle.buildParts(bundle.layout), ...extraParts];
     for (const part of parts) {
       const node = this.assetNodes.get(part.assetId);
       if (!node) continue;
@@ -191,7 +195,7 @@ export class EquipmentInstance {
       applyMeshData(mesh, this.rebased(part.build(FULL), part, rebase, stretchAnchor));
       mesh.parent = node;
       if (stretchAnchor) mesh.position.set(stretchAnchor[0], stretchAnchor[1], stretchAnchor[2]);
-      const material = materials.get(part.materialRef);
+      const material = (part.glbMaterial as Material | undefined) ?? materials.get(part.materialRef);
       mesh.material = material;
       mesh.isPickable = part.pickable;
       mesh.receiveShadows = !part.isGlass;
@@ -225,7 +229,40 @@ export class EquipmentInstance {
     const needs = part.cutaway === "sector" ? true : rebase[0] !== 0 || rebase[1] !== 0 || rebase[2] !== 0;
     if (needs) translateMeshData(md, rebase[0], rebase[1], rebase[2]);
     if (stretchAnchor) translateMeshData(md, -stretchAnchor[0], -stretchAnchor[1], -stretchAnchor[2]);
+    if (part.materialRef === "wafer_front") this.planarWaferUv(md, `${part.assetId}::${part.key}`);
     return md;
+  }
+
+  /**
+   * Wafer front faces get planar UVs over the 300 mm disc (u, v in 0..1 across the wafer) so the film-state
+   * pattern maps flat. The centre is taken once from the full (uncut) mesh and reused for sector rebuilds.
+   */
+  private planarWaferUv(md: MeshData, key: string): void {
+    let c = this.waferUvCenter.get(key);
+    if (!c) {
+      let sx = 0;
+      let sz = 0;
+      const n = md.positions.length / 3;
+      for (let i = 0; i < md.positions.length; i += 3) {
+        sx += md.positions[i];
+        sz += md.positions[i + 2];
+      }
+      c = [sx / Math.max(1, n), sz / Math.max(1, n)];
+      this.waferUvCenter.set(key, c);
+    }
+    const uvs: number[] = new Array((md.positions.length / 3) * 2);
+    for (let i = 0, j = 0; i < md.positions.length; i += 3, j += 2) {
+      uvs[j] = (md.positions[i] - c[0]) / 0.3 + 0.5;
+      uvs[j + 1] = (md.positions[i + 2] - c[1]) / 0.3 + 0.5;
+    }
+    md.uvs = uvs;
+  }
+
+  /** Film-state material of the wafer front faces (null restores the library material). */
+  setWaferSurface(material: Material | null): void {
+    if (material === this.waferSurface) return;
+    this.waferSurface = material;
+    for (const b of this.built) if (b.part.materialRef === "wafer_front") b.mesh.material = material ?? b.baseMaterial;
   }
 
   /** Primary plasma volume (CCP / Remote); undefined for templates without one. */

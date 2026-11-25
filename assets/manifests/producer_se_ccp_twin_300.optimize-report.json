@@ -1,0 +1,26 @@
+{
+  "templateId": "producer_se_ccp_twin_300",
+  "transforms": [
+    "dedup",
+    "weld"
+  ],
+  "before": {
+    "nodes": 42,
+    "meshes": 41,
+    "materials": 9,
+    "textures": 2,
+    "accessors": 201,
+    "triangles": 33652,
+    "bytes": 3000380
+  },
+  "after": {
+    "nodes": 42,
+    "meshes": 41,
+    "materials": 9,
+    "textures": 2,
+    "accessors": 205,
+    "triangles": 33652,
+    "bytes": 3002300
+  },
+  "semanticNodesUnchanged": true
+}

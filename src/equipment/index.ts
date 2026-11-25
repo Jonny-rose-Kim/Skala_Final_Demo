@@ -18,6 +18,17 @@ import { OHT_BUNDLE, OHT_TEMPLATE_ID } from "./oht/index";
 import { createOhtEffects } from "./oht/effects";
 import { OHT_STANDALONE_SCENARIO } from "./oht/scenario";
 import { FOUP_BUNDLE } from "./foup/index";
+import { PRODUCER_BUNDLE, PRODUCER_TEMPLATE_ID } from "./producer/index";
+import { PRODUCER_HANDLING_SCENARIO } from "./producer/scenario";
+import { TACTRAS_BUNDLE, TACTRAS_TEMPLATE_ID } from "./tactras/index";
+import { createTactrasEffects } from "./tactras/effects";
+import { TACTRAS_HANDLING_SCENARIO } from "./tactras/scenario";
+import { CELLESTA_BUNDLE, CELLESTA_TEMPLATE_ID } from "./cellesta/index";
+import { createCellestaEffects } from "./cellesta/effects";
+import { CELLESTA_STANDALONE_SCENARIO } from "./cellesta/scenario";
+import { CLW_BUNDLE, CLW_TEMPLATE_ID } from "./clw/index";
+import { CLW_STANDALONE_SCENARIO } from "./clw/scenario";
+import { CURRENT_ROUTE_SCENARIO } from "./routes/current";
 import { ROUTE_A_SCENARIO, ROUTE_B_SCENARIO } from "./routes/index";
 
 let registered = false;
@@ -34,6 +45,20 @@ export function registerAllEquipment(): void {
   registerBundle(OHT_BUNDLE);
   registerEffects(OHT_TEMPLATE_ID, (ctx) => createOhtEffects(ctx, ctx.stationMarkers ?? []));
   registerBundle(FOUP_BUNDLE);
+  registerBundle(PRODUCER_BUNDLE);
+  registerEffects(PRODUCER_TEMPLATE_ID, createCcpEffects);
+  registerBundle(TACTRAS_BUNDLE);
+  registerEffects(TACTRAS_TEMPLATE_ID, createTactrasEffects);
+  registerBundle(CELLESTA_BUNDLE);
+  registerEffects(CELLESTA_TEMPLATE_ID, createCellestaEffects);
+  registerBundle(CLW_BUNDLE);
+  registerEffects(CLW_TEMPLATE_ID, (ctx) => createOhtEffects(ctx, ctx.stationMarkers ?? []));
+  // current bay first (default route, then the standalone flows); legacy V1 scenarios follow
+  registerScenario(CURRENT_ROUTE_SCENARIO);
+  registerScenario(PRODUCER_HANDLING_SCENARIO);
+  registerScenario(TACTRAS_HANDLING_SCENARIO);
+  registerScenario(CELLESTA_STANDALONE_SCENARIO);
+  registerScenario(CLW_STANDALONE_SCENARIO);
   registerScenario(CCP_STANDALONE_SCENARIO);
   registerScenario(CCP_HANDLING_SCENARIO);
   registerScenario(REMOTE_STANDALONE_SCENARIO);

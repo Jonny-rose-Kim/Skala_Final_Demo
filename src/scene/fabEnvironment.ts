@@ -2,7 +2,8 @@
  * Visual-only fab bay surroundings: raised floor tiles (solid in the aisle and the service chase,
  * perforated around the tools), aisle floor markings, ceiling grid with FFU and light panels, bay walls
  * and the rear utility chase (cable tray, process piping, exhaust duct, drops to each tool's facility
- * interface). Built once from `config/environment/fab-bay-v1.json`; nothing here is equipment, picking
+ * interface), and in the v2.1 bay the overhead AMHS scenery (`fabOverhead.ts`). Built once from
+ * `config/environment/fab-bay-v*.json`; nothing here is equipment, picking
  * target, measurement or DB entity. The ceiling hides itself when the camera is above it and each wall
  * when the camera is on its outer side, so inspection views are never blocked.
  */
@@ -16,14 +17,25 @@ import { Constants } from "@babylonjs/core/Engines/constants";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import envConfig from "../../config/environment/fab-bay-v1.json";
+import envConfigV2 from "../../config/environment/fab-bay-v2.json";
 import type { Vec3Tuple } from "../config/geometry";
 import { chamferedBox, createMeshData, mergeMeshData, pushTriangleFacing, pushVertex, revolveProfile, rectProfile, translateMeshData, tubeAlongPath, type MeshData, type Vec3 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
 import type { MaterialLibrary } from "../materials/materialLibrary";
 import type { EnvironmentSettings } from "../presentation/store";
+import { FabOverhead, type DecorVehicleSource, type OverheadConfig } from "./fabOverhead";
+import { FabZones, type ZonesConfig } from "./fabZones";
 
-export type FabEnvironmentConfig = typeof envConfig;
+/** Optional sections of the newer bay configs (v2.1: square ceiling modules with a light rule, nodes, dome cameras;
+ * overhead AMHS scenery). */
+export type FabEnvironmentConfig = typeof envConfig & {
+  ceiling: typeof envConfig.ceiling & { light_rule?: number[]; node_size?: number; cctv?: number[][] };
+  overhead?: OverheadConfig;
+  zones?: ZonesConfig;
+};
 export const FAB_ENVIRONMENT_CONFIG: FabEnvironmentConfig = envConfig;
+/** Environment configs by name (instances.json `environments`): v2 = current bay, v1 = legacy V1 bay. */
+export const FAB_ENVIRONMENTS: Record<string, FabEnvironmentConfig> = { "fab-bay-v1": envConfig, "fab-bay-v2": envConfigV2 };
 
 /** Facility interface of a placed tool in world coordinates: plate center and outward normal. */
 export interface FacilityDrop {
@@ -106,6 +118,8 @@ export class FabEnvironment {
   private readonly ownMaterials: PBRMaterial[] = [];
   private readonly textures: Texture[] = [];
   private readonly ceilingY: number;
+  private readonly overhead: FabOverhead | null = null;
+  private readonly zones: FabZones | null = null;
   private triangles = 0;
 
   constructor(
@@ -114,6 +128,7 @@ export class FabEnvironment {
     floorY: number,
     drops: FacilityDrop[],
     cfg: FabEnvironmentConfig = FAB_ENVIRONMENT_CONFIG,
+    decorVehicle: DecorVehicleSource | null = null,
   ) {
     this.root = new TransformNode("fab-environment", scene);
     this.ceilingY = floorY + cfg.ceiling.height;
@@ -166,8 +181,14 @@ export class FabEnvironment {
         const cz0 = z + tb / 2;
         const cz1 = gz[iz + 1] - tb / 2;
         const full = xFull && gz[iz + 1] - z > mz - 1e-6;
+        const lr = c.light_rule;
+        const isLight = lr ? (lr[0] * ix + lr[1] * iz) % lr[2] === 0 : iz % c.light_every === 1;
         if (!full) ffuFace.push(floorQuad(cx0, cx1, cz0, cz1, cy + 0.008, 0.6));
-        else if (iz % c.light_every === 1) lights.push(box(cx0 + 0.02, cx1 - 0.02, cy + 0.004, cy + 0.02, cz0 + 0.18, cz1 - 0.18, 0.002));
+        else if (isLight && lr) {
+          // flush square LED panel filling the module (thin frame), as in the documentary ceiling
+          lights.push(box(cx0 + 0.03, cx1 - 0.03, cy + 0.006, cy + 0.012, cz0 + 0.03, cz1 - 0.03, 0.002));
+          ffuFace.push(floorQuad(cx0, cx1, cz0, cz1, cy + 0.014, 0.6));
+        } else if (isLight) lights.push(box(cx0 + 0.02, cx1 - 0.02, cy + 0.004, cy + 0.02, cz0 + 0.18, cz1 - 0.18, 0.002));
         else if (c.ffu_pattern[ix % c.ffu_pattern.length]) {
           ffu.push(box(cx0, cx1, cy + c.tbar_depth, cy + c.tbar_depth + 0.12, cz0, cz1, 0.006));
           ffuFace.push(floorQuad(cx0, cx1, cz0, cz1, cy + 0.006, 0.3));
@@ -183,7 +204,8 @@ export class FabEnvironment {
       faces.indices[i + 2] = t;
     }
     this.add(this.ceiling, "env.ceiling.ffu_housing", mergeMeshData(ffu), materials.get("painted_housing"));
-    this.add(this.ceiling, "env.ceiling.panels", faces, this.tileMaterial("env.ffu.face", [0.86, 0.87, 0.88], true, 0.6));
+    // v2.1 (documentary ceiling): smooth light filter faces; v1: perforated FFU faces
+    this.add(this.ceiling, "env.ceiling.panels", faces, c.light_rule ? this.ceilingFaceMaterial() : this.tileMaterial("env.ffu.face", [0.86, 0.87, 0.88], true, 0.6));
     const lightMat = new PBRMaterial("env.light", scene);
     lightMat.albedoColor = new Color3(0.9, 0.9, 0.88);
     lightMat.emissiveColor = new Color3(0.95, 0.96, 0.92);
@@ -192,6 +214,31 @@ export class FabEnvironment {
     lightMat.roughness = 0.5;
     this.ownMaterials.push(lightMat);
     this.add(this.ceiling, "env.ceiling.lights", mergeMeshData(lights), lightMat);
+    if (c.node_size) {
+      // grid nodes (hanger clamps) at the T-bar crossings
+      const ns = c.node_size / 2;
+      const nodes: MeshData[] = [];
+      for (const x of gx) for (const z of gz) nodes.push(box(x - ns, x + ns, cy - 0.012, cy + 0.004, z - ns, z + ns, 0.004));
+      this.add(this.ceiling, "env.ceiling.nodes", mergeMeshData(nodes), materials.get("aluminum_anodized"));
+    }
+    if (c.cctv?.length) {
+      // dome cameras on short drop poles
+      const housings: MeshData[] = [];
+      const domes: MeshData[] = [];
+      for (const [x, z] of c.cctv) {
+        housings.push(translateMeshData(revolveProfile(rectProfile(0, 0.014, cy - 0.32, cy), { segments: 12 }), x, 0, z));
+        housings.push(translateMeshData(revolveProfile(rectProfile(0, 0.07, cy - 0.36, cy - 0.32), { segments: 24 }), x, 0, z));
+        const arc: [number, number][] = [];
+        for (let k = 0; k <= 8; k++) {
+          const a = (Math.PI / 2) * (k / 8);
+          arc.push([0.062 * Math.cos(a), cy - 0.36 - 0.062 * Math.sin(a)]);
+        }
+        arc.push([0, cy - 0.36 - 0.062]);
+        domes.push(translateMeshData(revolveProfile([[0, cy - 0.36], ...arc], { segments: 24 }), x, 0, z));
+      }
+      this.add(this.ceiling, "env.ceiling.cctv_housing", mergeMeshData(housings), materials.get("polymer_white"));
+      this.add(this.ceiling, "env.ceiling.cctv_dome", mergeMeshData(domes), materials.get("painted_dark"));
+    }
     // ---------------------------------------------------------------- walls (hidden from their outer side)
     const w = cfg.walls;
     const wy0 = floorY;
@@ -266,6 +313,28 @@ export class FabEnvironment {
     if (cables.length) this.add(this.utilities, "env.util.drops.cable", mergeMeshData(cables), materials.get("rubber_membrane"));
     if (gas.length) this.add(this.utilities, "env.util.drops.gas", mergeMeshData(gas), materials.get("stainless"));
     if (exhaust.length) this.add(this.utilities, "env.util.drops.exhaust", mergeMeshData(exhaust), materials.get("aluminum_anodized"));
+    // ---------------------------------------------------------------- overhead AMHS scenery (v2.1)
+    if (cfg.overhead) {
+      this.overhead = new FabOverhead(scene, this.root, floorY, this.ceilingY, cfg.overhead, decorVehicle);
+      this.triangles += this.overhead.stats().triangles;
+    }
+    // ---------------------------------------------------------------- human-level zones (v2.1)
+    if (cfg.zones) {
+      this.zones = new FabZones(scene, this.root, floorY, this.ceilingY, cfg.zones);
+      this.triangles += this.zones.stats().triangles;
+    }
+  }
+
+  /** Smooth light ceiling face; a little self-illumination stands in for the bounce light under a lit ceiling. */
+  private ceilingFaceMaterial(): PBRMaterial {
+    const m = new PBRMaterial("env.ceiling.face", this.scene);
+    m.albedoColor = new Color3(0.86, 0.87, 0.875);
+    m.emissiveColor = new Color3(0.36, 0.365, 0.37);
+    m.metallic = 0;
+    m.roughness = 0.82;
+    m.environmentIntensity = 0.7;
+    this.ownMaterials.push(m);
+    return m;
   }
 
   private tileMaterial(name: string, base: [number, number, number], perforated: boolean, roughness: number): PBRMaterial {
@@ -297,9 +366,10 @@ export class FabEnvironment {
   }
 
   /** Visibility from the store settings and the camera position (auto-hide of ceiling and walls). */
-  update(camera: Vector3, s: EnvironmentSettings): void {
+  update(camera: Vector3, s: EnvironmentSettings, target: Vector3 | null = null): void {
     this.root.setEnabled(s.visible);
     if (!s.visible) return;
+    this.overhead?.update(camera, target, s.ceiling);
     const ceilingOn = s.ceiling && camera.y < this.ceilingY - 0.05;
     for (const m of this.ceiling) m.setEnabled(ceilingOn);
     for (const wl of this.walls) {
@@ -309,10 +379,12 @@ export class FabEnvironment {
   }
 
   stats(): { meshes: number; triangles: number } {
-    return { meshes: this.floor.length + this.ceiling.length + this.walls.length * 2 + this.utilities.length, triangles: this.triangles };
+    return { meshes: this.floor.length + this.ceiling.length + this.walls.length * 2 + this.utilities.length + (this.overhead?.stats().meshes ?? 0) + (this.zones?.stats().meshes ?? 0), triangles: this.triangles };
   }
 
   dispose(): void {
+    this.overhead?.dispose();
+    this.zones?.dispose();
     this.root.dispose(false, false);
     for (const m of this.ownMaterials) m.dispose(false, false);
     for (const t of this.textures) t.dispose();

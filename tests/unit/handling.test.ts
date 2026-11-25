@@ -4,7 +4,9 @@ import { CHAMBER_LAYOUT, GEOMETRY_CONFIG, validateGeometryConfig, type Vec3Tuple
 import { listBundles } from "../../src/domain/registry";
 import { attachedPoint, jointGraphErrors } from "../../src/domain/kinematics";
 import type { JointDef } from "../../src/domain/types";
-import { DEFAULT_INSTANCES } from "../../src/domain/instances";
+import { instanceFixture } from "../../src/domain/instances";
+// these tests cover the legacy V1 bay (CCP / Remote / STI CMP / OHT): its instance set is the legacy-v1 fixture
+const DEFAULT_INSTANCES = instanceFixture("legacy-v1")!;
 import { DEMO_CARRIER, DEMO_WAFER } from "../../src/domain/materialFlow";
 import { evaluateTrack, trackHandoffs } from "../../src/presentation/motionTrack";
 import { smoothstep, smoothstepInverse } from "../../src/presentation/preview";
@@ -13,6 +15,10 @@ import { getScenario } from "../../src/presentation/scenarioRegistry";
 import { CCP_STATION_PLAN } from "../../src/equipment/ccp/handling";
 import { REMOTE_STATION_PLAN } from "../../src/equipment/remote/handling";
 import { REMOTE_CONFIG, validateRemoteConfig } from "../../src/equipment/remote/layout";
+import { PRODUCER_STATION_PLAN } from "../../src/equipment/producer/handling";
+import { PRODUCER_LAYOUT, validateProducerConfig } from "../../src/equipment/producer/layout";
+import { TACTRAS_STATION_PLAN } from "../../src/equipment/tactras/handling";
+import { validateTactrasConfig } from "../../src/equipment/tactras/layout";
 import { scaraFK, scaraIK, type ScaraGeom } from "../../src/equipment/handling/scara";
 import { stationPoint } from "../../src/equipment/handling/stationLayout";
 import { STATION_IDS } from "../../src/equipment/handling/stationParts";
@@ -56,7 +62,8 @@ function waferPoint(plan: StationPlan, joints: JointDef[], holder: StationHolder
     case "blade":
       return attachedPoint(joints, jv, "vac_blade_s2", stationPoint(S, S.blade.pocketRestR, S.planeY, 0));
     case "stage": {
-      const processTop = plan.K.stageJoint === "pedestal_z" ? CHAMBER_LAYOUT.pedestalTopY : REMOTE_CONFIG.stage.top_y;
+      // process height of the stage top per chamber kinematics (Tactras: fixed lower electrode at 0)
+      const processTop = plan === PRODUCER_STATION_PLAN ? PRODUCER_LAYOUT.pedestalTopY : plan.K.stageJoint === "pedestal_z" ? CHAMBER_LAYOUT.pedestalTopY : plan.K.stageJoint === "stage_z" ? REMOTE_CONFIG.stage.top_y : 0;
       return attachedPoint(joints, jv, "lift_pins_z", [0, processTop, 0]);
     }
   }
@@ -84,6 +91,8 @@ describe("motion track primitives", () => {
 for (const [name, plan, templateId] of [
   ["CCP", CCP_STATION_PLAN, "ccp_pecvd_single_wafer_300"],
   ["Remote", REMOTE_STATION_PLAN, "remote_pecvd_upstream_icp"],
+  ["Producer", PRODUCER_STATION_PLAN, "producer_se_ccp_twin_300"],
+  ["Tactras", TACTRAS_STATION_PLAN, "tactras_oxide_ccp_rie_300"],
 ] as const) {
   describe(`${name} wafer handling station`, () => {
     const bundle = listBundles().find((b) => b.template.templateId === templateId)!;
@@ -94,7 +103,7 @@ for (const [name, plan, templateId] of [
       { label: "unload", steps: plan.unload, init: plan.unloadInitial, dur: plan.unloadDuration },
     ];
     it("config validates: load lock holds wafer + blade + pins + gate retreat, robot reach and swing, door openings", () => {
-      const r = name === "CCP" ? validateGeometryConfig(GEOMETRY_CONFIG) : validateRemoteConfig(REMOTE_CONFIG);
+      const r = name === "CCP" ? validateGeometryConfig(GEOMETRY_CONFIG) : name === "Remote" ? validateRemoteConfig(REMOTE_CONFIG) : name === "Producer" ? validateProducerConfig() : validateTactrasConfig();
       expect(r.errors).toEqual([]);
       expect(S.ll.innerR1 - S.ll.innerR0).toBeGreaterThan(0.3 + 0.06);
     });

@@ -1,12 +1,12 @@
 // Performance measurement with vsync disabled (real GPU, headed Chrome). Reports fps/frame time for representative states.
-// Usage: node qa/perf.mjs [webgl2|webgpu]
+// Usage: node qa/perf.mjs [webgl2|webgpu]  (legacy V1 states, fixture legacy-v1; the current bay is qa/perf-current.mjs)
 import { chromium } from "playwright";
 const mode = process.argv[2] ?? "webgl2";
 const args = ["--ignore-gpu-blocklist", "--window-size=1920,1080", "--force-device-scale-factor=1", "--disable-frame-rate-limit", "--disable-gpu-vsync"];
 if (mode === "webgpu") args.push("--enable-unsafe-webgpu", "--enable-features=Vulkan");
 const browser = await chromium.launch({ channel: "chrome", headless: false, args });
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-await page.goto(`http://localhost:5173/${mode === "webgl2" ? "?renderer=webgl2" : "?"}`);
+await page.goto(`http://localhost:5173/?fixture=legacy-v1${mode === "webgl2" ? "&renderer=webgl2" : ""}`);
 await page.waitForFunction(() => window.__pecvdTwin && window.__pecvdTwin.isReady(), null, { timeout: 90000 });
 await page.waitForTimeout(800);
 const measure = async (label, setup) => {

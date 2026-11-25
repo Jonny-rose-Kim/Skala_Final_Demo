@@ -1,0 +1,138 @@
+{
+  "templateId": "cellesta_i_md_clean_300",
+  "generatedBy": "scripts/assets/export-envelopes.ts",
+  "units": "m",
+  "frame": "instance (+Y up, Babylon left-handed)",
+  "floorY": -0.95,
+  "efem": {
+    "x0": -2.54,
+    "x1": -1.7,
+    "centerZ": 0.2525,
+    "halfWidth": 1.15,
+    "topY": 1.2500000000000002,
+    "ffuTopY": 1.4300000000000002
+  },
+  "loadPort": {
+    "x0": -2.98,
+    "x1": -2.54,
+    "deckTopY": -0.04999999999999993,
+    "deckWidth": 0.52,
+    "openingY0": -0.01499999999999993,
+    "openingY1": 0.28500000000000003,
+    "openingWidth": 0.36,
+    "seatX": -2.7869999999999995
+  },
+  "idleLoadPortsZ": [
+    -0.505,
+    0.505,
+    1.01
+  ],
+  "corridor": {
+    "x0": -1.48,
+    "x1": -0.4,
+    "halfZ": 0.42
+  },
+  "pm": {
+    "x0": -0.4,
+    "x1": 0.58,
+    "z0": -0.5,
+    "z1": 0.5,
+    "top": 0.95
+  },
+  "shutter": {
+    "width": 0.38,
+    "y0": -0.023000000000000003,
+    "y1": 0.047
+  },
+  "tool": {
+    "note": "Representative arrangement: PM-01 at the end of the transfer corridor, geometry-only module stacks along both sides, chemical supply / recycle cabinet at the rear.",
+    "idle_modules": [
+      {
+        "moduleId": "PM-02",
+        "center": [
+          -0.94,
+          0,
+          -0.95
+        ],
+        "size": [
+          1.02,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-03",
+        "center": [
+          0.1,
+          0,
+          -0.95
+        ],
+        "size": [
+          0.96,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-04",
+        "center": [
+          -0.94,
+          0,
+          0.95
+        ],
+        "size": [
+          1.02,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "moduleId": "PM-05",
+        "center": [
+          0.1,
+          0,
+          0.95
+        ],
+        "size": [
+          0.96,
+          2.4,
+          0.86
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "chemical_cabinet": {
+      "x0": 0.62,
+      "x1": 1.5,
+      "z0": -1.38,
+      "z1": 1.38,
+      "height": 2.4
+    },
+    "tower": {
+      "x0": -1.7,
+      "x1": -1.48,
+      "z0": -0.9,
+      "z1": -0.5,
+      "height": 2.4
+    }
+  }
+}

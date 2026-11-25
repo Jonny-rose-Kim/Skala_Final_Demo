@@ -1,0 +1,306 @@
+{
+  "$schema_id": "pecvd-twin.fab-environment/1",
+  "revision": "fab-bay-v2.2.0",
+  "note": "Visual-only bay surroundings of the current bay (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2), generic design assumption informed by public documentary footage of a memory fab (2026-11-25): raised floor tiles, operator aisle under the OHT rail with floor markings, 1.2 m square ceiling grid (v2.2: tools 1.4x farther apart along the bay for future multi-vehicle routes) with flush LED panels, grid nodes and dome cameras, bay walls, rear utility chase, and an overhead AMHS layer (additional OHT rails with hanger frames, red position strips and branch curves, side-track FOUP buffers, parked decorative vehicles). Nothing here is equipment, a measurement, WIP or a DB entity: decorative vehicles and buffered FOUPs are static scenery, not fleet or inventory state. Dimensions are not from a real fab.",
+  "units": "m",
+  "frame": "World X / Z (Babylon left-handed, +Y up). Heights are above the bay floor (bay.floor_y in config/equipment/instances.json).",
+  "floor": {
+    "x0": -4.4,
+    "x1": 3.7,
+    "z0": -9.4,
+    "z1": 7.8,
+    "tile": 0.6,
+    "thickness": 0.03
+  },
+  "aisle": {
+    "x0": -3.9,
+    "x1": -2.45,
+    "stripe_width": 0.06
+  },
+  "service": {
+    "x0": 2.65,
+    "x1": 3.7
+  },
+  "ceiling": {
+    "height": 4.4,
+    "module": [
+      1.2,
+      1.2
+    ],
+    "tbar_width": 0.035,
+    "tbar_depth": 0.05,
+    "ffu_pattern": [
+      1,
+      1,
+      1
+    ],
+    "light_every": 3,
+    "light_rule": [
+      1,
+      2,
+      5
+    ],
+    "node_size": 0.07,
+    "cctv": [
+      [
+        -2.9,
+        -1.7
+      ],
+      [
+        -2.9,
+        6.7
+      ],
+      [
+        2.6,
+        1.4
+      ],
+      [
+        -2.9,
+        -7.2
+      ]
+    ]
+  },
+  "walls": {
+    "height": 4.4,
+    "thickness": 0.12,
+    "back_x": 3.7,
+    "front_x": -4.4,
+    "z0": -9.4,
+    "z1": 7.8,
+    "base_height": 0.1
+  },
+  "utilities": {
+    "tray": {
+      "x": 2.95,
+      "height": 2.85,
+      "width": 0.45,
+      "depth": 0.08
+    },
+    "duct": {
+      "x": 3.4,
+      "height": 2.95,
+      "radius": 0.16
+    },
+    "pipes": {
+      "x": [
+        2.75,
+        2.85,
+        2.95
+      ],
+      "height": 2.7,
+      "radius": 0.014
+    },
+    "drops": {
+      "lateral": [
+        -0.09,
+        0.0,
+        0.09
+      ],
+      "radius": [
+        0.022,
+        0.016,
+        0.03
+      ]
+    }
+  },
+  "overhead": {
+    "rail": {
+      "width": 0.2,
+      "height": 0.16,
+      "slot": 0.05,
+      "stripe_height": 0.018,
+      "marker_pitch": 0.9,
+      "hanger_pitch": 1.5,
+      "tray_width": 0.14,
+      "box_every": 4
+    },
+    "rails": [
+      {
+        "id": "R1",
+        "x": -3.35,
+        "bottom": 3.15,
+        "z0": -9.4,
+        "z1": 7.8
+      },
+      {
+        "id": "R2",
+        "x": -0.35,
+        "bottom": 3.75,
+        "z0": -9.4,
+        "z1": 7.8
+      },
+      {
+        "id": "R3",
+        "x": 1.45,
+        "bottom": 3.75,
+        "z0": -9.4,
+        "z1": 7.8
+      }
+    ],
+    "branches": [
+      {
+        "from": "R2",
+        "to": "R3",
+        "z0": -1.7,
+        "length": 2.0
+      },
+      {
+        "from": "R3",
+        "to": "R2",
+        "z0": 3.9,
+        "length": 2.0
+      }
+    ],
+    "buffers": [
+      {
+        "id": "STB-aisle",
+        "x": -3.95,
+        "bottom": 2.4,
+        "z": [
+          [
+            -9.0,
+            -4.8
+          ],
+          [
+            -3.6,
+            1.7
+          ],
+          [
+            2.8,
+            7.4
+          ]
+        ]
+      },
+      {
+        "id": "STB-rail",
+        "x": -2.58,
+        "bottom": 2.32,
+        "z": [
+          [
+            -5.0,
+            -0.9
+          ],
+          [
+            0.9,
+            4.0
+          ],
+          [
+            6.0,
+            7.0
+          ]
+        ]
+      },
+      {
+        "id": "UTB-mid",
+        "x": 0.55,
+        "bottom": 3.0,
+        "z": [
+          [
+            -9.0,
+            -2.2
+          ],
+          [
+            0.8,
+            3.4
+          ],
+          [
+            6.4,
+            7.4
+          ]
+        ]
+      }
+    ],
+    "buffer": {
+      "pitch": 0.56,
+      "depth": 0.5,
+      "fill_pattern": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+      ]
+    },
+    "vehicles": [
+      {
+        "rail": "R1",
+        "z": -7.3,
+        "foup": true
+      },
+      {
+        "rail": "R1",
+        "z": 3.4,
+        "foup": false
+      },
+      {
+        "rail": "R2",
+        "z": -5.6,
+        "foup": true
+      },
+      {
+        "rail": "R2",
+        "z": 7.0,
+        "foup": false
+      },
+      {
+        "rail": "R3",
+        "z": -3.6,
+        "foup": false
+      },
+      {
+        "rail": "R3",
+        "z": 2.5,
+        "foup": true
+      }
+    ],
+    "chunk": 2.4
+  },
+  "zones": {
+    "lockers": [
+      {
+        "x": -4.38,
+        "depth": 0.44,
+        "z0": -9.0,
+        "z1": -5.2,
+        "height": 2.0
+      },
+      {
+        "x": -4.38,
+        "depth": 0.44,
+        "z0": 0.6,
+        "z1": 4.4,
+        "height": 2.0
+      }
+    ],
+    "columns": [
+      {
+        "x": -4.1,
+        "z": -2.9,
+        "size": 0.6
+      },
+      {
+        "x": -4.1,
+        "z": 6.4,
+        "size": 0.6
+      }
+    ],
+    "floor_marks": {
+      "x": -3.175,
+      "z": [
+        -7.6,
+        -2.5,
+        2.5,
+        7.2
+      ],
+      "start": 45,
+      "size": 0.42
+    }
+  }
+}

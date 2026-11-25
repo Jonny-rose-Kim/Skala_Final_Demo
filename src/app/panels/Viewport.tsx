@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { usePresentationStore } from "../../presentation/store";
 import { SceneHost } from "../../scene/sceneHost";
 import { CarrierInset } from "./CarrierContents";
+import { RouteCardOverlay, WaferInset } from "./WaferInset";
 
 export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -82,6 +83,12 @@ export function Viewport({ onHost }: { onHost: (host: SceneHost | null) => void 
         Orbit: 좌클릭 드래그 · Pan: 우클릭/Ctrl 드래그 · Zoom: 휠 · 클릭: 부품 선택
       </div>
       <div className="pointer-events-none absolute right-3 top-3 rounded-md border border-warn-line bg-warn-soft px-2 py-1 text-meta font-medium text-warn">VISUAL DEMO · Illustrative</div>
+      <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2">
+        <RouteCardOverlay />
+      </div>
+      <div className="pointer-events-none absolute bottom-3 right-3">
+        <WaferInset />
+      </div>
     </div>
   );
 }

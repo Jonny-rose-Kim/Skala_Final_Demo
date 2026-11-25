@@ -132,6 +132,8 @@ export interface OverlaySettings {
   markers: boolean;
   /** OHT: rail / hoist reference frames and station regions. */
   railFrames: boolean;
+  /** Current route: concept cross-section of the demonstration wafer (UI inset). */
+  waferSection: boolean;
 }
 
 export type OverlayKey = keyof OverlaySettings;
@@ -183,6 +185,8 @@ export interface PresentationState {
   timeline: TimelineSnapshot;
   /** Low-rate snapshot of the scripted preview (poses, holders, film state) for the UI (FOUP section inset). */
   preview: PreviewState | null;
+  /** Diagnosis highlight from an agent event (src/domain/agentContract.ts); null = none. */
+  diagnosis: import("../domain/agentContract").DiagnosisHighlight | null;
   devWarnings: string[];
   /** `tree: false` folds the component tree into the thin rail on the left edge; `timeline: false` hides the timeline. */
   panels: { tree: boolean; timeline: boolean };
@@ -215,6 +219,7 @@ export interface PresentationState {
   reportPerf(p: PerfSample): void;
   reportTimeline(t: TimelineSnapshot): void;
   reportPreview(p: PreviewState): void;
+  setDiagnosis(d: import("../domain/agentContract").DiagnosisHighlight | null): void;
   reportInstances(list: LoadedInstanceInfo[]): void;
   setDevWarnings(w: string[]): void;
   togglePanel(p: "tree" | "timeline"): void;
@@ -243,13 +248,14 @@ export const DEFAULT_OVERLAYS: OverlaySettings = {
   opticalPath: true,
   markers: false,
   railFrames: false,
+  waferSection: true,
 };
 
-export const DEFAULT_SCENARIO_ID = "ccp-illustrative-cycle-v1";
+export const DEFAULT_SCENARIO_ID = "route-dep-etch-clean-v1";
 
 export const usePresentationStore = create<PresentationState>((set) => ({
   appMode: "visual-inspection",
-  activeInstanceId: "PECVD-01.CH-A",
+  activeInstanceId: "PRODUCER-01",
   instances: [],
   overview: false,
   scenarioId: DEFAULT_SCENARIO_ID,
@@ -274,8 +280,9 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   cameraPresetId: "overview",
   renderer: { backend: null, status: "idle", message: null, gpu: null, fallbackReason: null, forceWebGL2: false },
   perf: null,
-  timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "ccp", phaseFocusInstanceId: null },
+  timeline: { playheadSec: 0, playing: true, holding: false, speed: 1, durationSec: 18, phase: "off", phaseLabelKo: "소등", intensity: 0, scenarioId: DEFAULT_SCENARIO_ID, phaseEquipment: "deposition", phaseFocusInstanceId: null },
   preview: null,
+  diagnosis: null,
   devWarnings: [],
   panels: { tree: true, timeline: true },
   requests: { resetCamera: 0, focusSelected: 0, cameraPreset: 0, focusInstance: 0, focusCarrier: 0 },
@@ -311,6 +318,7 @@ export const usePresentationStore = create<PresentationState>((set) => ({
   reportPerf: (p) => set({ perf: p }),
   reportTimeline: (t) => set({ timeline: t }),
   reportPreview: (p) => set({ preview: p }),
+  setDiagnosis: (d) => set({ diagnosis: d }),
   reportInstances: (list) => set({ instances: list }),
   setDevWarnings: (w) => set({ devWarnings: w }),
   togglePanel: (p) => set((s) => ({ panels: { ...s.panels, [p]: !s.panels[p] } })),

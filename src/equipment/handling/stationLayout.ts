@@ -54,6 +54,12 @@ export interface HandlingStationConfig {
     rail_height: number;
   };
   efem: { depth: number; width: number; height_above_floor: number; ffu_height: number; panel_thickness: number; frame_size: number; door_zone_depth: number };
+  /**
+   * Optional vacuum transfer chamber between the slit valve and the load lock (cluster tools). The blade
+   * stage then rides on a linear shuttle that crosses it; without this block the load lock sits right at
+   * the slit valve and the station is the single-chamber layout of the CCP / Remote tools.
+   */
+  transfer_chamber?: { length: number; width: number; wall_thickness: number; floor_thickness: number; lid_thickness: number; shuttle_rail_q: number };
   atm_robot: {
     axis_offset_from_back_wall: number;
     base_radius: number;
@@ -153,6 +159,8 @@ export interface HandlingStationLayout {
     vacOpening: { width: number; y0: number; y1: number };
   };
   atmDoor: { r0: number; r1: number; planeR: number; width: number; y0: number; y1: number; centerY: number; gateTravel: number; gateThickness: number };
+  /** Vacuum transfer chamber (null = load lock directly at the slit valve). */
+  tc: { r0: number; r1: number; innerR0: number; width: number; innerWidth: number; wall: number; bottomY: number; topY: number; railQ: number } | null;
   blade: {
     bladeY0: number;
     bladeY1: number;
@@ -168,6 +176,8 @@ export interface HandlingStationLayout {
     stageRestR1: number;
     s1max: number;
     s2max: number;
+    /** Linear shuttle travel across the transfer chamber (0 without one). */
+    shuttleMax: number;
     /** Total pocket travel from the load lock to the chamber axis. */
     stroke: number;
     halfWidth: number;
@@ -230,8 +240,11 @@ export function deriveHandlingStation(cfg: HandlingStationConfig, ch: ChamberHan
   const valveR0 = ch.portFaceR;
   const valveR1 = valveR0 + ch.valveBodySize[2];
   const adapterR1 = valveR1 + cfg.gap_from_slit_valve;
+  // optional vacuum transfer chamber between the adapter and the load lock
+  const tcc = cfg.transfer_chamber;
+  const tcLen = tcc ? tcc.length : 0;
   // load lock body
-  const llR0 = adapterR1;
+  const llR0 = adapterR1 + tcLen;
   const llR1 = llR0 + llc.length;
   const innerR0 = llR0 + llc.wall_thickness;
   const innerR1 = llR1 - llc.wall_thickness;
@@ -253,7 +266,8 @@ export function deriveHandlingStation(cfg: HandlingStationConfig, ch: ChamberHan
   const stageRestR0 = stageRestR1 - vb.stage_length;
   const s2max = rootRestR - vb.carriage_length / 2 - stageRestR0;
   const stroke = centerR;
-  const s1max = stroke - s2max;
+  const shuttleMax = tcLen;
+  const s1max = stroke - shuttleMax - s2max;
   // atmospheric door frame on the EFEM side of the load lock
   const ad = llc.atm_door;
   const atmR0 = llR1;
@@ -318,8 +332,11 @@ export function deriveHandlingStation(cfg: HandlingStationConfig, ch: ChamberHan
       pinStroke: pinRaiseTop - pinDropTop,
       vacOpening: { width: llc.vacuum_opening.width, y0: ch.slitCenterY - llc.vacuum_opening.height / 2, y1: ch.slitCenterY + llc.vacuum_opening.height / 2 },
     },
+    tc: tcc
+      ? { r0: adapterR1, r1: adapterR1 + tcLen, innerR0: adapterR1 + tcc.wall_thickness, width: tcc.width, innerWidth: tcc.width - 2 * tcc.wall_thickness, wall: tcc.wall_thickness, bottomY: innerBottomY - tcc.floor_thickness, topY: innerTopY + tcc.lid_thickness, railQ: tcc.shuttle_rail_q }
+      : null,
     atmDoor: { r0: atmR0, r1: atmR1, planeR: (atmR0 + atmR1) / 2, width: ad.opening_width, y0: atmDoorCenterY - ad.opening_height / 2, y1: atmDoorCenterY + ad.opening_height / 2, centerY: atmDoorCenterY, gateTravel: ad.gate_travel, gateThickness: ad.gate_thickness },
-    blade: { bladeY0, bladeY1, carriageY0, carriageY1, stageY0, stageY1, railY0, railY1, pocketRestR: centerR, rootRestR, stageRestR0, stageRestR1, s1max, s2max, stroke, halfWidth: vb.width / 2 },
+    blade: { bladeY0, bladeY1, carriageY0, carriageY1, stageY0, stageY1, railY0, railY1, pocketRestR: centerR, rootRestR, stageRestR0, stageRestR1, s1max, s2max, shuttleMax, stroke, halfWidth: vb.width / 2 },
     efem: { r0: efemR0, r1: efemR1, width: cfg.efem.width, topY: efemTopY, ffuTopY: efemTopY + cfg.efem.ffu_height, doorZoneR: efemR1 - cfg.efem.door_zone_depth },
     robot: { axisR, axisXZ, scara, shoulderY0, baseTopY: shoulderY0 - 0.03, zStroke: ar.z_stroke, supportOffset, hubRadius: ar.hub_radius, swingRadius },
     loadPort: {
@@ -375,6 +392,13 @@ export function validateHandlingStation(S: HandlingStationLayout, ch: ChamberHan
   must(bl.stageRestR0 >= ll.innerR0 - 1e-9 && bl.stageRestR1 <= ll.innerR1 + 1e-9, "retracted blade stage must fit inside the load lock");
   must(bl.s2max > 0 && bl.s1max > 0 && bl.s1max <= S.cfg.vacuum_blade.stage_length, "blade stage strokes must be positive and within the stage length");
   must(bl.rootRestR + S.cfg.vacuum_blade.carriage_length / 2 <= ll.innerR1 - 0.005, "retracted blade carriage must stay inside the load lock");
+  if (S.tc) {
+    const tc = S.tc;
+    must(tc.innerWidth >= 2 * W + 0.06, "transfer chamber interior must be wider than the wafer with 30 mm clearance per side");
+    must(tc.railQ - 0.012 > S.cfg.vacuum_blade.stage_width / 2 && tc.railQ + 0.012 < tc.innerWidth / 2 - 0.005, "shuttle rails must lie between the blade stage and the transfer chamber walls");
+    must(bl.shuttleMax > 0 && bl.s1max > 0.02, "shuttle and stage 1 must both have a positive stroke");
+    must(tc.innerR0 <= S.slit.valveR1 + S.cfg.gap_from_slit_valve + tc.wall + 1e-9, "transfer chamber must start at the slit valve adapter");
+  }
   // vertical stack through the slit and over the stage at the transfer position
   must(bl.stageY0 >= S.slit.y0 + 0.003, `blade stage must pass above the slit bottom (${((bl.stageY0 - S.slit.y0) * 1000).toFixed(1)} mm)`);
   must(S.planeY + 0.000775 <= S.slit.y1 - 0.01, "wafer on the blade must pass below the slit top");

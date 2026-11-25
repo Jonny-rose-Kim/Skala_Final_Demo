@@ -1,0 +1,2183 @@
+{
+  "$schema_id": "pecvd-twin.glb-manifest/1",
+  "templateId": "tactras_oxide_ccp_rie_300",
+  "generator": {
+    "tool": "Blender 4.5.16 LTS",
+    "script": "scripts/blender/tools/tactras.py",
+    "command": "blender --background --python scripts/blender/build_equipment.py -- tactras"
+  },
+  "export": {
+    "format": "GLB",
+    "yUp": true,
+    "extras": true,
+    "applyModifiers": true,
+    "imageFormat": "JPEG",
+    "jpegQuality": 88,
+    "units": "m"
+  },
+  "frame": "Blender (bx, by, bz) = instance (-x, -z, y); the glTF loader's __root__ maps it back (single conversion)",
+  "rawFile": "assets/source/glb-raw/tactras_oxide_ccp_rie_300.glb",
+  "runtimeFile": "public/models/tactras_oxide_ccp_rie_300.glb",
+  "nodes": [
+    {
+      "node": "idle_load_ports.column.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.column.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -3.387,
+          -0.85,
+          -0.655
+        ],
+        "max": [
+          -3.247,
+          0.02,
+          0.655
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.deck.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.deck.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 776,
+      "boundsInstance": {
+        "min": [
+          -3.617,
+          0.02,
+          -0.725
+        ],
+        "max": [
+          -3.177,
+          0.062,
+          0.725
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.door.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.door.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 216,
+      "boundsInstance": {
+        "min": [
+          -3.219,
+          0.085,
+          -0.685
+        ],
+        "max": [
+          -3.207,
+          0.385,
+          0.685
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.frame.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.frame.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 376,
+      "boundsInstance": {
+        "min": [
+          -3.207,
+          -0.73,
+          -0.745
+        ],
+        "max": [
+          -3.177,
+          0.565,
+          0.745
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_amber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_amber",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_amber"
+      ],
+      "triangles": 88,
+      "boundsInstance": {
+        "min": [
+          -3.211,
+          0.458,
+          -0.525
+        ],
+        "max": [
+          -3.207,
+          0.472,
+          0.525
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_blue",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_blue",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_blue"
+      ],
+      "triangles": 88,
+      "boundsInstance": {
+        "min": [
+          -3.211,
+          0.458,
+          -0.465
+        ],
+        "max": [
+          -3.207,
+          0.472,
+          0.585
+        ]
+      }
+    },
+    {
+      "node": "idle_load_ports.lamps.lamp_green",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "idle_load_ports",
+      "partKey": "idle_load_ports.lamps.lamp_green",
+      "materialRef": "polymer_white",
+      "cutaway": "keep",
+      "cover": false,
+      "lod": "fine",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": false,
+      "isGlass": false,
+      "materials": [
+        "lamp_green"
+      ],
+      "triangles": 88,
+      "boundsInstance": {
+        "min": [
+          -3.211,
+          0.458,
+          -0.585
+        ],
+        "max": [
+          -3.207,
+          0.472,
+          0.465
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.chamber_top.aluminum",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.chamber_top.aluminum",
+      "materialRef": "aluminum_machined",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "aluminum"
+      ],
+      "triangles": 1000,
+      "boundsInstance": {
+        "min": [
+          -0.135,
+          1.2,
+          -0.3
+        ],
+        "max": [
+          0.465,
+          1.32,
+          0.3
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.doors.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -0.386,
+          -0.76,
+          -0.644
+        ],
+        "max": [
+          0.916,
+          0.9636,
+          0.644
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.feet.rubber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -0.395,
+          -0.85,
+          -0.595
+        ],
+        "max": [
+          0.925,
+          -0.838,
+          0.595
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.feet.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -0.39,
+          -0.838,
+          -0.59
+        ],
+        "max": [
+          0.92,
+          -0.776,
+          0.59
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.frame.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -0.44,
+          -0.77,
+          -0.64
+        ],
+        "max": [
+          0.97,
+          1.2,
+          0.64
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.hardware.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 3480,
+      "boundsInstance": {
+        "min": [
+          -0.3818,
+          -0.5832,
+          -0.678
+        ],
+        "max": [
+          0.982,
+          1.092,
+          0.678
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.39,
+          -0.83,
+          -0.59
+        ],
+        "max": [
+          0.92,
+          -0.77,
+          0.59
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1296,
+      "boundsInstance": {
+        "min": [
+          -0.42,
+          -0.768,
+          -0.62
+        ],
+        "max": [
+          0.95,
+          1.198,
+          0.62
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.pipes.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.pipes.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -0.073,
+          1.2,
+          -0.198
+        ],
+        "max": [
+          0.023,
+          1.8,
+          0.218
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.top.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.418,
+          1.188,
+          -0.618
+        ],
+        "max": [
+          0.948,
+          1.2,
+          0.618
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.topboxes.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.topboxes.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          0.195,
+          1.33,
+          -0.17
+        ],
+        "max": [
+          0.495,
+          1.55,
+          0.17
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.vents.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          0.962,
+          0.8891,
+          -0.49
+        ],
+        "max": [
+          0.982,
+          1.0709,
+          0.49
+        ]
+      }
+    },
+    {
+      "node": "pm01_enclosure.windows.glass_smoke",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm01_enclosure",
+      "partKey": "pm01_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -0.266,
+          0.3135,
+          -0.648
+        ],
+        "max": [
+          0.141,
+          0.8454,
+          -0.642
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.chamber_top.aluminum",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.chamber_top.aluminum",
+      "materialRef": "aluminum_machined",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "aluminum"
+      ],
+      "triangles": 1000,
+      "boundsInstance": {
+        "min": [
+          -2.14,
+          1.15,
+          -1.28
+        ],
+        "max": [
+          -1.54,
+          1.27,
+          -0.68
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.doors.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -2.236,
+          -0.76,
+          -1.464
+        ],
+        "max": [
+          -1.444,
+          0.9196,
+          -1.442
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.feet.rubber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -2.245,
+          -0.85,
+          -1.415
+        ],
+        "max": [
+          -1.435,
+          -0.838,
+          -0.545
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.feet.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -2.24,
+          -0.838,
+          -1.41
+        ],
+        "max": [
+          -1.44,
+          -0.776,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.frame.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -2.29,
+          -0.77,
+          -1.46
+        ],
+        "max": [
+          -1.39,
+          1.15,
+          -0.5
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.hardware.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -2.2318,
+          -0.5884,
+          -1.498
+        ],
+        "max": [
+          -1.378,
+          1.042,
+          -0.64
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.24,
+          -0.83,
+          -1.41
+        ],
+        "max": [
+          -1.44,
+          -0.77,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -2.27,
+          -0.768,
+          -1.44
+        ],
+        "max": [
+          -1.41,
+          1.148,
+          -0.52
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.pipes.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.pipes.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -2.078,
+          1.15,
+          -1.178
+        ],
+        "max": [
+          -1.982,
+          1.75,
+          -0.762
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.top.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.268,
+          1.138,
+          -1.438
+        ],
+        "max": [
+          -1.412,
+          1.15,
+          -0.522
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.topboxes.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.topboxes.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -1.81,
+          1.28,
+          -1.15
+        ],
+        "max": [
+          -1.51,
+          1.5,
+          -0.81
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.vents.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -1.398,
+          0.8391,
+          -1.31
+        ],
+        "max": [
+          -1.378,
+          1.0209,
+          -0.65
+        ]
+      }
+    },
+    {
+      "node": "pm02_enclosure.windows.glass_smoke",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm02_enclosure",
+      "partKey": "pm02_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.116,
+          0.286,
+          -1.468
+        ],
+        "max": [
+          -1.564,
+          0.8044,
+          -1.462
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.chamber_top.aluminum",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.chamber_top.aluminum",
+      "materialRef": "aluminum_machined",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "aluminum"
+      ],
+      "triangles": 1000,
+      "boundsInstance": {
+        "min": [
+          -1.22,
+          1.15,
+          -1.28
+        ],
+        "max": [
+          -0.62,
+          1.27,
+          -0.68
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.doors.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -1.316,
+          -0.76,
+          -1.464
+        ],
+        "max": [
+          -0.524,
+          0.9196,
+          -1.442
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.feet.rubber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -1.325,
+          -0.85,
+          -1.415
+        ],
+        "max": [
+          -0.515,
+          -0.838,
+          -0.545
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.feet.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -1.32,
+          -0.838,
+          -1.41
+        ],
+        "max": [
+          -0.52,
+          -0.776,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.frame.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -1.37,
+          -0.77,
+          -1.46
+        ],
+        "max": [
+          -0.47,
+          1.15,
+          -0.5
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.hardware.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -1.3118,
+          -0.5884,
+          -1.498
+        ],
+        "max": [
+          -0.458,
+          1.042,
+          -0.64
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.32,
+          -0.83,
+          -1.41
+        ],
+        "max": [
+          -0.52,
+          -0.77,
+          -0.55
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -1.35,
+          -0.768,
+          -1.44
+        ],
+        "max": [
+          -0.49,
+          1.148,
+          -0.52
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.pipes.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.pipes.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -1.158,
+          1.15,
+          -1.178
+        ],
+        "max": [
+          -1.062,
+          1.75,
+          -0.762
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.top.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.348,
+          1.138,
+          -1.438
+        ],
+        "max": [
+          -0.492,
+          1.15,
+          -0.522
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.topboxes.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.topboxes.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -0.89,
+          1.28,
+          -1.15
+        ],
+        "max": [
+          -0.59,
+          1.5,
+          -0.81
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.vents.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -0.478,
+          0.8391,
+          -1.31
+        ],
+        "max": [
+          -0.458,
+          1.0209,
+          -0.65
+        ]
+      }
+    },
+    {
+      "node": "pm03_enclosure.windows.glass_smoke",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm03_enclosure",
+      "partKey": "pm03_enclosure.windows.glass_smoke",
+      "materialRef": "quartz",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": false,
+      "castShadow": false,
+      "isGlass": true,
+      "materials": [
+        "glass_smoke"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.196,
+          0.286,
+          -1.468
+        ],
+        "max": [
+          -0.644,
+          0.8044,
+          -1.462
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.chamber_top.aluminum",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.chamber_top.aluminum",
+      "materialRef": "aluminum_machined",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "aluminum"
+      ],
+      "triangles": 1000,
+      "boundsInstance": {
+        "min": [
+          -2.14,
+          1.15,
+          0.68
+        ],
+        "max": [
+          -1.54,
+          1.27,
+          1.28
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.doors.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -2.236,
+          -0.76,
+          1.442
+        ],
+        "max": [
+          -1.444,
+          0.9196,
+          1.464
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.feet.rubber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -2.245,
+          -0.85,
+          0.545
+        ],
+        "max": [
+          -1.435,
+          -0.838,
+          1.415
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.feet.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -2.24,
+          -0.838,
+          0.55
+        ],
+        "max": [
+          -1.44,
+          -0.776,
+          1.41
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.frame.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -2.29,
+          -0.77,
+          0.5
+        ],
+        "max": [
+          -1.39,
+          1.15,
+          1.46
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.hardware.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -2.2318,
+          -0.5884,
+          0.64
+        ],
+        "max": [
+          -1.378,
+          1.042,
+          1.498
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.24,
+          -0.83,
+          0.55
+        ],
+        "max": [
+          -1.44,
+          -0.77,
+          1.41
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -2.27,
+          -0.768,
+          0.52
+        ],
+        "max": [
+          -1.41,
+          1.148,
+          1.44
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.pipes.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.pipes.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -2.078,
+          1.15,
+          0.782
+        ],
+        "max": [
+          -1.982,
+          1.75,
+          1.198
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.top.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.268,
+          1.138,
+          0.522
+        ],
+        "max": [
+          -1.412,
+          1.15,
+          1.438
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.topboxes.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.topboxes.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -1.81,
+          1.28,
+          0.81
+        ],
+        "max": [
+          -1.51,
+          1.5,
+          1.15
+        ]
+      }
+    },
+    {
+      "node": "pm04_enclosure.vents.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm04_enclosure",
+      "partKey": "pm04_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -1.398,
+          0.8391,
+          0.65
+        ],
+        "max": [
+          -1.378,
+          1.0209,
+          1.31
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.chamber_top.aluminum",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.chamber_top.aluminum",
+      "materialRef": "aluminum_machined",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "aluminum"
+      ],
+      "triangles": 1000,
+      "boundsInstance": {
+        "min": [
+          -1.22,
+          1.15,
+          0.68
+        ],
+        "max": [
+          -0.62,
+          1.27,
+          1.28
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.doors.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.doors.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -1.316,
+          -0.76,
+          1.442
+        ],
+        "max": [
+          -0.524,
+          0.9196,
+          1.464
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.feet.rubber",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.feet.rubber",
+      "materialRef": "rubber_membrane",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "rubber"
+      ],
+      "triangles": 944,
+      "boundsInstance": {
+        "min": [
+          -1.325,
+          -0.85,
+          0.545
+        ],
+        "max": [
+          -0.515,
+          -0.838,
+          1.415
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.feet.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.feet.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1584,
+      "boundsInstance": {
+        "min": [
+          -1.32,
+          -0.838,
+          0.55
+        ],
+        "max": [
+          -0.52,
+          -0.776,
+          1.41
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.frame.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.frame.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 432,
+      "boundsInstance": {
+        "min": [
+          -1.37,
+          -0.77,
+          0.5
+        ],
+        "max": [
+          -0.47,
+          1.15,
+          1.46
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.hardware.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.hardware.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 1032,
+      "boundsInstance": {
+        "min": [
+          -1.3118,
+          -0.5884,
+          0.64
+        ],
+        "max": [
+          -0.458,
+          1.042,
+          1.498
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.32,
+          -0.83,
+          0.55
+        ],
+        "max": [
+          -0.52,
+          -0.77,
+          1.41
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 756,
+      "boundsInstance": {
+        "min": [
+          -1.35,
+          -0.768,
+          0.52
+        ],
+        "max": [
+          -0.49,
+          1.148,
+          1.44
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.pipes.stainless",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.pipes.stainless",
+      "materialRef": "stainless",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "stainless"
+      ],
+      "triangles": 752,
+      "boundsInstance": {
+        "min": [
+          -1.158,
+          1.15,
+          0.782
+        ],
+        "max": [
+          -1.062,
+          1.75,
+          1.198
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.top.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.top.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -1.348,
+          1.138,
+          0.522
+        ],
+        "max": [
+          -0.492,
+          1.15,
+          1.438
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.topboxes.paint_lightgray",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.topboxes.paint_lightgray",
+      "materialRef": "polymer_gray",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_lightgray"
+      ],
+      "triangles": 188,
+      "boundsInstance": {
+        "min": [
+          -0.89,
+          1.28,
+          0.81
+        ],
+        "max": [
+          -0.59,
+          1.5,
+          1.15
+        ]
+      }
+    },
+    {
+      "node": "pm05_enclosure.vents.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "pm05_enclosure",
+      "partKey": "pm05_enclosure.vents.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 396,
+      "boundsInstance": {
+        "min": [
+          -0.478,
+          0.8391,
+          0.65
+        ],
+        "max": [
+          -0.458,
+          1.0209,
+          1.31
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.mainframe_kick.paint_graphite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.mainframe_kick.paint_graphite",
+      "materialRef": "painted_dark",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_graphite"
+      ],
+      "triangles": 108,
+      "boundsInstance": {
+        "min": [
+          -2.313,
+          -0.84,
+          -0.425
+        ],
+        "max": [
+          -0.444,
+          -0.77,
+          0.425
+        ]
+      }
+    },
+    {
+      "node": "tool_enclosure.mainframe_panels.paint_offwhite",
+      "parent": "tactras_oxide_ccp_rie_300__root",
+      "assetId": "tool_enclosure",
+      "partKey": "tool_enclosure.mainframe_panels.paint_offwhite",
+      "materialRef": "painted_offwhite",
+      "cutaway": "keep",
+      "cover": true,
+      "lod": "",
+      "jointId": "",
+      "pickable": true,
+      "castShadow": true,
+      "isGlass": false,
+      "materials": [
+        "paint_offwhite"
+      ],
+      "triangles": 1620,
+      "boundsInstance": {
+        "min": [
+          -2.331,
+          -0.768,
+          -0.45
+        ],
+        "max": [
+          -0.426,
+          0.62,
+          0.45
+        ]
+      }
+    }
+  ]
+}

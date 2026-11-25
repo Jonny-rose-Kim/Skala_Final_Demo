@@ -1,0 +1,6 @@
+[
+  { "id": "t01_tool", "instance": "ETCH-01", "mode": "assembled", "scenario": "tactras-etch-cycle-v1", "time": 5, "local": true, "cam": [215, 60, 7.0, [-1.4, 0.3, 0]], "ui": true },
+  { "id": "t02_pm01_cutaway_etch", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "tactras-etch-cycle-v1", "time": 45, "local": true, "cam": [268, 80, 1.0, [0, 0.02, 0]] },
+  { "id": "t03_lower_feeds", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "tactras-etch-cycle-v1", "time": 45, "local": true, "cam": [262, 95, 1.3, [0, -0.4, 0]] },
+  { "id": "t04_transfer", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "tactras-etch-cycle-v1", "time": 24, "local": true, "cam": [60, 50, 3.0, [-1.2, 0.15, 0]] }
+]

@@ -22,6 +22,8 @@ const HOLDER_LABEL: Record<string, string> = {
   load_cup: "Load cup",
   clean_module: "Brush cleaner",
   dry_module: "Spin dryer",
+  transfer_buffer: "Pass station",
+  spin_chuck: "Spin chuck",
 };
 
 /** Occupied slots of a carrier preview in slot order (1 = bottom). */

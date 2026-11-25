@@ -14,19 +14,26 @@ import { hoistExtensionForSeat, OHT_LAYOUT, projectOnRail, type OhtLayout } from
 import { OHT_TEMPLATE_ID } from "./template";
 import { idleToolPose } from "../idle";
 
-const rows = buildPhases([
+/** Transfer phases with a given travel duration (the vehicle moves along the rail only in the travel phase). */
+export function ohtTransferScenario(id: string, title: string, travelSec: number): VisualScenario {
+  const r = transferRows(travelSec);
+  return { id, title, durationSec: r.durationSec, phases: r.phases, renderSource: "illustrative" };
+}
+
+const transferRows = (travelSec: number) => buildPhases([
   { id: "oht_ready", label: "Ready", labelKo: "대기 (park)", duration: 2, equipment: "oht" },
   { id: "oht_align_pickup", label: "Align at pickup", labelKo: "Pickup station 정렬", duration: 6, equipment: "oht" },
   { id: "oht_lower_empty", label: "Lower empty gripper", labelKo: "빈 gripper 하강", duration: 4, equipment: "oht" },
   { id: "oht_engage", label: "Engage carrier", labelKo: "Carrier 결합 (gripper close)", duration: 1.5, equipment: "oht" },
   { id: "oht_lift_loaded", label: "Lift loaded", labelKo: "적재 상승", duration: 4, equipment: "oht" },
-  { id: "oht_travel", label: "Travel", labelKo: "주행 (retracted pose)", duration: 8, equipment: "oht" },
+  { id: "oht_travel", label: "Travel", labelKo: "주행 (retracted pose)", duration: travelSec, equipment: "oht" },
   { id: "oht_align_dest", label: "Align at destination", labelKo: "Destination 정렬", duration: 1, equipment: "oht" },
   { id: "oht_lower_loaded", label: "Lower loaded", labelKo: "적재 하강", duration: 4, equipment: "oht" },
   { id: "oht_release", label: "Seat / release", labelKo: "Seating·gripper 해제", duration: 1.5, equipment: "oht" },
   { id: "oht_lift_empty", label: "Lift empty", labelKo: "빈 gripper 상승", duration: 4, equipment: "oht" },
   { id: "oht_complete", label: "Complete", labelKo: "완료", duration: 2, equipment: "oht" },
 ]);
+const rows = transferRows(8);
 
 export const OHT_SCENARIO: VisualScenario = { id: "oht-transfer-v1", title: "OHT FOUP transfer (pickup → travel → dropoff)", durationSec: rows.durationSec, phases: rows.phases, renderSource: "illustrative" };
 
@@ -42,7 +49,7 @@ export interface OhtTransferPlan {
 }
 
 /** Project the two stations into the OHT frame and check reachability with the implemented DOF. */
-export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: Record<string, StationWorldFrame>, sourceId: string, destId: string): OhtTransferPlan {
+export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: Record<string, StationWorldFrame>, sourceId: string, destId: string, opts: { startS?: number } = {}): OhtTransferPlan {
   const toLocal = (w: [number, number, number]): [number, number, number] => {
     // instance rotation about Y (rotationYDeg) then translation
     const yaw = (oht.rotationYDeg * Math.PI) / 180;
@@ -68,7 +75,8 @@ export function planTransfer(L: OhtLayout, oht: EquipmentInstanceDef, stations: 
   else if (Math.abs(src.lateral) > tol || Math.abs(dst.lateral) > tol) blocked = `Preview blocked: load port seat is ${(Math.max(Math.abs(src.lateral), Math.abs(dst.lateral)) * 1000).toFixed(0)} mm off the rail line (no lateral axis implemented)`;
   else if (src.s < 0 || src.s > L.rail.length || dst.s < 0 || dst.s > L.rail.length) blocked = "Preview blocked: station outside the rail";
   else if (src.ext < 0 || src.ext > L.hoist.stroke || dst.ext < 0 || dst.ext > L.hoist.stroke) blocked = "Preview blocked: load port height outside the hoist stroke";
-  return { ohtInstanceId: oht.instanceId, sourceStationId: sourceId, destinationStationId: destId, src: src ?? { s: 0, ext: 0, lateral: 0 }, dst: dst ?? { s: 0, ext: 0, lateral: 0 }, parkS: L.vehicle.parkS, blockedReason: blocked };
+  // a leg that follows another one starts where the vehicle stopped (opts.startS); a first leg starts at park
+  return { ohtInstanceId: oht.instanceId, sourceStationId: sourceId, destinationStationId: destId, src: src ?? { s: 0, ext: 0, lateral: 0 }, dst: dst ?? { s: 0, ext: 0, lateral: 0 }, parkS: opts.startS ?? L.vehicle.parkS, blockedReason: blocked };
 }
 
 export interface OhtState {

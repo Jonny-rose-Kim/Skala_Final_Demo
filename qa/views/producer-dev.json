@@ -1,0 +1,5 @@
+[
+  { "id": "p01_tool_assembled", "instance": "PRODUCER-01", "mode": "assembled", "scenario": "producer-deposition-cycle-v1", "time": 60, "local": true, "cam": [215, 62, 6.2, [-1.0, 0.1, 0.3]], "ui": true },
+  { "id": "p02_twin_cutaway", "instance": "PRODUCER-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 265, "sweepDeg": 95 }, "scenario": "producer-deposition-cycle-v1", "time": 60, "local": true, "cam": [300, 58, 2.7, [0.1, 0.1, 0.52]] },
+  { "id": "p03_transfer", "instance": "PRODUCER-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 265, "sweepDeg": 95 }, "scenario": "producer-deposition-cycle-v1", "time": 30, "local": true, "cam": [60, 50, 2.6, [-1.0, 0.15, 0]] }
+]

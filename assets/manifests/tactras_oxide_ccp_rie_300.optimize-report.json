@@ -1,0 +1,26 @@
+{
+  "templateId": "tactras_oxide_ccp_rie_300",
+  "transforms": [
+    "dedup",
+    "weld"
+  ],
+  "before": {
+    "nodes": 73,
+    "meshes": 72,
+    "materials": 10,
+    "textures": 2,
+    "accessors": 353,
+    "triangles": 44892,
+    "bytes": 3802920
+  },
+  "after": {
+    "nodes": 73,
+    "meshes": 72,
+    "materials": 10,
+    "textures": 2,
+    "accessors": 360,
+    "triangles": 44892,
+    "bytes": 3801192
+  },
+  "semanticNodesUnchanged": true
+}

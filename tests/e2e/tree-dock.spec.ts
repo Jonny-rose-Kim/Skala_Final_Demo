@@ -52,13 +52,13 @@ test.describe("Component tree dock", () => {
     expect(l.css).toBe(start.css + start.tree - l.tree);
     expect(Math.abs(l.buffer / l.css - scale)).toBeLessThan(0.01);
 
-    // past the minimum the width holds at 160; further left the tree folds into the 16 px rail
+    // past the minimum the width holds at 160; further left the tree folds into the rail (20 px since the design-system commit 697dbea)
     await dragEdge(page, 130);
     expect((await layout(page)).tree).toBe(160);
     await dragEdge(page, 20);
     l = await layout(page);
     expect(l.shown).toBe(false);
-    expect(l.css).toBe(start.css + start.tree - 16);
+    expect(l.css).toBe(start.css + start.tree - 20);
     await expect(edge).toHaveAttribute("aria-valuenow", "0");
     expect(await page.evaluate(() => window.__pecvdTwin!.store.getState().panels.tree)).toBe(false);
 

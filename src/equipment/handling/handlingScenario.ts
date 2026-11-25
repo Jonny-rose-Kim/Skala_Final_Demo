@@ -27,6 +27,10 @@ export interface StationHandlingSpec {
   plan: StationPlan;
   process: ProcessSegment;
   stageWaferAssetId: string;
+  /** Incoming wafer state of this standalone demonstration (default: the legacy STI incoming stack). */
+  incoming?: (waferId: string) => IllustrativeFilmState;
+  /** Tool-specific preview additions (flags, effects) evaluated after the station state. */
+  decorate?: (out: PreviewState, toolInstanceId: string, segment: string, tProcess: number) => void;
 }
 
 /** Phase rows of load, process and unload starting at `t0` (ids optionally prefixed). */
@@ -63,7 +67,7 @@ export function makeStationHandlingScenario(spec: StationHandlingSpec): Scenario
     const station = Object.values(ctx.stations).find((s) => s.instanceId === first.instanceId);
     const foup = ctx.instances.find((i) => i.instanceId === DEMO_CARRIER.carrierId);
     const state = stationStateAt(spec.plan, tl, t);
-    let film = incomingFilmState(DEMO_WAFER.waferId);
+    let film = spec.incoming ? spec.incoming(DEMO_WAFER.waferId) : incomingFilmState(DEMO_WAFER.waferId);
     const ip = out.instances[first.instanceId];
     if (state.segment === "process") {
       const s = spec.process.sample(t - tl.processStart, seed, animT - tl.processStart);
@@ -75,6 +79,7 @@ export function makeStationHandlingScenario(spec: StationHandlingSpec): Scenario
     if (station) {
       applyStationState({ out, plan: spec.plan, state, toolInstanceId: first.instanceId, foupInstanceId: foup?.instanceId ?? null, stationId: station.stationId, carrierId: DEMO_CARRIER.carrierId, waferId: DEMO_WAFER.waferId, slotId: DEMO_RESERVED_SLOT.slotId, stageWaferAssetId: spec.stageWaferAssetId, film, reservedSlot: DEMO_RESERVED_SLOT });
     } else out.blockedReason = "Preview blocked: no load port station for the tool";
+    spec.decorate?.(out, first.instanceId, state.segment, t - tl.processStart);
     out.phaseFocusInstanceId = first.instanceId;
     return out;
   };

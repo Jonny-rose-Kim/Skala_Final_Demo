@@ -8,7 +8,8 @@ async function openApp(page: Page, projectName: string) {
     if (m.type() === "error") errors.push(m.text());
   });
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`/${isWebGPUProject(projectName) ? "?" : "?renderer=webgl2"}`);
+  // legacy V1 bay (its scenarios and stations): the legacy-v1 fixture
+  await page.goto(`/${isWebGPUProject(projectName) ? "?" : "?renderer=webgl2"}&fixture=legacy-v1`);
   await page.waitForFunction(() => !!window.__pecvdTwin && window.__pecvdTwin.isReady(), null, { timeout: 90_000 });
   await page.waitForTimeout(500);
   return errors;

@@ -70,6 +70,8 @@ export interface PartGeometry {
   capBuild?: (kept: AngularInterval[]) => MeshData;
   /** Shown only while the instance presents this key (a carrier slot wafer is shown while its slot is occupied). */
   presenceKey?: string;
+  /** Material supplied by an imported GLB (Babylon Material); used instead of the library material `materialRef`. */
+  glbMaterial?: object;
   sectorDependent: boolean;
 }
 
@@ -125,7 +127,7 @@ export function toRadialFrame(md: MeshData, az: number, centerY: number): MeshDa
 
 const chamfRect = (r0: number, r1: number, y0: number, y1: number, c: number) => chamferProfile(rectProfile(r0, r1, y0, y1), c);
 
-export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
+export function buildChamberParts(L: ChamberLayout, opts: { enclosure?: boolean } = {}): PartGeometry[] {
   const parts: PartGeometry[] = [];
   const cfg = L.cfg;
   const ports = L.ports;
@@ -700,7 +702,7 @@ export function buildChamberParts(L: ChamberLayout): PartGeometry[] {
     const sink = new PartSink();
     buildSlitGateValve(sink, L.station, cfg.ports.slit.door_thickness, cfg.ports.slit.gate_travel);
     buildHandlingStationParts(sink, L.station, { waferThickness: cfg.wafer.thickness });
-    buildProcessEnclosureParts(sink, L.station.floorY, ccpEnclosureSpec(L), { enclosure: "process_enclosure", facility: "facility_interface" });
+    if (opts.enclosure !== false) buildProcessEnclosureParts(sink, L.station.floorY, ccpEnclosureSpec(L), { enclosure: "process_enclosure", facility: "facility_interface" });
     parts.push(...sink.parts);
   }
 

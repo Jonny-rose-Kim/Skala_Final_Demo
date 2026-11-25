@@ -46,6 +46,15 @@ export const MATERIAL_PRESETS: Record<Exclude<MaterialRef, "none" | "quartz">, M
   // gray PVC / PP of wet-zone parts (splash shields, drip trays, drain lines)
   polymer_gray: { albedo: [0.46, 0.48, 0.5], metallic: 0, roughness: 0.55, normal: "ceramicNormal", normalStrength: 0.12, uvScale: 6 },
   // patterned wafer frontside (oxide film over the STI pattern reads blue-violet); makes face up / face down visible
+  // red reflective position strip along the OHT rails
+  marking_red: { albedo: [0.72, 0.09, 0.11], metallic: 0, roughness: 0.45, uvScale: 4 },
+  // smoked dark polycarbonate FOUP shell (documentary footage: near-black shells)
+  foup_shell: { albedo: [0.07, 0.075, 0.08], metallic: 0, roughness: 0.32, normal: "machinedNormal", normalStrength: 0.05, uvScale: 4, environmentIntensity: 1.0 },
+  // amber polycarbonate window plates on the FOUP back and sides
+  amber_polycarbonate: { albedo: [0.86, 0.42, 0.07], metallic: 0, roughness: 0.22, uvScale: 4, environmentIntensity: 1.0 },
+  // unlit indicator lenses (status LED rows on the load ports; no lit state is implied)
+  indicator_green: { albedo: [0.12, 0.55, 0.25], metallic: 0, roughness: 0.25, uvScale: 4 },
+  indicator_blue: { albedo: [0.15, 0.3, 0.75], metallic: 0, roughness: 0.25, uvScale: 4 },
   wafer_front: { albedo: [0.2, 0.22, 0.46], metallic: 0.35, roughness: 0.16, specularAA: true, environmentIntensity: 0.45 },
 };
 

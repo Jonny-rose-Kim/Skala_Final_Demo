@@ -1,0 +1,31 @@
+{
+  "templateId": "producer_se_ccp_twin_300",
+  "validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 16,
+    "hints": 0,
+    "messages": [
+      "I UNUSED_MESH_TANGENT /meshes/4/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/4/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/5/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/5/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/6/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/6/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/8/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/8/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/17/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/17/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/19/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/19/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/28/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/28/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/30/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/30/primitives/0/attributes/TEXCOORD_0 This object may be unused."
+    ]
+  },
+  "semantic": {
+    "problems": []
+  }
+}

@@ -6,6 +6,9 @@ import type { SceneHost } from "../../scene/sceneHost";
 import { Button, SELECT_CLASS, Toggle } from "../components/ui";
 
 const EQUIPMENT_TONE: Record<string, string> = {
+  deposition: "border-[oklch(55.7%_0.156_295)] bg-[oklch(95.9%_0.018_300)] text-[oklch(39.8%_0.153_291)]",
+  etch: "border-[oklch(58.5%_0.154_339)] bg-[oklch(96.7%_0.017_338)] text-[oklch(42.6%_0.139_340)]",
+  wet_clean: "border-[oklch(58.2%_0.113_220)] bg-[oklch(96.5%_0.016_220)] text-[oklch(42%_0.09_225)]",
   ccp: "border-[oklch(55.7%_0.156_295)] bg-[oklch(95.9%_0.018_300)] text-[oklch(39.8%_0.153_291)]",
   remote: "border-[oklch(58.5%_0.154_339)] bg-[oklch(96.7%_0.017_338)] text-[oklch(42.6%_0.139_340)]",
   cmp: "border-[oklch(58.2%_0.113_159)] bg-ok-soft text-[oklch(43.1%_0.086_159)]",

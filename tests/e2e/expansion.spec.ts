@@ -9,7 +9,9 @@ async function openApp(page: Page, projectName: string, suffix = "") {
   });
   page.on("pageerror", (e) => errors.push(e.message));
   const q = isWebGPUProject(projectName) ? "?" : "?renderer=webgl2";
-  await page.goto(`/${q}${suffix}`);
+  // these specs cover the legacy V1 bay (CCP / Remote / STI CMP / OHT); its instance set is the legacy-v1 fixture
+  const fx = suffix.includes("fixture=") ? "" : "&fixture=legacy-v1";
+  await page.goto(`/${q}${fx}${suffix}`);
   await page.waitForFunction(() => !!window.__pecvdTwin && window.__pecvdTwin.isReady(), null, { timeout: 90_000 });
   await page.waitForTimeout(500);
   return errors;

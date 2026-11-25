@@ -4,8 +4,12 @@ import type { Vec3Tuple } from "../config/geometry";
 export type AssetId = string;
 export type InstanceId = string;
 
-/** Equipment families in this project (template ids stay stable; families only group behaviour). */
-export type EquipmentFamily = "CCP_PECVD" | "REMOTE_PECVD" | "STI_CMP_ROTARY" | "OHT" | "CARRIER";
+/**
+ * Equipment families in this project (template ids stay stable; families only group behaviour).
+ * Legacy (V1 bay): CCP_PECVD, REMOTE_PECVD, STI_CMP_ROTARY. Current bay: PECVD_TWIN_CLUSTER (Producer SE
+ * based), ETCH_CCP_RIE_CLUSTER (Tactras based), WET_CLEAN_SINGLE_WAFER (CELLESTA-i MD based), OHT, CARRIER.
+ */
+export type EquipmentFamily = "CCP_PECVD" | "REMOTE_PECVD" | "STI_CMP_ROTARY" | "PECVD_TWIN_CLUSTER" | "ETCH_CCP_RIE_CLUSTER" | "WET_CLEAN_SINGLE_WAFER" | "OHT" | "CARRIER";
 
 /**
  * Assembly ids are template-specific strings. The CCP template keeps its original literal ids; the other
@@ -48,7 +52,12 @@ export type ComponentKind =
   | "hoist"
   | "gripper"
   | "carrier"
-  | "module";
+  | "module"
+  // added for the etch / wet-clean tools and whole-tool exteriors
+  | "chuck"
+  | "nozzle"
+  | "cup"
+  | "panel";
 
 export type MaterialRef =
   | "aluminum_machined"
@@ -73,6 +82,12 @@ export type MaterialRef =
   | "painted_offwhite"
   | "polymer_gray"
   | "wafer_front"
+  // added for the documentary-informed bay (2026-11-25): red position strips, FOUP shell and window plates
+  | "marking_red"
+  | "foup_shell"
+  | "amber_polycarbonate"
+  | "indicator_green"
+  | "indicator_blue"
   | "none";
 
 /** How the cutaway sector treats a component. */
@@ -154,6 +169,35 @@ export interface ComponentDef<L = unknown> {
   structuralBasis?: string;
   /** Short label for the labels overlay (priority > 0 shows it). */
   label?: { text: string; priority: number };
+  /** Tool-internal scope (module / chamber) for whole-tool templates; absent = tool level. */
+  scope?: ComponentScope;
+}
+
+/**
+ * Where a component sits inside a whole tool. `moduleId` / `chamberId` are template-scoped ids (e.g.
+ * "MOD-01", "CELL-A"); the plant-wide id is `${instanceId}.${moduleId}.${chamberId}`.
+ * `activity`: active = runs in the demonstration; idle = present and complete but not used by the
+ * demonstration; geometry_only = exterior / silhouette only (no internal parts, joints or sensors).
+ */
+export interface ComponentScope {
+  moduleId?: string;
+  chamberId?: string;
+  activity: "active" | "idle" | "geometry_only";
+}
+
+/** What a geometry or fact is based on. `official_public` = OEM public page / report; never OEM CAD. */
+export type ReferenceBasis = "official_public" | "public_secondary" | "design_assumption" | "measured";
+
+/** Scope of a reference: the product family, the platform, the exact model, or the chosen configuration. */
+export type ReferenceScope = "family" | "platform" | "model" | "configuration";
+
+export interface ReferenceNote {
+  basis: ReferenceBasis;
+  scope: ReferenceScope;
+  /** Public URLs consulted (structure / outline only). Empty for pure design assumptions. */
+  sourceUrls: string[];
+  /** How the dimensions were chosen (e.g. "representative, scaled from the public product image"). */
+  dimensionBasis: string;
 }
 
 export interface AssemblyDef {
@@ -161,6 +205,21 @@ export interface AssemblyDef {
   name: string;
   description: string;
   order: number;
+  /** Reference basis of this assembly's geometry (whole-tool templates). */
+  reference?: ReferenceNote;
+}
+
+/** Module / chamber hierarchy of a whole tool (mainframe -> module -> chamber). */
+export interface ToolModuleDef {
+  moduleId: string;
+  name: string;
+  kind: "process_module" | "twin_process_module" | "load_lock" | "transfer" | "front_end" | "load_port";
+  activity: ComponentScope["activity"];
+  chambers: { chamberId: string; name: string; activity: ComponentScope["activity"]; noteKo?: string }[];
+  /** Module placement in the instance frame (rest pose); joints and anchors of the module use the same frame. */
+  origin: Vec3Tuple;
+  yawDeg: number;
+  noteKo: string;
 }
 
 export type PortMedium = "gas" | "vacuum" | "rf" | "electrical" | "thermal" | "mechanical" | "wafer" | "liquid" | "pneumatic" | "optical" | "carrier" | "coolant";
@@ -224,6 +283,12 @@ export interface EquipmentTemplate<L = unknown> {
   station?: StationInterfaceDef;
   /** Wafer presentation assets of templates without a station (e.g. the FOUP slot wafer). */
   waferPresentationAssetIds?: AssetId[];
+  /** Whole-tool hierarchy (mainframe -> modules -> chambers). Absent on single-chamber legacy templates. */
+  modules?: ToolModuleDef[];
+  /** Model / platform reference of the whole template (what is public, what is assumed). */
+  reference?: ReferenceNote & { vendor: string; model: string; configurationKo: string };
+  /** Legacy templates stay registered for fixtures and old routes but are not offered in the default bay. */
+  lifecycle?: "current" | "legacy";
 }
 
 /** Instrument installed on the equipment (legacy V1 shape; kept for the CCP compatibility mapping). */
@@ -264,7 +329,7 @@ export interface ChannelBinding {
   installationRevision: string;
 }
 
-export type EquipmentRole = "deposition" | "cmp" | "transport" | "carrier";
+export type EquipmentRole = "deposition" | "etch" | "wet_clean" | "cmp" | "transport" | "carrier";
 
 export interface EquipmentInstanceDef {
   instanceId: InstanceId;

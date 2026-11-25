@@ -74,3 +74,39 @@ Front end는 새로 만들었다. 이전에는 wafer가 FOUP slot에서 load cup
 - Bay: load port seat 세 개(CCP, Remote, CMP)가 x = -1.974 m 선 위, 높이 0.9 m에 있다. 장비 front end가 길어지면서 seat가 바깥으로 나와 rail과 CMP 위치를 함께 옮겼다(`config/equipment/instances.json`, instances-v4).
 
 계측(O-MP-01 ~ 08)은 `src/equipment/oht/measurement.ts`에 있다. Scripted travel, hoist, gripper 값은 Preview status이며 encoder와 switch channel은 비어 있다.
+
+## 현재 bay 장비 가정 (2026-11-24)
+
+결정, ID, 근거 구분은 `docs/equipment-migration.md`, 치수는 각 config에 있다.
+
+**Producer SE 기반 (`config/geometry/producer-se-twin-v1.json`):**
+- Cell A는 기존 CCP chamber geometry v1.3.0을 재사용한다.
+- Transfer chamber는 0.90 m이고 linear blade shuttle로 지난다.
+- Cell B는 +Z로 1.05 m 떨어진 정적 copy다.
+- MOD-02와 MOD-03은 외형만 있다.
+- RPS(remote chamber clean)는 이 configuration에 없다.
+
+**Tactras 기반 (`tactras-oxide-rie-v1.json`):**
+- 상부 전극은 접지이고 gap은 75 mm다.
+- 하부는 ESC(298 mm), 냉각 base, focus ring(300-370 mm), 절연 ring, ground shield다.
+- Lift pin stroke는 60 mm다.
+- Transfer chamber는 1.45 m다.
+- PM-02부터 PM-05까지는 외형만 있다.
+- 단일 RF는 프로젝트가 선택한 대표 구성이다.
+
+**CELLESTA-i MD 기반 (`cellesta-i-md-v1.json`):**
+- 4 port 중 두 번째가 active다.
+- Pass station은 EFEM 뒷벽에 걸쳐 있다.
+- Transfer robot의 end effector는 0.45 m로, wrist가 PM-01 밖에 남는다.
+- Cup은 안쪽과 바깥쪽 회수 channel이 있고, guard는 3단(transfer / chemical / rinse·dry)이다.
+- Chuck는 support pin 6개와 edge pin으로 받친다.
+- Swing arm에 nozzle 3개(약액 / UPW / IPA)가 있고, park 위치는 cup 밖이다.
+
+**CLW-08v2 기반 (`clw08v2-oht-v1.json`):**
+- 기존 OHT 기구를 쓰고, rail은 z -7.0에서 5.8 m까지다.
+- 차체와 carrier bay end wall은 GLB다.
+- 2026-11-25부터 차체는 SK hynix 팹 OHT 공개 사진을 참고한 외형이다.
+  - SK hynix 로고와 호기 번호 V001(instance OHT-01)을 넣었다.
+  - 경고 라벨, LED 표시창, 비상정지, 센서 창 3개가 있다.
+  - Template revision은 1.1.0이고, `vehicle_face_fittings` asset을 추가했다.
+  - 앞뒤 면 배치와 둥근 shell은 사진을 따랐다. 크기는 config envelope(0.54 x 0.93 x 0.84 m)에 맞춘 가정이고, 사진의 실제 차량과 높이·폭 비율이 다르다.

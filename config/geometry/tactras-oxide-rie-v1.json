@@ -1,0 +1,393 @@
+{
+  "$schema_id": "pecvd-twin.geometry/tactras-oxide-rie/1",
+  "geometry_revision": "tactras-oxide-rie-1.0.0",
+  "template_id": "tactras_oxide_ccp_rie_300",
+  "title": "Tactras based rectangular-cluster etch tool: representative oxide CCP-RIE process module PM-01",
+  "source": {
+    "kind": "assumed",
+    "note": "Rectangular cluster, front-end / back-end split and module enclosure arrangement follow the public Tokyo Electron Tactras product page (up to 6 chambers, 300 mm, dielectric / conductor RIE). The PM-01 interior is a representative single-RF oxide CCP-RIE chamber chosen for this project (RF on the lower electrode with an electrostatic chuck, grounded upper electrode, focus ring, backside He, pump below). It is not a specific Tactras chamber option, not OEM CAD, and no RF frequency, bias or etch rate is specified.",
+    "references": [
+      "https://www.tel.com/product/tactras.html (product page, 2026-11-24: rectangular cluster, up to 6 chambers, dielectric / conductor / RIE)"
+    ]
+  },
+  "units": "m",
+  "frame": {
+    "leg_size": 0.04,
+    "leg_radius": 0.33,
+    "floor_y": -0.85
+  },
+  "wafer": {
+    "diameter": 0.3,
+    "thickness": 0.000775
+  },
+  "chamber": {
+    "inner_diameter": 0.53,
+    "wall_thickness": 0.03,
+    "floor_top_y": -0.21,
+    "floor_thickness": 0.035,
+    "wall_top_y": 0.145,
+    "floor_bore_diameter": 0.36,
+    "top_flange_outer_diameter": 0.66,
+    "top_flange_height": 0.03,
+    "bottom_flange_outer_diameter": 0.68,
+    "bottom_flange_height": 0.025,
+    "liner_thickness": 0.006,
+    "liner_clearance": 0.004,
+    "liner_bottom_y": -0.12,
+    "liner_top_y": 0.13
+  },
+  "lid": {
+    "thickness": 0.032,
+    "diameter": 0.66,
+    "bore_diameter": 0.07,
+    "bolt_count": 20,
+    "bolt_circle_diameter": 0.625,
+    "bolt_head_diameter": 0.016,
+    "bolt_head_height": 0.01
+  },
+  "upper_electrode": {
+    "note": "Grounded upper electrode: replaceable electrode plate with gas holes on a cooled gas-distribution (shower) plate, ceramic shield ring. Gap to the chuck is representative.",
+    "gap_to_chuck": 0.075,
+    "plate_diameter": 0.38,
+    "plate_thickness": 0.01,
+    "hole_pitch": 0.016,
+    "hole_diameter": 0.0012,
+    "pattern_diameter": 0.33,
+    "distribution_plate_thickness": 0.03,
+    "distribution_plate_diameter": 0.42,
+    "shield_ring_inner_diameter": 0.384,
+    "shield_ring_outer_diameter": 0.49,
+    "shield_ring_height": 0.05,
+    "gas_inlet_diameter": 0.022,
+    "gas_inlet_length": 0.12
+  },
+  "lower_electrode": {
+    "note": "RF-powered lower electrode (fixed; transfer by lift pins): ceramic ESC puck on a cooled aluminum base plate, focus ring, quartz insulator ring, ground shield. Backside He enters through the base plate center.",
+    "esc_diameter": 0.298,
+    "esc_thickness": 0.012,
+    "base_diameter": 0.36,
+    "base_thickness": 0.05,
+    "focus_ring_inner_diameter": 0.3,
+    "focus_ring_outer_diameter": 0.37,
+    "focus_ring_thickness": 0.006,
+    "focus_ring_top_above_chuck": 0.002,
+    "insulator_ring_inner_diameter": 0.36,
+    "insulator_ring_outer_diameter": 0.42,
+    "insulator_ring_height": 0.09,
+    "ground_shield_diameter": 0.44,
+    "ground_shield_height": 0.1,
+    "pedestal_column_diameter": 0.2,
+    "lift_pin_circle_diameter": 0.2,
+    "lift_pin_diameter": 0.004,
+    "lift_pin_stroke": 0.06,
+    "he_line_diameter": 0.008,
+    "coolant_line_diameter": 0.014,
+    "rf_rod_diameter": 0.03
+  },
+  "baffle": {
+    "inner_diameter": 0.43,
+    "outer_diameter": 0.5,
+    "y": -0.105,
+    "thickness": 0.006,
+    "slot_count": 48,
+    "slot_fill": 0.55
+  },
+  "ports": {
+    "slit": {
+      "azimuth_deg": 180,
+      "width": 0.36,
+      "height": 0.05,
+      "center_y": 0.041,
+      "valve_body_size": [
+        0.47,
+        0.17,
+        0.09
+      ],
+      "door_thickness": 0.018,
+      "gate_travel": 0.075
+    },
+    "viewport": {
+      "azimuth_deg": 270,
+      "center_y": 0.035,
+      "bore_diameter": 0.05,
+      "flange_diameter": 0.11,
+      "flange_thickness": 0.014,
+      "tube_length": 0.06,
+      "window_diameter": 0.07,
+      "window_thickness": 0.008
+    },
+    "pressure_tap": {
+      "azimuth_deg": 60,
+      "center_y": 0.09,
+      "bore_diameter": 0.012,
+      "sensor_body_diameter": 0.06,
+      "sensor_body_length": 0.09,
+      "standoff_length": 0.05
+    },
+    "exhaust": {
+      "azimuth_deg": 0,
+      "center_y": -0.16,
+      "bore_diameter": 0.1,
+      "flange_diameter": 0.17,
+      "stub_length": 0.1
+    }
+  },
+  "exhaust_line": {
+    "pipe_diameter": 0.1,
+    "throttle_valve_body_length": 0.12,
+    "throttle_valve_body_diameter": 0.16,
+    "isolation_valve_size": [
+      0.2,
+      0.09,
+      0.2
+    ],
+    "pump_size": [
+      0.32,
+      0.36,
+      0.32
+    ],
+    "pump_center_y": -0.62
+  },
+  "peripherals": {
+    "rf_generator_size": [
+      0.42,
+      0.18,
+      0.44
+    ],
+    "rf_generator_center": [
+      0.62,
+      -0.7,
+      -0.35
+    ],
+    "matching_network_size": [
+      0.26,
+      0.2,
+      0.24
+    ],
+    "matching_network_center": [
+      0.0,
+      -0.52,
+      0.0
+    ],
+    "gas_box_size": [
+      0.3,
+      0.28,
+      0.18
+    ],
+    "gas_box_center": [
+      0.08,
+      0.36,
+      0.42
+    ],
+    "mfc_block_size": [
+      0.045,
+      0.09,
+      0.02
+    ],
+    "mfc_block_pitch": 0.06,
+    "mfc_block_count": 3,
+    "chiller_line_offset": [
+      0.12,
+      0.0
+    ]
+  },
+  "station": {
+    "note": "Wafer handling of PM-01: load port LP1 (of three), EFEM with an atmospheric SCARA robot, load lock with support pins and an atmospheric door, a long vacuum transfer chamber (rectangular cluster) crossed by a linear blade shuttle, then the PM-01 transfer gate. Representative; the Tactras vacuum robot type is not reproduced.",
+    "revision_note": "tactras-oxide-rie-1.0.0: 1.45 m transfer chamber, EFEM 1.75 m wide for three load ports, transfer plane set by the fixed lower electrode.",
+    "gap_from_slit_valve": 0.02,
+    "transfer_plane_below_slit_center": 0.004,
+    "load_lock": {
+      "length": 0.44,
+      "width": 0.5,
+      "wall_thickness": 0.025,
+      "floor_thickness": 0.03,
+      "lid_thickness": 0.022,
+      "interior_below_plane": 0.027,
+      "interior_above_plane": 0.045,
+      "wafer_offset_from_vacuum_wall": 0.19,
+      "support_pins": {
+        "r_offsets": [
+          -0.07,
+          0.07
+        ],
+        "q_offsets": [
+          -0.055,
+          0.055
+        ],
+        "diameter": 0.006,
+        "raise_above_plane": 0.016,
+        "drop_below_plane": 0.004
+      },
+      "vacuum_opening": {
+        "width": 0.36,
+        "height": 0.05
+      },
+      "atm_door": {
+        "opening_width": 0.34,
+        "opening_height": 0.04,
+        "frame_depth": 0.03,
+        "gate_travel": 0.06,
+        "gate_thickness": 0.012
+      },
+      "pump_port_diameter": 0.05,
+      "leg_size": 0.04
+    },
+    "vacuum_blade": {
+      "thickness": 0.003,
+      "width": 0.08,
+      "pad_height": 0.0008,
+      "root_to_pocket": 0.12,
+      "tip_beyond_pocket": 0.13,
+      "carriage_length": 0.06,
+      "carriage_width": 0.07,
+      "carriage_thickness": 0.005,
+      "stage_length": 0.36,
+      "stage_width": 0.06,
+      "stage_thickness": 0.006,
+      "stage_rear_margin": 0.022,
+      "rail_width": 0.03,
+      "rail_height": 0.012
+    },
+    "efem": {
+      "depth": 0.84,
+      "width": 1.75,
+      "height_above_floor": 2.1,
+      "ffu_height": 0.18,
+      "panel_thickness": 0.012,
+      "frame_size": 0.04,
+      "door_zone_depth": 0.08
+    },
+    "atm_robot": {
+      "axis_offset_from_back_wall": 0.38,
+      "base_radius": 0.13,
+      "column_radius": 0.075,
+      "z_stroke": 0.38,
+      "z_margin_below": 0.012,
+      "link_length": 0.28,
+      "link_width": 0.085,
+      "link1_thickness": 0.045,
+      "link2_thickness": 0.035,
+      "hub_radius": 0.04,
+      "ee_reach": 0.31,
+      "ee_mount_height": 0.008,
+      "ee_thickness": 0.004,
+      "pad_height": 0.001,
+      "approach_clearance": 0.004,
+      "tine_q": [
+        0.088,
+        0.118
+      ],
+      "tip_beyond_center": 0.12
+    },
+    "load_port": {
+      "deck_depth": 0.44,
+      "deck_width": 0.52,
+      "deck_height_above_floor": 0.9,
+      "deck_thickness": 0.025,
+      "dock_stroke": 0.03,
+      "door_gap": 0.002,
+      "opening_width": 0.36,
+      "opening_height": 0.3,
+      "opening_bottom_above_deck": 0.035,
+      "door_pull": 0.06,
+      "door_lower": 0.34,
+      "door_plate_thickness": 0.02
+    },
+    "transfer_chamber": {
+      "length": 1.45,
+      "width": 0.7,
+      "wall_thickness": 0.025,
+      "floor_thickness": 0.03,
+      "lid_thickness": 0.03,
+      "shuttle_rail_q": 0.22
+    }
+  },
+  "tool": {
+    "note": "Rectangular cluster: PM-01 (active) at the far end of the transfer chamber, geometry-only PM-02..PM-05 along both sides. Representative arrangement and sizes, not measured.",
+    "pm01_box": {
+      "x0": -0.42,
+      "x1": 0.95,
+      "z0": -0.62,
+      "z1": 0.62,
+      "top_y": 1.2
+    },
+    "idle_modules": [
+      {
+        "moduleId": "PM-02",
+        "center": [
+          -1.84,
+          0,
+          -0.98
+        ],
+        "size": [
+          0.86,
+          2.0,
+          0.92
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-03",
+        "center": [
+          -0.92,
+          0,
+          -0.98
+        ],
+        "size": [
+          0.86,
+          2.0,
+          0.92
+        ],
+        "facing": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "moduleId": "PM-04",
+        "center": [
+          -1.84,
+          0,
+          0.98
+        ],
+        "size": [
+          0.86,
+          2.0,
+          0.92
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "moduleId": "PM-05",
+        "center": [
+          -0.92,
+          0,
+          0.98
+        ],
+        "size": [
+          0.86,
+          2.0,
+          0.92
+        ],
+        "facing": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "idle_load_ports_q": [
+      0.505,
+      -0.505
+    ]
+  }
+}

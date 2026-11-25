@@ -15,6 +15,7 @@ import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
 import "@babylonjs/core/Materials/Textures/Loaders/hdrTextureLoader";
 import "@babylonjs/core/Culling/ray";
 import { Scene } from "@babylonjs/core/scene";
+import type { RenderTargetTexture } from "@babylonjs/core/Materials/Textures/renderTargetTexture";
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
@@ -25,15 +26,20 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
 import type { DepthRenderer } from "@babylonjs/core/Rendering/depthRenderer";
-import type { HDRCubeTexture } from "@babylonjs/core/Materials/Textures/hdrCubeTexture";
+import { GlbLibrary } from "./glbParts";
+import { diagnosisFor, type AgentEvent, type DiagnosisHighlight } from "../domain/agentContract";
+import { WaferSurfaceLibrary } from "../materials/waferSurface";
+import type { PartGeometry } from "../geometry/chamberParts";
+import type { Material } from "@babylonjs/core/Materials/material";
+import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
 import "../equipment/index";
 import { getBundle, listBundles, measurementIndex, validateAllBundles, type EquipmentBundle } from "../domain/registry";
-import { DEFAULT_INSTANCES, instanceFixture } from "../domain/instances";
+import { DEFAULT_INSTANCES, environmentFor, instanceFixture } from "../domain/instances";
 import type { EquipmentInstanceDef } from "../domain/types";
 import { revolveProfile, rectProfile, type Vec2 } from "../geometry/meshlib";
 import { applyMeshData } from "../geometry/meshlib/toBabylon";
-import { createCleanroomEnvironment } from "../materials/environment";
+import { createIndoorEnvironment } from "../materials/environment";
 import { MaterialLibrary } from "../materials/materialLibrary";
 import { createProceduralTextures, type ProceduralTextureSet } from "../materials/proceduralTextures";
 import { resolveCutaway, type ResolvedCutaway, FULL } from "../presentation/cutaway";
@@ -50,7 +56,9 @@ import { createEffects } from "./effectsRegistry";
 import { createCanvas, readForceWebGL2, tryCreateWebGL2, tryCreateWebGPU, type CreatedEngine } from "./engineFactory";
 import { LightingRig } from "./lighting";
 import { MeasurementOverlay } from "./measurementOverlay";
-import { FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
+import { FAB_ENVIRONMENTS, FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
+import type { DecorVehicleSource } from "./fabOverhead";
+import type { OhtLayout } from "../equipment/oht/layout";
 import { QUALITY, QualityManager, RenderPipeline } from "./renderPipeline";
 
 export interface SceneHostOptions {
@@ -64,7 +72,7 @@ interface World {
   created: CreatedEngine;
   scene: Scene;
   camera: ArcRotateCamera;
-  env: HDRCubeTexture;
+  env: BaseTexture;
   textures: ProceduralTextureSet;
   materials: MaterialLibrary;
   lighting: LightingRig;
@@ -116,7 +124,16 @@ function backdropProfile(radius: number): Vec2[] {
 
 const NO_CUT = resolveCutaway({ enabled: false, azimuthDeg: 0, sweepDeg: 0 }, []);
 
-const FAMILY_LABEL: Record<string, string> = { CCP_PECVD: "CCP PECVD", REMOTE_PECVD: "Remote ICP PECVD", STI_CMP_ROTARY: "Rotary STI CMP", OHT: "OHT", CARRIER: "FOUP" };
+const FAMILY_LABEL: Record<string, string> = {
+  CCP_PECVD: "CCP PECVD",
+  REMOTE_PECVD: "Remote ICP PECVD",
+  STI_CMP_ROTARY: "Rotary STI CMP",
+  PECVD_TWIN_CLUSTER: "PECVD (Producer SE)",
+  ETCH_CCP_RIE_CLUSTER: "Oxide Etch (Tactras)",
+  WET_CLEAN_SINGLE_WAFER: "Wet Clean (CELLESTA-i MD)",
+  OHT: "OHT",
+  CARRIER: "FOUP",
+};
 
 export class SceneHost {
   private world: World | null = null;
@@ -134,6 +151,10 @@ export class SceneHost {
   private frozenTime: number | null = null;
   private logs: string[] = [];
   private disposed = false;
+  private glbLibrary: GlbLibrary | null = null;
+  private waferSurfaces: WaferSurfaceLibrary | null = null;
+  /** Templates whose required GLB failed to load (their scenarios stay blocked). */
+  private readonly glbFailed = new Set<string>();
   /** CCP layout kept for the original debug/QA API. */
   readonly layout: ChamberLayout = CHAMBER_LAYOUT;
   private options: SceneHostOptions = {};
@@ -143,7 +164,7 @@ export class SceneHost {
   private scenarioDef: ScenarioDefinition | null = null;
   private ctx: ScenarioContext = { instances: [], stations: {} };
   /** Instances with a visible glow volume and camera-to-glow segments (limits the opaque depth pass). */
-  private depthFocus: { instances: Set<string>; segments: { a: Vector3; b: Vector3 }[] } = { instances: new Set(), segments: [] };
+  private depthFocus: { segments: { a: Vector3; b: Vector3; r: number }[] } = { segments: [] };
   private lastPreview: PreviewState | null = null;
   private lastFocusInstance: string | null = null;
   private activeTemplateId: string | null = null;
@@ -290,13 +311,45 @@ export class SceneHost {
     camera.useNaturalPinchZoom = true;
     camera.attachControl(created.canvas, true);
 
-    const env = await createCleanroomEnvironment(scene);
+    const env = await createIndoorEnvironment(scene, (m) => this.log(m));
+    if (this.disposed) {
+      env.dispose();
+      throw new Error("cancelled during environment load");
+    }
     const textures = createProceduralTextures(scene);
     const materials = new MaterialLibrary(scene, textures);
     const lighting = new LightingRig(scene, env);
+    this.waferSurfaces = new WaferSurfaceLibrary(scene, materials.get("wafer_front") as PBRMaterial);
 
     const instances = new Map<string, EquipmentInstance>();
     const defs = this.instanceDefs();
+    // GLB geometry sources: loaded (once per template) before any instance exists, so picking, poses and
+    // the first frame never see a half-built tool. A failed optional GLB leaves the procedural parts; a
+    // failed required GLB blocks the scenario clock (see renderFrame) instead of showing a partial tool.
+    const glb = new GlbLibrary(scene);
+    this.glbLibrary = glb;
+    const glbParts = new Map<string, PartGeometry[]>();
+    this.glbFailed.clear();
+    for (const templateId of [...new Set(defs.map((d) => d.templateId))]) {
+      const b = getBundle(templateId);
+      if (!b?.glb) continue;
+      store.setRenderer({ status: "initializing", message: `장비 모델 불러오는 중: ${b.template.displayName}` });
+      const tg = performance.now();
+      try {
+        const res = await glb.load(b.glb, b.template);
+        glbParts.set(templateId, res.parts);
+        this.log(`GLB ${templateId}: ${res.parts.length} parts, ${res.status.state === "ready" ? res.status.triangles : 0} triangles, ${(performance.now() - tg).toFixed(0)} ms`);
+      } catch (e) {
+        if (this.disposed) throw e;
+        this.log(`GLB ${templateId} 로드 실패: ${String(e)}`);
+        store.setDevWarnings([...usePresentationStore.getState().devWarnings, `${templateId}: GLB load failed (${String(e)})`]);
+        if (b.glb.required) this.glbFailed.add(templateId);
+      }
+      if (this.disposed) {
+        glb.dispose();
+        throw new Error("cancelled during GLB load");
+      }
+    }
     const t0 = performance.now();
     for (const def of defs) {
       const bundle = getBundle(def.templateId);
@@ -304,7 +357,7 @@ export class SceneHost {
         this.log(`알 수 없는 template ${def.templateId} (instance ${def.instanceId}) - 건너뜀`);
         continue;
       }
-      const inst = new EquipmentInstance(scene, def, bundle, materials, lighting.shadow);
+      const inst = new EquipmentInstance(scene, def, bundle, materials, lighting.shadow, glbParts.get(def.templateId) ?? []);
       instances.set(def.instanceId, inst);
     }
     this.log(`Equipment 생성 ${instances.size}개 (${defs.map((d) => d.templateId).join(", ")}), ${(performance.now() - t0).toFixed(0)} ms, meshes=${scene.meshes.length}`);
@@ -385,19 +438,10 @@ export class SceneHost {
     const depth = scene.enableDepthRenderer(camera, false, true, Constants.TEXTURE_NEAREST_SAMPLINGMODE, true);
     depth.useOnlyInActiveCamera = true;
     const depthMap = depth.getDepthMap();
-    depthMap.renderListPredicate = (m: AbstractMesh) => {
-      const meta = m.metadata as (InstanceMeshMetadata & { isOverlay?: boolean; isGround?: boolean }) | undefined;
-      if (!m.isEnabled() || !m.isVisible) return false;
-      if (meta?.isPlasma || meta?.isOverlay) return false;
-      const mat = m.material;
-      if (mat && mat.needAlphaBlending()) return false;
-      // only what can hide a glow volume: the meshes of the tool that owns it, and anything between the camera and it
-      const focus = this.depthFocus;
-      if (meta?.instanceId && focus.instances.has(meta.instanceId)) return true;
-      const bs = m.getBoundingInfo().boundingSphere;
-      for (const seg of focus.segments) if (segmentSphereHit(seg.a, seg.b, bs.centerWorld, bs.radiusWorld)) return true;
-      return false;
-    };
+    // The list is assigned explicitly (refreshDepthList), never through renderListPredicate: with a predicate Babylon
+    // rebuilds the list every frame and each push marks the light defines of every mesh in the scene dirty, which
+    // re-prepared all materials each frame while a glow was shown (about 14 ms per frame on the Producer view).
+    depthMap.renderList = [];
     for (const inst of instances.values()) for (const p of inst.effects?.plasmas ?? []) p.setDepthTexture(depthMap);
 
     // Backdrop sphere: an explicit unlit background so both backends produce the same tone-mapped color.
@@ -454,7 +498,7 @@ export class SceneHost {
       const fi = inst.bundle.facilityInterface?.(inst.bundle.layout);
       if (fi && !inst.def.mobile) drops.push(facilityDropFor(inst.def.instanceId, inst.def.position, inst.def.rotationYDeg, fi));
     }
-    const environment = new FabEnvironment(scene, materials, floorY, drops);
+    const environment = new FabEnvironment(scene, materials, floorY, drops, FAB_ENVIRONMENTS[environmentFor(this.options.fixture ?? undefined)] ?? FAB_ENVIRONMENTS["fab-bay-v2"], this.decorVehicleSource(instances, glbParts));
     this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius, instrumentation, lodCenters, environment };
 
     // Report loaded instances and pick a valid active instance / scenario
@@ -524,6 +568,10 @@ export class SceneHost {
     w.lighting.dispose();
     w.materials.dispose();
     w.textures.dispose();
+    this.glbLibrary?.dispose();
+    this.glbLibrary = null;
+    this.waferSurfaces?.dispose();
+    this.waferSurfaces = null;
     w.env.dispose();
     w.ground.dispose(false, true);
     w.environment.dispose();
@@ -533,6 +581,8 @@ export class SceneHost {
 
   dispose(): void {
     this.disposed = true;
+    // a GLB load still in flight frees its materials when it settles (GlbLibrary checks the flag)
+    this.glbLibrary?.dispose();
     if (this.cutawayTimer !== null) window.clearTimeout(this.cutawayTimer);
     const created = this.world?.created ?? this.pendingEngine;
     this.teardownWorld();
@@ -659,7 +709,7 @@ export class SceneHost {
       }
       this.refreshHighlight(s);
     }
-    if (changed("selectedAssetId") || changed("hoveredAssetId") || changed("activeInstanceId")) this.refreshHighlight(s);
+    if (changed("selectedAssetId") || changed("hoveredAssetId") || changed("activeInstanceId") || changed("diagnosis")) this.refreshHighlight(s);
     if (changed("lightingPreset")) w.lighting.setPreset(s.lightingPreset);
     if (changed("qualityPreset") || changed("effectiveQuality")) this.applyQuality(s);
     if (changed("overlays") || modeChanged || changed("activeInstanceId") || changed("selectedMeasurement")) {
@@ -682,7 +732,9 @@ export class SceneHost {
   private coversRemovedFor(s: PresentationState, instanceId: string): boolean {
     if (s.coverMode === "closed") return false;
     if (s.coverMode === "removed") return true;
-    return instanceId === s.activeInstanceId && !s.overview;
+    if (instanceId !== s.activeInstanceId || s.overview) return false;
+    const inst = this.world?.instances.get(instanceId);
+    return inst?.bundle.coversAuto === "inspection" ? s.viewMode !== "assembled" : true;
   }
 
   private scheduleCutaway(s: PresentationState, immediate: boolean): void {
@@ -723,6 +775,16 @@ export class SceneHost {
     const w = this.world;
     if (!w) return;
     w.highlight.removeAllMeshes();
+    // diagnosis highlight first (amber / red by severity); the selection and hover below win on shared meshes
+    if (s.diagnosis) {
+      const col = s.diagnosis.severity === "critical" || s.diagnosis.severity === "major" ? new Color3(0.86, 0.2, 0.16) : s.diagnosis.severity === "warning" || s.diagnosis.severity === "prediction" ? new Color3(0.93, 0.62, 0.12) : new Color3(0.62, 0.45, 0.85);
+      const covered = new Set([s.selectedAssetId, s.hoveredAssetId]);
+      for (const t of s.diagnosis.targets) {
+        const di = w.instances.get(t.instanceId);
+        if (!di) continue;
+        for (const a of t.assetIds) if (!(t.instanceId === s.activeInstanceId && covered.has(a))) for (const m of di.highlightMeshes(a)) w.highlight.addMesh(m, col);
+      }
+    }
     const inst = this.activeInstance(s);
     if (!inst) return;
     if (s.hoveredAssetId && s.hoveredAssetId !== s.selectedAssetId) {
@@ -884,6 +946,25 @@ export class SceneHost {
     w.camera.interpolateTo(w.camera.alpha, w.camera.beta, radius, b.center);
   }
 
+  /** Agent event -> diagnosis highlight (+ Focus on the first resolved target). Returns the resolved highlight. */
+  applyAgentEvent(e: AgentEvent): DiagnosisHighlight | null {
+    const st = usePresentationStore.getState();
+    if (e.kind === "detection" && e.state === "cleared") {
+      if (st.diagnosis?.eventId === e.eventId) st.setDiagnosis(null);
+      return null;
+    }
+    const d = diagnosisFor(e, this.instanceDefs(), (tid) => getBundle(tid)?.template);
+    st.setDiagnosis(d);
+    const first = d?.targets[0];
+    if (first) {
+      st.setOverview(false);
+      st.setActiveInstance(first.instanceId);
+      if (first.assetIds.length) st.select(first.assetIds[0]);
+      st.requestFocusSelected();
+    }
+    return d;
+  }
+
   /** Programmatic camera for QA screenshots (world frame). */
   setCamera(alphaDeg: number, betaDeg: number, radius: number, target: [number, number, number]): void {
     const w = this.world;
@@ -946,6 +1027,11 @@ export class SceneHost {
           inst.setPreviewHidden(cp ? new Set() : new Set(all.filter((a) => a !== shown)));
         }
       }
+      // wafer front faces follow the illustrative film state of the wafer this instance presents
+      if (this.waferSurfaces) {
+        const wid = cp ? Object.values(cp.slots).find((x): x is string => !!x) : ip?.presentedWaferId;
+        inst.setWaferSurface(this.waferSurfaces.materialFor(wid ? preview.wafers[wid]?.film : undefined));
+      }
       // mobile carriers follow their presented holder (one mesh entity, world pose set directly)
       if (cp) this.placeCarrier(inst, cp);
       if (inst.bundle.carrierSlots) inst.setPresentKeys(cp ? new Set(Object.keys(cp.slots).filter((k) => cp.slots[k])) : new Set());
@@ -972,6 +1058,52 @@ export class SceneHost {
       }
     }
     if (!w.instances.get(s.activeInstanceId)?.plasma || s.overview) w.lighting.updatePlasmaLight(Vector3.Zero(), 0, presetColor.core, false);
+  }
+
+  /**
+   * Shell of the parked scenery vehicles: the GLB parts of the bay's OHT template at rest pose, without the parts
+   * that carry an identity (vehicle number, status display) so no second vehicle id appears in the scene.
+   */
+  private decorVehicleSource(instances: Map<string, EquipmentInstance>, glbParts: Map<string, PartGeometry[]>): DecorVehicleSource | null {
+    for (const inst of instances.values()) {
+      const parts = glbParts.get(inst.templateId);
+      const L = inst.bundle.layout as Partial<OhtLayout>;
+      if (inst.bundle.template.family !== "OHT" || !parts?.length || !L.rail || !L.vehicle || !L.cfg) continue;
+      const shell = parts.filter((p) => p.glbMaterial && !p.key.includes(".number.") && !p.key.includes(".display."));
+      return {
+        parts: shell.map((p) => ({ md: p.build([]), material: p.glbMaterial as Material })),
+        railBottom: L.rail.bottomY,
+        restZ: L.rail.z0,
+        bodyBottom: L.vehicle.bodyY0,
+        foupSize: L.cfg.foup.body_size,
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Opaque meshes that can hide or cut a glow volume: meshes touching the cylinder from the camera to the volume
+   * (radius = the volume's bounding radius, a superset of the view cone), which includes everything overlapping the
+   * volume. Reassigned only when the membership changes, so the depth pass does not dirty materials every frame.
+   */
+  private refreshDepthList(scene: Scene, depthMap: RenderTargetTexture): void {
+    const next: AbstractMesh[] = [];
+    for (const m of scene.meshes) {
+      const meta = m.metadata as (InstanceMeshMetadata & { isOverlay?: boolean; isGround?: boolean }) | undefined;
+      if (!m.isEnabled() || !m.isVisible || m.getTotalVertices() === 0) continue;
+      if (meta?.isPlasma || meta?.isOverlay) continue;
+      const mat = m.material;
+      if (mat && mat.needAlphaBlending()) continue;
+      const bs = m.getBoundingInfo().boundingSphere;
+      for (const seg of this.depthFocus.segments)
+        if (segmentSphereHit(seg.a, seg.b, bs.centerWorld, bs.radiusWorld + seg.r)) {
+          next.push(m);
+          break;
+        }
+    }
+    const cur = depthMap.renderList ?? [];
+    if (cur.length === next.length && next.every((m, i) => cur[i] === m)) return;
+    depthMap.renderList = next;
   }
 
   private placeCarrier(inst: EquipmentInstance, cp: { holder: { kind: "station" | "gripper"; id: string }; yawFromStationId?: string; dockOffset?: number }): void {
@@ -1010,6 +1142,12 @@ export class SceneHost {
     let preview: PreviewState | null = null;
     if (def) {
       preview = def.evaluate(time, s.visual.visualSeed, animTime, this.ctx);
+      // a required equipment model failed to load: hold the clock and say so (never play a partial tool)
+      const failed = [...this.glbFailed].filter((t) => def.requiredTemplateIds.includes(t) || def.templateId === t);
+      if (failed.length) {
+        preview = { ...preview, blockedReason: `Preview blocked: equipment model not loaded (${failed.join(", ")})` };
+        if (this.clock.playing) this.clock.pause();
+      }
       // exploded: robot joints, wafer holders and the carrier stay on one frozen snapshot; leaving the
       // view applies the current evaluator state again
       const exploded = s.viewMode === "exploded" && !s.overview;
@@ -1034,19 +1172,19 @@ export class SceneHost {
       return fx?.pointPose ? fx.pointPose(pointId) : null;
     });
     w.lighting.updateHeadlamp(w.camera);
-    w.environment.update(w.camera.globalPosition, s.environment);
+    w.environment.update(w.camera.globalPosition, s.environment, w.camera.target);
     // the opaque depth map only feeds the plasma ray march: stop refreshing it while no glow volume is drawn
     let glowVisible = false;
-    this.depthFocus.instances.clear();
     this.depthFocus.segments.length = 0;
-    for (const [id, inst] of w.instances)
+    for (const inst of w.instances.values())
       for (const p of inst.effects?.plasmas ?? [])
         if (p.mesh.isEnabled() && p.mesh.isVisible) {
           glowVisible = true;
-          this.depthFocus.instances.add(id);
-          this.depthFocus.segments.push({ a: w.camera.globalPosition.clone(), b: p.mesh.getBoundingInfo().boundingSphere.centerWorld.clone() });
+          const bs = p.mesh.getBoundingInfo().boundingSphere;
+          this.depthFocus.segments.push({ a: w.camera.globalPosition.clone(), b: bs.centerWorld.clone(), r: bs.radiusWorld });
         }
     const depthMap = w.depth.getDepthMap();
+    if (glowVisible) this.refreshDepthList(w.scene, depthMap);
     const wantRefresh = glowVisible ? 1 : 0;
     if (depthMap.refreshRate !== wantRefresh) {
       depthMap.refreshRate = wantRefresh;
@@ -1147,6 +1285,9 @@ export class SceneHost {
       setCameraLocal: (id: string, a: number, b: number, r: number, t: [number, number, number]) => this.setCameraLocal(id, a, b, r, t),
       freezeTime: (t: number | null) => this.freezeTime(t),
       preview: () => this.lastPreview,
+      /** Integration hook: apply an agent event (contract in src/domain/agentContract.ts) and focus its first target. */
+      applyAgentEvent: (e: AgentEvent) => this.applyAgentEvent(e),
+      clearDiagnosis: () => usePresentationStore.getState().setDiagnosis(null),
       scenario: () => this.scenarioDef?.id ?? null,
       stations: () => this.stations,
       stats: () => {
