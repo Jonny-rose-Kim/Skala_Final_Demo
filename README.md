@@ -4,7 +4,6 @@
 
 증착 장비는 FOUP에서 EFEM robot, load lock, 진공 blade를 거쳐 chamber로 웨이퍼를 넣고 같은 길로 꺼냅니다. CMP는 dry robot, flip station, wet robot, load cup, head, cleaner, spin dryer를 거쳐 마른 웨이퍼만 FOUP로 돌려보냅니다. 바닥 타일, 천장 FFU, 벽, 후면 utility 같은 bay 배경도 있습니다.
 
-지금 버전(V1)은 프론트엔드만으로 동작합니다. 백엔드, 실제 센서 데이터, 물리 시뮬레이션은 없고, 화면에 나오는 플라즈마, slurry, 막 두께 변화는 이해를 돕기 위한 시각 효과일 뿐 계산 결과가 아닙니다.
 
 ## 기술 스택
 
@@ -38,10 +37,6 @@ npm run dev
 | `npm run test:e2e` | E2E 테스트 (WebGL2, WebGPU 각각 실행) |
 | `npm run validate:config` | 장비 치수 설정, 템플릿, 계측 정의, bay 배치 검사 |
 
-E2E 테스트와 `qa/` 폴더의 스크립트는 PC에 설치된 Google Chrome을 창으로 띄워서 실행합니다.
-리눅스라면 화면이 있는 환경(DISPLAY 설정)에서 돌려야 합니다. 앱을 실행하는 데는 필요 없습니다.
-
-화면 캡처는 `node qa/shoot.mjs webgl2 qa/out/<폴더> qa/views/<뷰 목록>.json`으로 찍습니다. `qa/views/`에 장비별 뷰 목록이 있습니다. 성능은 `node qa/perf.mjs webgl2`로 잽니다.
 
 부품 형상을 OBJ 파일로 내보내려면 `node --import tsx scripts/export-geometry-obj.ts`를 실행하세요.
 결과는 `assets/exports/`에 저장됩니다.
@@ -104,11 +99,3 @@ docs/              설계 문서
 - `docs/status.md` 진행 상황, 테스트 결과, 성능 측정값
 - `docs/flickering_solutions.md` tree 폭을 바꿀 때 3D 화면이 깜빡이는 원인과 해결 방안 (후속 작업)
 - `assets/ATTRIBUTIONS.md` 외부 자료 출처
-
-## 참고
-
-- 모든 치수는 특정 장비의 실제 도면이 아니라 일반적인 구조를 바탕으로 정한 가정값입니다.
-- 개발과 테스트는 Ubuntu 22.04, RTX 4070 SUPER, Chrome 148에서 했습니다.
-- 리눅스용 Chrome은 기본 설정에서 WebGPU를 지원하지 않아 WebGL2로 실행됩니다.
-  WebGPU로 보려면 Chrome을 `--enable-unsafe-webgpu --enable-features=Vulkan` 옵션으로 실행하세요.
-- macOS와 Safari에서는 아직 테스트하지 않았습니다.
