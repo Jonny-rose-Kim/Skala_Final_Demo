@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.oht-geometry-config/1",
-  "geometry_revision": "clw08v2-oht-1.0.0",
+  "geometry_revision": "clw08v2-oht-1.1.0",
   "template_id": "clw08v2_oht",
   "title": "Cleanway CLW-08v2 based overhead hoist transport vehicle on the bay rail (representative mechanism)",
   "source": {
@@ -18,8 +18,8 @@
     "azimuth": "phi in degrees from +X toward +Z"
   },
   "rail": {
-    "z0": -7.0,
-    "z1": 5.8,
+    "z0": -9.0,
+    "z1": 7.2,
     "bottom_y": 2.9,
     "height": 0.12,
     "width": 0.1,
@@ -55,8 +55,8 @@
       0.05,
       0.03
     ],
-    "travel_reference_z": -6.3,
-    "park_position_z": -6.3
+    "travel_reference_z": -8.0,
+    "park_position_z": -8.0
   },
   "hoist": {
     "stroke": 1.5,

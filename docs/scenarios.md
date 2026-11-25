@@ -59,7 +59,7 @@ Follow 토글을 켜면 단계가 바뀔 때 해당 장비가 선택되고 카�
 
 | Id | 종류 | 내용 |
 | --- | --- | --- |
-| `route-dep-etch-clean-v1` | linked (기본) | `RT-DEP-ETCH-CLEAN` v1, 308.5 s. Producer 증착 -> 외부 노광(시연 전환 카드) -> OHT 1구간 -> Tactras 식각 -> 외부 strip(카드) -> OHT 2구간 -> CELLESTA 세정 |
+| `route-dep-etch-clean-v1` | linked (기본) | `RT-DEP-ETCH-CLEAN` v1, 314.5 s. Producer 증착 -> 외부 노광(시연 전환 카드) -> OHT 1구간 -> Tactras 식각 -> 외부 strip(카드) -> OHT 2구간 -> CELLESTA 세정 |
 | `producer-deposition-cycle-v1` | standalone | FOUP -> cell A -> 증착 -> 복귀 (bare Si 입고) |
 | `tactras-etch-cycle-v1` | standalone | ESC clamp -> pump / gas -> ignition -> main etch -> RF off -> de-clamp (mask가 있는 입고) |
 | `cellesta-clean-cycle-v1` | standalone | Dry in -> ready -> pre-wet -> chemical -> rinse -> IPA·분위기 건조 -> spin-down -> dry-confirmed -> dry out |
@@ -68,3 +68,5 @@ Follow 토글을 켜면 단계가 바뀔 때 해당 장비가 선택되고 카�
 단계 순서는 팀 합성 데이터셋의 recipe step 순서를 참고했다. 예를 들어 식각은 PUMPDOWN, GAS_STABILIZE, PLASMA_IGNITION, MAIN_ETCH, RF_OFF_PURGE이고, 세정은 LOAD, PRE_WET, CHEM_CLEAN, REACTION_HOLD, DI_RINSE, SPIN_DRY, UNLOAD다. 시간은 시연용으로 줄였고 recipe 값이 아니다.
 
 Legacy V1 시나리오(ccp, remote, cmp, oht, route A/B)는 `?fixture=legacy-v1`에서만 나온다.
+
+2026-11-25: 장비 간격을 1.4배로 넓히면서 CLW 이동 구간을 11 s로 늘렸다(legacy OHT는 8 s 그대로). 최고 시연 속도를 1 m/s 아래로 유지하기 위한 값이며 정격 속도가 아니다. Route 길이는 308.5 s에서 314.5 s가 되었다(leg 1: 76.6-117.6 s, leg 2: 197.2-238.2 s).

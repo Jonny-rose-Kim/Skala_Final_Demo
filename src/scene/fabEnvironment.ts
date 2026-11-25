@@ -260,17 +260,7 @@ export class FabEnvironment {
     mkWall("env.wall.back", mergeMeshData([box(w.back_x, w.back_x + t, wy0, wy1, w.z0, w.z1), ...seamsX(w.back_x - 0.001, w.z0, w.z1)]), box(w.back_x - 0.01, w.back_x, wy0, wy0 + w.base_height, w.z0, w.z1), [w.back_x, 0, 0], [1, 0, 0]);
     mkWall("env.wall.front", box(w.front_x - t, w.front_x, wy0, wy1, w.z0, w.z1), box(w.front_x, w.front_x + 0.01, wy0, wy0 + w.base_height, w.z0, w.z1), [w.front_x, 0, 0], [-1, 0, 0]);
     mkWall("env.wall.south", box(w.front_x - t, w.back_x + t, wy0, wy1, w.z0 - t, w.z0), box(w.front_x, w.back_x, wy0, wy0 + w.base_height, w.z0, w.z0 + 0.01), [0, 0, w.z0], [0, 0, -1]);
-    const yr = cfg.zones?.yellow_room;
-    if (yr) {
-      // north wall with the aisle passage and a window band into the yellow-light room
-      const [ox0, ox1] = yr.opening;
-      const wn = yr.window;
-      const piece = (xa: number, xb: number, ya: number, yb: number) => box(xa, xb, ya, yb, w.z1, w.z1 + t);
-      const pieces = [piece(w.front_x - t, ox0, wy0, wy1), piece(ox1, wn.x0, wy0, wy1), piece(wn.x1, w.back_x + t, wy0, wy1), piece(wn.x0, wn.x1, wy0, wy0 + wn.y0), piece(wn.x0, wn.x1, wy0 + wn.y1, wy1), piece(ox0, ox1, wy0 + 2.4, wy1)];
-      const frame = [box(wn.x0, wn.x1, wy0 + wn.y0 - 0.03, wy0 + wn.y0, w.z1 - 0.02, w.z1 + t + 0.02, 0.003), box(wn.x0, wn.x1, wy0 + wn.y1, wy0 + wn.y1 + 0.03, w.z1 - 0.02, w.z1 + t + 0.02, 0.003)];
-      const bases = [box(w.front_x, ox0, wy0, wy0 + w.base_height, w.z1 - 0.01, w.z1), box(ox1, w.back_x, wy0, wy0 + w.base_height, w.z1 - 0.01, w.z1)];
-      mkWall("env.wall.north", mergeMeshData([...pieces, ...frame]), mergeMeshData(bases), [0, 0, w.z1], [0, 0, 1]);
-    } else mkWall("env.wall.north", box(w.front_x - t, w.back_x + t, wy0, wy1, w.z1, w.z1 + t), box(w.front_x, w.back_x, wy0, wy0 + w.base_height, w.z1 - 0.01, w.z1), [0, 0, w.z1], [0, 0, 1]);
+    mkWall("env.wall.north", box(w.front_x - t, w.back_x + t, wy0, wy1, w.z1, w.z1 + t), box(w.front_x, w.back_x, wy0, wy0 + w.base_height, w.z1 - 0.01, w.z1), [0, 0, w.z1], [0, 0, 1]);
     // ---------------------------------------------------------------- rear utility chase
     const u = cfg.utilities;
     const tz0 = f.z0 + 0.3;
@@ -330,7 +320,7 @@ export class FabEnvironment {
     }
     // ---------------------------------------------------------------- human-level zones (v2.1)
     if (cfg.zones) {
-      this.zones = new FabZones(scene, this.root, floorY, this.ceilingY, cfg.zones, { x0: w.front_x, x1: w.back_x, wallT: t });
+      this.zones = new FabZones(scene, this.root, floorY, this.ceilingY, cfg.zones);
       this.triangles += this.zones.stats().triangles;
     }
   }
@@ -380,7 +370,6 @@ export class FabEnvironment {
     this.root.setEnabled(s.visible);
     if (!s.visible) return;
     this.overhead?.update(camera, target, s.ceiling);
-    this.zones?.update(camera, s.ceiling, s.walls);
     const ceilingOn = s.ceiling && camera.y < this.ceilingY - 0.05;
     for (const m of this.ceiling) m.setEnabled(ceilingOn);
     for (const wl of this.walls) {

@@ -11,7 +11,7 @@
     "textures": 4,
     "accessors": 100,
     "triangles": 4772,
-    "bytes": 704004
+    "bytes": 703472
   },
   "after": {
     "nodes": 22,
@@ -20,7 +20,7 @@
     "textures": 4,
     "accessors": 105,
     "triangles": 4772,
-    "bytes": 702836
+    "bytes": 702304
   },
   "semanticNodesUnchanged": true
 }

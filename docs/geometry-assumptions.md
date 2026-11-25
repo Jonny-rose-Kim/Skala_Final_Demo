@@ -108,7 +108,7 @@ Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-
 
 **Load port seat:** 모두 rail 선 x = -1.974, deck 높이 0.9 m다. OHT로 계산하면 세 station 모두 측면 오차 0 mm, hoist 1.081 m다(`npm run validate:config`).
 
-**Z 배치:** PRODUCER -4.3, ETCH 0, CLEAN 3.6. Bay 환경은 `config/environment/fab-bay-v2.json`이다.
+**Z 배치:** PRODUCER -6.02, ETCH 0, CLEAN 5.04 (2026-11-25, instances-v6). 이전 배치(-4.3, 0, 3.6)보다 장비 중심 간격이 1.4배이고, 장비 사이 빈 공간은 0.97 / 0.66 m에서 2.69 / 2.10 m가 되었다. 나중에 OHT 여러 대와 복잡한 경로가 들어올 자리를 위한 것이다. Bay 환경은 `config/environment/fab-bay-v2.json`(v2.2, 바닥 z -9.4..7.8)이고, CLW rail은 z -9.0..7.2, park는 -8.0이다.
 
 ## Bay 환경 v2.1: 공개 다큐멘터리 영상을 참고한 배경 (2026-11-25)
 
@@ -128,10 +128,8 @@ Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-
 - **장식 차량과 FOUP:**
   - 장식 차량은 CLW GLB 외장을 복사하되 호기 번호와 표시창은 뺐다(차량 ID가 둘로 보이지 않도록). 움직이지 않는다.
   - 선반의 FOUP와 장식 차량은 배경이다. fleet, WIP, 재고 상태가 아니다.
-- **사람 눈높이 구역(`src/scene/fabZones.ts`):**
-  - 북쪽 벽 너머 노란 조명의 노광 구역. 통로 출입구와 창 band로 보이고, track형 장비 3줄, load port와 FOUP, 신호등, 모니터가 있다.
-  - 이 구역은 route의 외부 노광 단계(S20)를 장면 안에서 보여 주는 배경이다. 모델링된 장비가 아니다.
-  - 통로 벽 쪽 사물함 2열(작은 문, keypad, 라벨 card), 건물 기둥 2개, 통로 바닥 위치 번호 45-48.
+- **사람 눈높이 구역(`src/scene/fabZones.ts`):** 통로 벽 쪽 사물함 2열(작은 문, keypad, 라벨 card), 건물 기둥 2개, 통로 바닥 위치 번호 45-48.
+  - 노란 조명 노광 구역은 2026-11-25에 넣었다가 필요 없다는 결정으로 같은 날 뺐다.
 - **장비 세부:**
   - FOUP: 짙은 연기색 shell, 뒤와 양옆의 호박색 창 plate(세로 rib과 볼트), 노란 side handle.
   - Load port: 개구부 위 흰 indicator panel과 꺼진 상태의 LED lens 8개(녹·황·적·청). 켜진 상태는 표시하지 않는다.
@@ -139,5 +137,4 @@ Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-
 - **보기 편의:**
   - 천장 반송층은 카메라가 천장 위에 있으면 통째로 숨는다.
   - 카메라와 target 사이를 막는 chunk만 따로 숨는다(2.4 m 단위).
-  - 노란 구역의 천장과 벽도 bay 천장·벽과 같은 규칙으로 숨는다.
 - **모든 치수와 배치는 가정이다.** 실제 팹의 rail 높이, 선반 간격, 구역 배치가 아니다.

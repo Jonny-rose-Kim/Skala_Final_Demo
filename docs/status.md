@@ -3,7 +3,8 @@
 ## Bay 환경 v2.1과 OHT livery (2026-11-25)
 
 - **OHT 차체:** SK hynix 팹 OHT 공개 사진 기준 외형으로 바꿨다. 로고, 호기 번호 V001, LED 표시창(정적 식별만), 비상정지, 센서 창, 경고 라벨이 있다. Template은 1.1.0이다.
-- **배경:** 공개 다큐멘터리 영상 캡처를 참고했다. 1.2 m 천장 그리드, LED 패널, CCTV, 천장 반송층(rail 3개, 분기, FOUP 선반, 정지 장식 차량 6대), 노란 조명 노광 구역, 사물함, 기둥, 바닥 번호를 넣었다. 자세한 내용은 `docs/geometry-assumptions.md`의 "Bay 환경 v2.1"에 있다.
+- **배경:** 공개 다큐멘터리 영상 캡처를 참고했다. 1.2 m 천장 그리드, LED 패널, CCTV, 천장 반송층(rail 3개, 분기, FOUP 선반, 정지 장식 차량 6대), 사물함, 기둥, 바닥 번호를 넣었다. 노란 조명 노광 구역은 넣었다가 뺐다.
+- **배치:** 장비 중심 간격을 1.4배로 넓혔다(PRODUCER z -6.02, ETCH 0, CLEAN 5.04). CLW rail은 z -9.0..7.2, park는 -8.0이다. Route는 314.5 s다. 자세한 내용은 `docs/geometry-assumptions.md`의 "Bay 환경 v2.1"에 있다.
 - **장비:** FOUP 외형(검은 shell, 호박색 창, 노란 handle), load port LED lens panel, CELLESTA nozzle head를 바꿨다.
 - **고친 버그:** GLB part의 `build()`가 같은 mesh data를 돌려줘서 `EquipmentInstance`가 그 데이터를 제자리에서 이동시키고 있었다. 이제 호출마다 복사본을 돌려준다.
 - **검증:** typecheck, 단위 146, E2E 62(WebGPU, WebGL2)를 모두 통과했다. GLB validator는 error 0이다. 캡처는 `qa/views/fab-realism.json`, `fab-details.json`, `oht-livery.json`에 있다.

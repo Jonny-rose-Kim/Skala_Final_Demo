@@ -28,7 +28,7 @@
 | Template | `ccp_pecvd_single_wafer_300` 1.3.0 | `producer_se_ccp_twin_300` 1.0.0 | Geometry `producer-se-ccp-cell-1.0.0` |
 | Template | `remote_pecvd_upstream_icp` 1.1.0 | `tactras_oxide_ccp_rie_300` 1.0.0 | Geometry `tactras-oxide-rie-1.0.0` |
 | Template | `sti_cmp_rotary_single_platen` 1.1.0 | `cellesta_i_md_clean_300` 1.0.0 | Geometry `cellesta-i-md-clean-1.0.0` |
-| Template | `oht_single_vehicle` 1.1.0 | `clw08v2_oht` 1.1.0 (1.0.0: 무지 차체) | Geometry `clw08v2-oht-1.0.0` |
+| Template | `oht_single_vehicle` 1.1.0 | `clw08v2_oht` 1.1.0 (1.0.0: 무지 차체) | Geometry `clw08v2-oht-1.1.0` (rail z -9.0..7.2, ceiling 4.4 m) |
 | Family | `CCP_PECVD`, `REMOTE_PECVD`, `STI_CMP_ROTARY`, `OHT` | `PECVD_TWIN_CLUSTER`, `ETCH_CCP_RIE_CLUSTER`, `WET_CLEAN_SINGLE_WAFER`, `OHT` | `EquipmentRole`에 `etch`, `wet_clean` 추가 |
 | Station | `LP.PECVD-01.CH-A`, `LP.REMOTE-01`, `LP.CMP-01` | `LP.PRODUCER-01`, `LP.ETCH-01`, `LP.CLEAN-01` | 모두 rail 선 x = -1.974 위 |
 | Component (예) | `pedestal`, `stage`, `platen` ... | Producer cell A는 CCP id 유지(`pedestal` 등, nodeKey `mod01.cell_a.*`), cell B는 `cellb_*`; Tactras `esc_puck`, `focus_ring`, `lower_electrode_base`, `backside_he_line` ...; CELLESTA `spin_chuck`, `cup_guard`, `dispense_arm`, `supply_ipa` ... | nodeKey는 template마다 고정 |
@@ -53,7 +53,7 @@
 
 ## 4. Route와 웨이퍼 상태
 
-`RT-DEP-ETCH-CLEAN` v1, 길이 308.5 s(presentation time).
+`RT-DEP-ETCH-CLEAN` v1, 길이 314.5 s(presentation time).
 
 1. `S10_PRODUCER_DEPOSITION`: FOUP(LP.PRODUCER-01) -> EFEM -> load lock -> shuttle -> cell A -> 증착 -> 복귀. 산화막(`target_oxide`)만 생긴다.
 2. `S20_EXTERNAL_LITHOGRAPHY`: 장면 밖 공정. FOUP는 LP.PRODUCER-01에 닫힌 채 있고, 전환 카드가 뜨며, 이 단계 **끝**에서 photoresist mask가 생긴다.

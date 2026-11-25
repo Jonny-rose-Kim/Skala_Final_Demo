@@ -1,18 +1,325 @@
 [
-  { "id": "01_fab_overview", "overview": true, "scenario": "route-dep-etch-clean-v1", "time": 100, "cam": [205, 56, 15.5, [-0.2, 0.2, -0.4]], "ui": true },
-  { "id": "02_producer_exterior", "instance": "PRODUCER-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 30, "local": true, "cam": [200, 66, 6.0, [-1.1, 0.2, 0.3]] },
-  { "id": "03_producer_twin_interior", "instance": "PRODUCER-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 265, "sweepDeg": 95 }, "scenario": "route-dep-etch-clean-v1", "time": 37, "local": true, "cam": [300, 55, 2.9, [0.05, 0.05, 0.5]], "ui": true },
-  { "id": "04_tactras_exterior", "instance": "ETCH-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 120, "local": true, "cam": [205, 64, 7.0, [-1.4, 0.3, 0.0]] },
-  { "id": "05_tactras_pm01_cutaway", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 152, "local": true, "cam": [262, 76, 1.15, [0.0, -0.05, 0]], "ui": true },
-  { "id": "06_tactras_lower_feeds", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 152, "local": true, "cam": [262, 98, 1.4, [0.0, -0.45, 0]] },
-  { "id": "07_cellesta_exterior", "instance": "CLEAN-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 240, "local": true, "cam": [205, 62, 6.6, [-0.7, 0.3, 0.0]] },
-  { "id": "08_cellesta_chemical", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 263, "local": true, "cam": [190, 52, 1.25, [0.05, 0.0, 0.0]], "ui": true },
-  { "id": "09_cellesta_drying", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 274.5, "local": true, "cam": [190, 52, 1.25, [0.05, 0.0, 0.0]], "ui": true },
-  { "id": "10_cellesta_transfer_robot", "instance": "CLEAN-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 200, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 287, "local": true, "cam": [300, 48, 2.3, [-0.9, 0.0, 0.0]] },
-  { "id": "11_oht_pickup", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 89.5, "cam": [235, 70, 2.6, [-1.974, 0.9, -4.3]] },
-  { "id": "12_oht_dropoff", "instance": "OHT-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 107.4, "cam": [235, 70, 2.6, [-1.974, 0.9, 0.0]], "ui": true },
-  { "id": "13_foup_section", "instance": "PRODUCER-01", "mode": "assembled", "scenario": "route-dep-etch-clean-v1", "time": 5, "carrierSection": true, "cam": [230, 70, 1.3, [-1.974, 0.3, -4.3]], "ui": true },
-  { "id": "14_select_focus", "instance": "ETCH-01", "mode": "cutaway", "cutaway": { "azimuthDeg": 255, "sweepDeg": 110 }, "scenario": "route-dep-etch-clean-v1", "time": 152, "local": true, "select": "focus_ring", "cam": [262, 70, 0.7, [0.1, 0.0, 0]], "ui": true },
-  { "id": "15_covers_removed", "instance": "PRODUCER-01", "mode": "assembled", "covers": "removed", "scenario": "route-dep-etch-clean-v1", "time": 30, "local": true, "cam": [215, 58, 5.2, [-0.9, 0.2, 0.3]] },
-  { "id": "16_exploded_cellesta", "instance": "CLEAN-01", "mode": "exploded", "scenario": "route-dep-etch-clean-v1", "time": 263, "local": true, "cam": [215, 60, 2.6, [0.0, 0.0, 0.0]], "ui": true }
+ {
+  "id": "01_fab_overview",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   205,
+   56,
+   15.5,
+   [
+    -0.2,
+    0.2,
+    -0.4
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "02_producer_exterior",
+  "instance": "PRODUCER-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 30,
+  "local": true,
+  "cam": [
+   200,
+   66,
+   6.0,
+   [
+    -1.1,
+    0.2,
+    0.3
+   ]
+  ]
+ },
+ {
+  "id": "03_producer_twin_interior",
+  "instance": "PRODUCER-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 265,
+   "sweepDeg": 95
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 37,
+  "local": true,
+  "cam": [
+   300,
+   55,
+   2.9,
+   [
+    0.05,
+    0.05,
+    0.5
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "04_tactras_exterior",
+  "instance": "ETCH-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 120,
+  "local": true,
+  "cam": [
+   205,
+   64,
+   7.0,
+   [
+    -1.4,
+    0.3,
+    0.0
+   ]
+  ]
+ },
+ {
+  "id": "05_tactras_pm01_cutaway",
+  "instance": "ETCH-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 255,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 152,
+  "local": true,
+  "cam": [
+   262,
+   76,
+   1.15,
+   [
+    0.0,
+    -0.05,
+    0
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "06_tactras_lower_feeds",
+  "instance": "ETCH-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 255,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 152,
+  "local": true,
+  "cam": [
+   262,
+   98,
+   1.4,
+   [
+    0.0,
+    -0.45,
+    0
+   ]
+  ]
+ },
+ {
+  "id": "07_cellesta_exterior",
+  "instance": "CLEAN-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 240,
+  "local": true,
+  "cam": [
+   205,
+   62,
+   6.6,
+   [
+    -0.7,
+    0.3,
+    0.0
+   ]
+  ]
+ },
+ {
+  "id": "08_cellesta_chemical",
+  "instance": "CLEAN-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 200,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 263,
+  "local": true,
+  "cam": [
+   190,
+   52,
+   1.25,
+   [
+    0.05,
+    0.0,
+    0.0
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "09_cellesta_drying",
+  "instance": "CLEAN-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 200,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 280.5,
+  "local": true,
+  "cam": [
+   190,
+   52,
+   1.25,
+   [
+    0.05,
+    0.0,
+    0.0
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "10_cellesta_transfer_robot",
+  "instance": "CLEAN-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 200,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 287,
+  "local": true,
+  "cam": [
+   300,
+   48,
+   2.3,
+   [
+    -0.9,
+    0.0,
+    0.0
+   ]
+  ]
+ },
+ {
+  "id": "11_oht_pickup",
+  "instance": "OHT-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 89.5,
+  "cam": [
+   235,
+   70,
+   2.6,
+   [
+    -1.974,
+    0.9,
+    -6.02
+   ]
+  ]
+ },
+ {
+  "id": "12_oht_dropoff",
+  "instance": "OHT-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 107.4,
+  "cam": [
+   235,
+   70,
+   2.6,
+   [
+    -1.974,
+    0.9,
+    0.0
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "13_foup_section",
+  "instance": "PRODUCER-01",
+  "mode": "assembled",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 5,
+  "carrierSection": true,
+  "cam": [
+   230,
+   70,
+   1.3,
+   [
+    -1.974,
+    0.3,
+    -6.02
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "14_select_focus",
+  "instance": "ETCH-01",
+  "mode": "cutaway",
+  "cutaway": {
+   "azimuthDeg": 255,
+   "sweepDeg": 110
+  },
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 152,
+  "local": true,
+  "select": "focus_ring",
+  "cam": [
+   262,
+   70,
+   0.7,
+   [
+    0.1,
+    0.0,
+    0
+   ]
+  ],
+  "ui": true
+ },
+ {
+  "id": "15_covers_removed",
+  "instance": "PRODUCER-01",
+  "mode": "assembled",
+  "covers": "removed",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 30,
+  "local": true,
+  "cam": [
+   215,
+   58,
+   5.2,
+   [
+    -0.9,
+    0.2,
+    0.3
+   ]
+  ]
+ },
+ {
+  "id": "16_exploded_cellesta",
+  "instance": "CLEAN-01",
+  "mode": "exploded",
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 263,
+  "local": true,
+  "cam": [
+   215,
+   60,
+   2.6,
+   [
+    0.0,
+    0.0,
+    0.0
+   ]
+  ],
+  "ui": true
+ }
 ]

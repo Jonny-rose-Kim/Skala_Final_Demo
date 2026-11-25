@@ -53,7 +53,7 @@ viewed locally and are not redistributed):
 - Applied Materials, Producer CVD page (HTTP 403 when fetched on 2026-11-24, not consulted) and 2001 report link (platform naming only): Producer, Twin-Chamber, SE.
 
 Bay surroundings v2.1 (2026-11-25): the ceiling grid, overhead AMHS layer (rails, side-track buffers, vehicles), aisle
-lockers, columns, floor markers, the yellow-light lithography room, the FOUP shell / window plates, load port
+lockers, columns, floor markers, the FOUP shell / window plates, load port
 indicator panels and the spin-module nozzle head follow screenshots of public Korean broadcast documentary footage of
 a memory fab, supplied by the user. They were used as visual reference only: no frame, logo, broadcaster mark or
 person is reproduced or stored in the repository, and no dimension was measured from them.

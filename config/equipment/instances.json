@@ -1,6 +1,6 @@
 {
   "$schema_id": "pecvd-twin.equipment-instances/1",
-  "config_revision": "instances-v5",
+  "config_revision": "instances-v6",
   "default": [
     {
       "instanceId": "PRODUCER-01",
@@ -9,7 +9,7 @@
       "position": [
         0.9,
         0.0,
-        -4.3
+        -6.02
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
@@ -35,7 +35,7 @@
       "position": [
         0.813,
         0.168,
-        3.6
+        5.04
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",
@@ -61,7 +61,7 @@
       "position": [
         -1.974,
         0.118,
-        -4.3
+        -6.02
       ],
       "rotationYDeg": 0,
       "detailLevel": "detailed",

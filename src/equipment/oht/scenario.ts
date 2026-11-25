@@ -14,19 +14,26 @@ import { hoistExtensionForSeat, OHT_LAYOUT, projectOnRail, type OhtLayout } from
 import { OHT_TEMPLATE_ID } from "./template";
 import { idleToolPose } from "../idle";
 
-const rows = buildPhases([
+/** Transfer phases with a given travel duration (the vehicle moves along the rail only in the travel phase). */
+export function ohtTransferScenario(id: string, title: string, travelSec: number): VisualScenario {
+  const r = transferRows(travelSec);
+  return { id, title, durationSec: r.durationSec, phases: r.phases, renderSource: "illustrative" };
+}
+
+const transferRows = (travelSec: number) => buildPhases([
   { id: "oht_ready", label: "Ready", labelKo: "대기 (park)", duration: 2, equipment: "oht" },
   { id: "oht_align_pickup", label: "Align at pickup", labelKo: "Pickup station 정렬", duration: 6, equipment: "oht" },
   { id: "oht_lower_empty", label: "Lower empty gripper", labelKo: "빈 gripper 하강", duration: 4, equipment: "oht" },
   { id: "oht_engage", label: "Engage carrier", labelKo: "Carrier 결합 (gripper close)", duration: 1.5, equipment: "oht" },
   { id: "oht_lift_loaded", label: "Lift loaded", labelKo: "적재 상승", duration: 4, equipment: "oht" },
-  { id: "oht_travel", label: "Travel", labelKo: "주행 (retracted pose)", duration: 8, equipment: "oht" },
+  { id: "oht_travel", label: "Travel", labelKo: "주행 (retracted pose)", duration: travelSec, equipment: "oht" },
   { id: "oht_align_dest", label: "Align at destination", labelKo: "Destination 정렬", duration: 1, equipment: "oht" },
   { id: "oht_lower_loaded", label: "Lower loaded", labelKo: "적재 하강", duration: 4, equipment: "oht" },
   { id: "oht_release", label: "Seat / release", labelKo: "Seating·gripper 해제", duration: 1.5, equipment: "oht" },
   { id: "oht_lift_empty", label: "Lift empty", labelKo: "빈 gripper 상승", duration: 4, equipment: "oht" },
   { id: "oht_complete", label: "Complete", labelKo: "완료", duration: 2, equipment: "oht" },
 ]);
+const rows = transferRows(8);
 
 export const OHT_SCENARIO: VisualScenario = { id: "oht-transfer-v1", title: "OHT FOUP transfer (pickup → travel → dropoff)", durationSec: rows.durationSec, phases: rows.phases, renderSource: "illustrative" };
 

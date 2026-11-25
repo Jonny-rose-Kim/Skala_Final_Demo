@@ -261,6 +261,20 @@ describe("GLB sources", () => {
       expect(new Set(b.glb!.manifest.nodes.map((n) => n.partKey)).size).toBe(b.glb!.manifest.nodes.length);
     }
   });
+  it("the OHT shell GLB is authored at the rest pose of the current config (rail start, body heights)", () => {
+    // a config change without `npm run assets:build` would leave the shell away from the procedural mechanism
+    const b = getBundle("clw08v2_oht")!;
+    const L = b.layout as unknown as { rail: { z0: number }; vehicle: { bodyY0: number; bodyY1: number } };
+    const body = b.glb!.manifest.nodes.filter((n) => n.jointId === "travel" && n.assetId === "carrier_bay_guard");
+    expect(body.length).toBeGreaterThan(0);
+    for (const n of body) {
+      const zc = (n.boundsInstance.min[2] + n.boundsInstance.max[2]) / 2;
+      expect(Math.abs(zc - L.rail.z0), n.partKey).toBeLessThan(0.05);
+    }
+    const yMax = Math.max(...b.glb!.manifest.nodes.filter((n) => n.assetId === "vehicle_body").map((n) => n.boundsInstance.max[1]));
+    expect(yMax).toBeGreaterThan(L.vehicle.bodyY1 - 0.01);
+    expect(yMax).toBeLessThan(L.vehicle.bodyY1 + 0.1);
+  });
 });
 
 describe("agent contract adapter", () => {

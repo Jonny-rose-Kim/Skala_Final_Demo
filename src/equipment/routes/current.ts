@@ -23,7 +23,8 @@ import { stationHandlingPhases, type ProcessSegment } from "../handling/handling
 import { applyStationState, stationStateAt, stationTimeline, type StationTimeline } from "../handling/stationScenario";
 import type { StationPlan } from "../handling/stationSequence";
 import { idleToolPose } from "../idle";
-import { OHT_SCENARIO, ohtSequence, planTransfer } from "../oht/scenario";
+import { ohtSequence, planTransfer } from "../oht/scenario";
+import { CLW_TRANSFER_SCENARIO as OHT_SCENARIO } from "../clw/scenario";
 import { PRODUCER_STATION_PLAN } from "../producer/handling";
 import { PRODUCER_PROCESS_SEGMENT } from "../producer/scenario";
 import { PRODUCER_TEMPLATE_ID } from "../producer/template";
@@ -157,7 +158,7 @@ export function currentRoutePreview(t: number, seed: number, animT: number, ctx:
     out.routeCard = card;
   };
   const leg = (plan: typeof leg1, t0: number, f: IllustrativeFilmState) => {
-    const st = ohtSequence(CLW_LAYOUT, plan, t - t0);
+    const st = ohtSequence(CLW_LAYOUT, plan, t - t0, OHT_SCENARIO);
     const ip = out.instances[oht.instanceId];
     ip.joints = st.joints;
     ip.flags = st.flags;
@@ -170,8 +171,8 @@ export function currentRoutePreview(t: number, seed: number, animT: number, ctx:
   };
   // the OHT stays where its last leg ended (or parked before leg 1)
   const ohtIp = out.instances[oht.instanceId];
-  if (t >= T.leg1[1]) ohtIp.joints = ohtSequence(CLW_LAYOUT, leg1, OHT_SCENARIO.durationSec).joints;
-  if (t >= T.leg2[1]) ohtIp.joints = ohtSequence(CLW_LAYOUT, leg2, OHT_SCENARIO.durationSec).joints;
+  if (t >= T.leg1[1]) ohtIp.joints = ohtSequence(CLW_LAYOUT, leg1, OHT_SCENARIO.durationSec, OHT_SCENARIO).joints;
+  if (t >= T.leg2[1]) ohtIp.joints = ohtSequence(CLW_LAYOUT, leg2, OHT_SCENARIO.durationSec, OHT_SCENARIO).joints;
   if (t < T.litho[0]) {
     station(PRODUCER_STATION_PLAN, PRODUCER_PROCESS_SEGMENT, T.dep, dep, depSt.stationId, film);
     out.phaseFocusInstanceId = dep.instanceId;
