@@ -100,7 +100,7 @@ def build(env, P):
         xo = sx * (hx + 0.0015)
         side_decals.append(decal(f"vb_num{sx}", (xo, y1 - 0.15, z0 + 0.14), (sx, 0), (0.13, 0.041), num_tight, A, P["livery_decal"]))
         side_labels.append(decal(f"vb_lid{sx}", (xo, (y0 + yt) / 2 - 0.01, z0 - 0.08), (sx, 0), (0.2, 0.146), R["panel_outline"], A, P["livery_decal"]))
-    G.add("vehicle_body", "livery", "livery_decal", side_decals, cover=True, **deco)
+    G.add("vehicle_body", "number", "livery_decal", side_decals, cover=True, **deco)
     G.add("vehicle_body", "labels", "livery_decal", side_labels, cover=True, lod="fine", **deco)
 
     # ------------------------------------------------------------------ end faces
@@ -136,10 +136,10 @@ def build(env, P):
         G.add("vehicle_face_fittings", "breaker_lever", "paint_offwhite", [box(f"ff_lever{s}", at(s, 0.168, fy(0.54) + 0.008, 0.017), (0.01, 0.016, 0.006), P["paint_offwhite"], bevel=0.0015, segments=1)], **dict(sem, lod="fine"))
         # decals: logo and number (always), small labels (fine LOD)
         dz = 0.0015
-        G.add("vehicle_face_fittings", "livery", "livery_decal", [
-            decal(f"ff_logo{s}", at(s, 0.0, fy(0.28), dz), n, (0.28, 0.153), R["logo"], A, P["livery_decal"]),
-            decal(f"ff_num{s}", at(s, 0.0, fy(0.447), dz), n, (0.2, 0.0635), num_tight, A, P["livery_decal"]),
-        ], **deco)
+        # logo and vehicle number are separate nodes, so scenery copies of the shell can keep the logo and drop
+        # the identity (number, display)
+        G.add("vehicle_face_fittings", "logo", "livery_decal", [decal(f"ff_logo{s}", at(s, 0.0, fy(0.28), dz), n, (0.28, 0.153), R["logo"], A, P["livery_decal"])], **deco)
+        G.add("vehicle_face_fittings", "number", "livery_decal", [decal(f"ff_num{s}", at(s, 0.0, fy(0.447), dz), n, (0.2, 0.0635), num_tight, A, P["livery_decal"])], **deco)
         G.add("vehicle_face_fittings", "labels", "livery_decal", [
             decal(f"ff_caution{s}", at(s, -0.155, fy(0.44), dz), n, (0.05, 0.096), R["label_caution"], A, P["livery_decal"]),
             decal(f"ff_electric{s}", at(s, -0.155, fy(0.615), dz), n, (0.05, 0.096), R["label_electric"], A, P["livery_decal"]),

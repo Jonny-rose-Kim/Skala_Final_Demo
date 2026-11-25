@@ -1,7 +1,7 @@
 {
   "$schema_id": "pecvd-twin.fab-environment/1",
-  "revision": "fab-bay-v2.0.0",
-  "note": "Visual-only bay surroundings of the current bay (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2), generic design assumption: raised floor tiles, operator aisle under the OHT rail with floor markings, ceiling grid with FFU and light panels, bay walls, rear utility chase with cable tray, process piping, exhaust duct and drops to each tool's facility interface. Nothing here is equipment, a measurement or a DB entity; dimensions are not from a real fab.",
+  "revision": "fab-bay-v2.1.0",
+  "note": "Visual-only bay surroundings of the current bay (Producer SE / Tactras / CELLESTA-i MD / CLW-08v2), generic design assumption informed by public documentary footage of a memory fab (2026-11-25): raised floor tiles, operator aisle under the OHT rail with floor markings, 1.2 m square ceiling grid with flush LED panels, grid nodes and dome cameras, bay walls, rear utility chase, and an overhead AMHS layer (additional OHT rails with hanger frames, red position strips and branch curves, side-track FOUP buffers, parked decorative vehicles). Nothing here is equipment, a measurement, WIP or a DB entity: decorative vehicles and buffered FOUPs are static scenery, not fleet or inventory state. Dimensions are not from a real fab.",
   "units": "m",
   "frame": "World X / Z (Babylon left-handed, +Y up). Heights are above the bay floor (bay.floor_y in config/equipment/instances.json).",
   "floor": {
@@ -22,22 +22,42 @@
     "x1": 3.7
   },
   "ceiling": {
-    "height": 3.4,
+    "height": 4.4,
     "module": [
       1.2,
-      0.6
+      1.2
     ],
-    "tbar_width": 0.04,
+    "tbar_width": 0.035,
     "tbar_depth": 0.05,
     "ffu_pattern": [
       1,
       1,
-      0
+      1
     ],
-    "light_every": 3
+    "light_every": 3,
+    "light_rule": [
+      1,
+      2,
+      5
+    ],
+    "node_size": 0.07,
+    "cctv": [
+      [
+        -2.9,
+        -1.2
+      ],
+      [
+        -2.9,
+        4.8
+      ],
+      [
+        2.6,
+        1.0
+      ]
+    ]
   },
   "walls": {
-    "height": 3.4,
+    "height": 4.4,
     "thickness": 0.12,
     "back_x": 3.7,
     "front_x": -4.4,
@@ -77,6 +97,245 @@
         0.016,
         0.03
       ]
+    }
+  },
+  "overhead": {
+    "rail": {
+      "width": 0.2,
+      "height": 0.16,
+      "slot": 0.05,
+      "stripe_height": 0.018,
+      "marker_pitch": 0.9,
+      "hanger_pitch": 1.5,
+      "tray_width": 0.14,
+      "box_every": 4
+    },
+    "rails": [
+      {
+        "id": "R1",
+        "x": -3.35,
+        "bottom": 3.15,
+        "z0": -7.4,
+        "z1": 10.6
+      },
+      {
+        "id": "R2",
+        "x": -0.35,
+        "bottom": 3.75,
+        "z0": -7.4,
+        "z1": 10.6
+      },
+      {
+        "id": "R3",
+        "x": 1.45,
+        "bottom": 3.75,
+        "z0": -7.4,
+        "z1": 10.6
+      }
+    ],
+    "branches": [
+      {
+        "from": "R2",
+        "to": "R3",
+        "z0": -1.2,
+        "length": 2.0
+      },
+      {
+        "from": "R3",
+        "to": "R2",
+        "z0": 2.8,
+        "length": 2.0
+      }
+    ],
+    "buffers": [
+      {
+        "id": "STB-aisle",
+        "x": -3.95,
+        "bottom": 2.4,
+        "z": [
+          [
+            -7.0,
+            -3.4
+          ],
+          [
+            -2.6,
+            1.2
+          ],
+          [
+            2.0,
+            6.2
+          ]
+        ]
+      },
+      {
+        "id": "STB-rail",
+        "x": -2.58,
+        "bottom": 2.32,
+        "z": [
+          [
+            -3.4,
+            -0.9
+          ],
+          [
+            0.9,
+            2.7
+          ],
+          [
+            4.5,
+            5.6
+          ]
+        ]
+      },
+      {
+        "id": "UTB-mid",
+        "x": 0.55,
+        "bottom": 3.0,
+        "z": [
+          [
+            -6.8,
+            -1.6
+          ],
+          [
+            1.2,
+            2.4
+          ],
+          [
+            5.2,
+            6.2
+          ]
+        ]
+      }
+    ],
+    "buffer": {
+      "pitch": 0.56,
+      "depth": 0.5,
+      "fill_pattern": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+      ]
+    },
+    "vehicles": [
+      {
+        "rail": "R1",
+        "z": -5.2,
+        "foup": true
+      },
+      {
+        "rail": "R1",
+        "z": 2.4,
+        "foup": false
+      },
+      {
+        "rail": "R2",
+        "z": -4.0,
+        "foup": true
+      },
+      {
+        "rail": "R2",
+        "z": 5.2,
+        "foup": false
+      },
+      {
+        "rail": "R3",
+        "z": -2.6,
+        "foup": false
+      },
+      {
+        "rail": "R3",
+        "z": 1.8,
+        "foup": true
+      }
+    ],
+    "chunk": 2.4
+  },
+  "zones": {
+    "yellow_room": {
+      "z0": 6.6,
+      "z1": 10.8,
+      "opening": [
+        -3.9,
+        -2.45
+      ],
+      "window": {
+        "x0": -2.2,
+        "x1": 3.5,
+        "y0": 1.0,
+        "y1": 2.6
+      },
+      "light": [
+        1.0,
+        0.88,
+        0.56
+      ],
+      "rows": [
+        {
+          "x": -1.55,
+          "front": -1,
+          "z0": 7.2,
+          "z1": 10.3
+        },
+        {
+          "x": 0.35,
+          "front": 1,
+          "z0": 7.2,
+          "z1": 10.3
+        },
+        {
+          "x": 2.75,
+          "front": -1,
+          "z0": 7.2,
+          "z1": 10.3
+        }
+      ]
+    },
+    "lockers": [
+      {
+        "x": -4.38,
+        "depth": 0.44,
+        "z0": -6.9,
+        "z1": -3.7,
+        "height": 2.0
+      },
+      {
+        "x": -4.38,
+        "depth": 0.44,
+        "z0": 0.4,
+        "z1": 3.1,
+        "height": 2.0
+      }
+    ],
+    "columns": [
+      {
+        "x": -4.1,
+        "z": -2.1,
+        "size": 0.6
+      },
+      {
+        "x": -4.1,
+        "z": 4.6,
+        "size": 0.6
+      }
+    ],
+    "floor_marks": {
+      "x": -3.175,
+      "z": [
+        -5.4,
+        -1.8,
+        1.8,
+        5.4
+      ],
+      "start": 45,
+      "size": 0.42
     }
   }
 }

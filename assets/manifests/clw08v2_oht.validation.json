@@ -4,7 +4,7 @@
     "version": "2.0.0-dev.3.10",
     "errors": 0,
     "warnings": 0,
-    "infos": 14,
+    "infos": 15,
     "hints": 0,
     "messages": [
       "I UNUSED_MESH_TANGENT /meshes/3/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
@@ -19,7 +19,8 @@
       "I UNUSED_MESH_TANGENT /meshes/16/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
       "I UNUSED_MESH_TANGENT /meshes/17/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
       "I UNUSED_MESH_TANGENT /meshes/19/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
-      "I UNUSED_OBJECT /meshes/19/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
+      "I UNUSED_MESH_TANGENT /meshes/20/primitives/0/attributes/TANGENT Tangents are not used because the material has no normal texture.",
+      "I UNUSED_OBJECT /meshes/20/primitives/0/attributes/TEXCOORD_0 This object may be unused.",
       "I IMAGE_NPOT_DIMENSIONS /images/2 Image has non-power-of-two dimensions: 512x192."
     ]
   },

@@ -9,7 +9,7 @@
  */
 import { DEG, TAU } from "../../config/geometry";
 import type { PartGeometry } from "../../geometry/chamberParts";
-import { chamferedBox, mergeMeshData, rectProfile, revolveProfile, rotateYMeshData, translateMeshData, tubeAlongPath, type MeshData, type Vec3 } from "../../geometry/meshlib";
+import { chamferedBox, mergeMeshData, rectProfile, revolveProfile, rotateYMeshData, translateMeshData, tubeAlongPath, type MeshData, type Vec2, type Vec3 } from "../../geometry/meshlib";
 import { PartSink, chamfRect, type Mat } from "../../geometry/sharedParts";
 import { waferHalfMeshes, waferHalfProfiles } from "../../geometry/waferParts";
 import { buildScaraRobotParts } from "../handling/robotParts";
@@ -134,16 +134,39 @@ export function buildCellestaParts(L: CellestaLayout): PartGeometry[] {
     // authored at angle 0 (head over the spin axis): beam from the pivot to the head
     const len = a.length;
     const beam = tubeAlongPath([[pv[0], armY, pv[2]], [pv[0] + d[0] * (len - 0.03), armY, pv[2] + d[1] * (len - 0.03)]] as Vec3[], 0.011, { segments: 14 });
-    const head = chamferedBox([0.05, 0.03, 0.05], 0.004, [pv[0] + d[0] * len, armY - 0.004, pv[2] + d[1] * len]);
-    sink.fixed("arm_beam", "dispense_arm", "polymer_white", mergeMeshData([beam, head]), { cutaway: "keep", jointId: J.arm });
-    const nz: MeshData[] = [];
+    // nozzle head as in documentary close-ups of single-wafer spin modules: an L bracket around a manifold block,
+    // nozzles in one row across the arm, translucent PFA-style tapered tips
+    const phi = Math.atan2(d[1], d[0]);
+    const hx = pv[0] + d[0] * len;
+    const hz = pv[2] + d[1] * len;
+    const rowLen = (a.nozzles.length - 1) * 0.015 + 0.03;
+    const local = (md: MeshData) => translateMeshData(rotateYMeshData(md, phi), hx, 0, hz);
+    const bracket = mergeMeshData([
+      local(chamferedBox([0.006, 0.05, rowLen + 0.012], 0.0015, [-0.024, armY - 0.01, 0])),
+      local(chamferedBox([0.034, 0.006, rowLen + 0.012], 0.0015, [-0.01, armY + 0.012, 0])),
+    ]);
+    const manifold = local(chamferedBox([0.02, 0.018, rowLen], 0.002, [-0.004, armY - 0.004, 0]));
+    sink.fixed("arm_beam", "dispense_arm", "polymer_white", mergeMeshData([beam, bracket]), { cutaway: "keep", jointId: J.arm });
+    sink.fixed("arm_head", "dispense_arm", "stainless", manifold, { cutaway: "keep", jointId: J.arm, castShadow: false });
+    const fittings: MeshData[] = [];
+    const tips: MeshData[] = [];
+    const tipTop = armY - 0.016;
     a.nozzles.forEach((_, i) => {
       const off = (i - (a.nozzles.length - 1) / 2) * 0.015;
-      const nx = pv[0] + d[0] * len - d[1] * off;
-      const nzz = pv[2] + d[1] * len + d[0] * off;
-      nz.push(translateMeshData(revolveProfile(chamfRect(0, 0.0035, armY - a.nozzle_drop, armY - 0.016, 0.0008), { segments: 12 }), nx, 0, nzz));
+      const nx = hx - d[1] * off;
+      const nzz = hz + d[0] * off;
+      fittings.push(translateMeshData(revolveProfile(chamfRect(0, 0.0055, tipTop, armY - 0.012, 0.0008), { segments: 14 }), nx, 0, nzz));
+      const tip = [
+        [0, tipTop],
+        [0.0045, tipTop],
+        [0.0045, tipTop - 0.012],
+        [0.0016, armY - a.nozzle_drop],
+        [0, armY - a.nozzle_drop],
+      ] as Vec2[];
+      tips.push(translateMeshData(revolveProfile(tip, { segments: 14 }), nx, 0, nzz));
     });
-    sink.fixed("arm_nozzles", "dispense_arm", "stainless", mergeMeshData(nz), { cutaway: "keep", jointId: J.arm, castShadow: false });
+    sink.fixed("arm_nozzle_fittings", "dispense_arm", "polymer_white", mergeMeshData(fittings), { cutaway: "keep", jointId: J.arm, castShadow: false, lod: "fine" });
+    sink.fixed("arm_nozzles", "dispense_arm", "quartz", mergeMeshData(tips), { cutaway: "keep", jointId: J.arm, castShadow: false, isGlass: true });
     const hoses = tubeAlongPath([[pv[0], armY + 0.012, pv[2]], [pv[0] + d[0] * (len - 0.04), armY + 0.016, pv[2] + d[1] * (len - 0.04)]] as Vec3[], 0.006, { segments: 10 });
     sink.fixed("arm_hoses", "dispense_arm", "polymer_gray", hoses, { cutaway: "keep", jointId: J.arm, castShadow: false, lod: "fine" });
     // column + swing drive (fixed)

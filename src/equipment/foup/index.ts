@@ -60,8 +60,8 @@ const COMPONENTS: ComponentDef<OhtLayout>[] = [
     kind: "carrier",
     assembly: "carrier",
     description: "25-slot 300 mm FOUP의 shell. 안쪽 양 벽에 slot rib(25쌍)이 있고 side handle이 붙어 있다. 운반 중에는 door가 닫혀 wafer를 노출하지 않는다. FOUP 단면 보기는 seat 축을 지나는 평면으로 shell을 잘라 slot과 wafer를 보여 주며, 몇 장이 들었는지는 carrier state의 slot map과 같다.",
-    materialRef: "foup_polymer",
-    materialNote: "Polycarbonate / PEEK shell (가정)",
+    materialRef: "foup_shell",
+    materialNote: "Smoked polycarbonate shell, amber window plates, yellow side handles (외형은 공개 영상 참고, 재질은 가정)",
     selectable: true,
     explode: { dir: [0, 0, 0], distance: 0 },
     cutaway: "sector",
@@ -144,7 +144,7 @@ const PORTS: PortDef[] = [
 export function buildFoupTemplate(L: OhtLayout = OHT_LAYOUT): EquipmentTemplate<OhtLayout> {
   return {
     templateId: FOUP_TEMPLATE_ID,
-    templateRevision: "1.2.0",
+    templateRevision: "1.3.0",
     family: "CARRIER",
     displayName: "FOUP",
     title: "300 mm FOUP carrier (closed), 25 slots",
@@ -202,10 +202,34 @@ export function buildFoupParts(L: OhtLayout): PartGeometry[] {
     handles.push(box(-hl / 2 - 0.02, hl / 2 - 0.02, h * 0.62, h * 0.62 + hh, s > 0 ? hz : -hz - hd, s > 0 ? hz + hd : -hz, 0.006));
     for (const x of [-hl / 2 - 0.02, hl / 2 - 0.02]) handles.push(box(x - 0.01, x + 0.01, h * 0.62 - 0.03, h * 0.62 + hh, s > 0 ? hz : -hz - hd * 0.6, s > 0 ? hz + hd * 0.6 : -hz, 0.003));
   }
-  for (const x of [xb + 0.08, xb + 0.2, xb + 0.32]) handles.push(box(x - 0.006, x + 0.006, h - 0.002, h + 0.004, -hz + 0.03, hz - 0.03, 0.002));
+  const topRibs: SolidBox[] = [];
+  for (const x of [xb + 0.08, xb + 0.2, xb + 0.32]) topRibs.push(box(x - 0.006, x + 0.006, h - 0.002, h + 0.004, -hz + 0.03, hz - 0.03, 0.002));
+  // amber polycarbonate window plates (back and both sides) with vertical ribs and corner bolts, as on the FOUPs in
+  // documentary footage of a memory fab; the shell itself is smoked near-black polycarbonate
+  const plates: SolidBox[] = [];
+  const plateRibs: SolidBox[] = [];
+  const pt = 0.004;
+  const py0 = 0.06;
+  const py1 = h - 0.06;
+  plates.push(box(xb - pt, xb, py0, py1, -0.12, 0.12, 0.002));
+  for (let i = 0; i < 6; i++) {
+    const zr = -0.09 + i * 0.036;
+    plateRibs.push(box(xb - pt - 0.003, xb - pt, py0 + 0.02, py1 - 0.02, zr - 0.004, zr + 0.004, 0.001));
+  }
+  for (const [yy, zz] of [[py0 + 0.015, -0.1], [py0 + 0.015, 0.1], [py1 - 0.015, -0.1], [py1 - 0.015, 0.1]] as const) plateRibs.push(box(xb - pt - 0.005, xb - pt, yy - 0.007, yy + 0.007, zz - 0.007, zz + 0.007, 0.003));
+  for (const s of [-1, 1]) {
+    const xm = (xb + xr) / 2 - 0.02;
+    plates.push(box(xm - 0.1, xm + 0.1, py0 + 0.02, h * 0.58, s > 0 ? hz : -hz - pt, s > 0 ? hz + pt : -hz, 0.002));
+  }
   const handleSet = solid(handles);
-  sink.clipped("shell", "foup_body", "foup_polymer", shell.md, shell.boxes);
-  sink.clipped("handles", "foup_body", "foup_polymer", handleSet.md, handleSet.boxes);
+  const topSet = solid(topRibs);
+  const plateSet = solid(plates);
+  const plateRibSet = solid(plateRibs);
+  sink.clipped("shell", "foup_body", "foup_shell", shell.md, shell.boxes);
+  sink.clipped("top_ribs", "foup_body", "foup_shell", topSet.md, topSet.boxes);
+  sink.clipped("handles", "foup_body", "safety_marking", handleSet.md, handleSet.boxes);
+  sink.clipped("window_plates", "foup_body", "amber_polycarbonate", plateSet.md, plateSet.boxes);
+  sink.clipped("window_plate_ribs", "foup_body", "amber_polycarbonate", plateRibSet.md, plateRibSet.boxes, { castShadow: false, lod: "fine" });
   // slot ribs (25 pairs) on the inner side walls; the wafer edge rests on their top
   const ribs: SolidBox[] = [];
   const rib0 = hz - wt;

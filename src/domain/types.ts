@@ -82,6 +82,12 @@ export type MaterialRef =
   | "painted_offwhite"
   | "polymer_gray"
   | "wafer_front"
+  // added for the documentary-informed bay (2026-11-25): red position strips, FOUP shell and window plates
+  | "marking_red"
+  | "foup_shell"
+  | "amber_polycarbonate"
+  | "indicator_green"
+  | "indicator_blue"
   | "none";
 
 /** How the cutaway sector treats a component. */

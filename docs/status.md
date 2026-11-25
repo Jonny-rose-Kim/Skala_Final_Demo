@@ -1,5 +1,17 @@
 # 진행 상황 (장비 교체 2026-11-24, legacy 상세 장비 모델 2026-11-16)
 
+## Bay 환경 v2.1과 OHT livery (2026-11-25)
+
+- **OHT 차체:** SK hynix 팹 OHT 공개 사진 기준 외형으로 바꿨다. 로고, 호기 번호 V001, LED 표시창(정적 식별만), 비상정지, 센서 창, 경고 라벨이 있다. Template은 1.1.0이다.
+- **배경:** 공개 다큐멘터리 영상 캡처를 참고했다. 1.2 m 천장 그리드, LED 패널, CCTV, 천장 반송층(rail 3개, 분기, FOUP 선반, 정지 장식 차량 6대), 노란 조명 노광 구역, 사물함, 기둥, 바닥 번호를 넣었다. 자세한 내용은 `docs/geometry-assumptions.md`의 "Bay 환경 v2.1"에 있다.
+- **장비:** FOUP 외형(검은 shell, 호박색 창, 노란 handle), load port LED lens panel, CELLESTA nozzle head를 바꿨다.
+- **고친 버그:** GLB part의 `build()`가 같은 mesh data를 돌려줘서 `EquipmentInstance`가 그 데이터를 제자리에서 이동시키고 있었다. 이제 호출마다 복사본을 돌려준다.
+- **검증:** typecheck, 단위 146, E2E 62(WebGPU, WebGL2)를 모두 통과했다. GLB validator는 error 0이다. 캡처는 `qa/views/fab-realism.json`, `fab-details.json`, `oht-livery.json`에 있다.
+- **성능(`qa/perf-current.mjs`):**
+  - 측정할 때 다른 프로그램이 GPU를 쓰고 있었다(측정하지 않을 때도 사용률 38%). 같은 조건에서 배경이 바뀌지 않은 CELLESTA 화면도 444 fps에서 283 fps로 떨어졌으므로, 전날 표와 직접 비교할 수 없다.
+  - 그 조건에서 가장 낮은 값은 WebGPU 88 fps(p95 17.6 ms)이고, WebGL2는 모든 상태가 142 fps 이상이다.
+  - 천장 반송층은 overview처럼 카메라가 천장 위에 있으면 그리지 않는다.
+
 ## 장비 교체: Producer SE / Tactras / CELLESTA-i MD / CLW-08v2 (2026-11-24)
 
 브랜치 `equipment-migration`. 결정, ID 대응, 근거 구분은 `docs/equipment-migration.md`, asset 명령과 결과는 `docs/asset-pipeline.md`, 센서 후보는 `docs/sensor-crosswalk.md`에 있다. 아래 절(2026-11-16 이전)은 legacy V1 장비 기록이며 지금은 `?fixture=legacy-v1`에서만 그 장비가 나온다.

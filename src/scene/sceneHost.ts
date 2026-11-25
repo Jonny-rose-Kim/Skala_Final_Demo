@@ -30,6 +30,7 @@ import { GlbLibrary } from "./glbParts";
 import { diagnosisFor, type AgentEvent, type DiagnosisHighlight } from "../domain/agentContract";
 import { WaferSurfaceLibrary } from "../materials/waferSurface";
 import type { PartGeometry } from "../geometry/chamberParts";
+import type { Material } from "@babylonjs/core/Materials/material";
 import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture";
 import { CHAMBER_LAYOUT, DEG, floorTopY, type ChamberLayout, type Vec3Tuple } from "../config/geometry";
 import "../equipment/index";
@@ -56,6 +57,8 @@ import { createCanvas, readForceWebGL2, tryCreateWebGL2, tryCreateWebGPU, type C
 import { LightingRig } from "./lighting";
 import { MeasurementOverlay } from "./measurementOverlay";
 import { FAB_ENVIRONMENTS, FabEnvironment, facilityDropFor, type FacilityDrop } from "./fabEnvironment";
+import type { DecorVehicleSource } from "./fabOverhead";
+import type { OhtLayout } from "../equipment/oht/layout";
 import { QUALITY, QualityManager, RenderPipeline } from "./renderPipeline";
 
 export interface SceneHostOptions {
@@ -495,7 +498,7 @@ export class SceneHost {
       const fi = inst.bundle.facilityInterface?.(inst.bundle.layout);
       if (fi && !inst.def.mobile) drops.push(facilityDropFor(inst.def.instanceId, inst.def.position, inst.def.rotationYDeg, fi));
     }
-    const environment = new FabEnvironment(scene, materials, floorY, drops, FAB_ENVIRONMENTS[environmentFor(this.options.fixture ?? undefined)] ?? FAB_ENVIRONMENTS["fab-bay-v2"]);
+    const environment = new FabEnvironment(scene, materials, floorY, drops, FAB_ENVIRONMENTS[environmentFor(this.options.fixture ?? undefined)] ?? FAB_ENVIRONMENTS["fab-bay-v2"], this.decorVehicleSource(instances, glbParts));
     this.world = { created, scene, camera, env, textures, materials, lighting, instances, stations, depth, pipeline, highlight, picking, labels, markers, ground, backdrop, resizeObserver, bayCenter, bayRadius, instrumentation, lodCenters, environment };
 
     // Report loaded instances and pick a valid active instance / scenario
@@ -1058,6 +1061,27 @@ export class SceneHost {
   }
 
   /**
+   * Shell of the parked scenery vehicles: the GLB parts of the bay's OHT template at rest pose, without the parts
+   * that carry an identity (vehicle number, status display) so no second vehicle id appears in the scene.
+   */
+  private decorVehicleSource(instances: Map<string, EquipmentInstance>, glbParts: Map<string, PartGeometry[]>): DecorVehicleSource | null {
+    for (const inst of instances.values()) {
+      const parts = glbParts.get(inst.templateId);
+      const L = inst.bundle.layout as Partial<OhtLayout>;
+      if (inst.bundle.template.family !== "OHT" || !parts?.length || !L.rail || !L.vehicle || !L.cfg) continue;
+      const shell = parts.filter((p) => p.glbMaterial && !p.key.includes(".number.") && !p.key.includes(".display."));
+      return {
+        parts: shell.map((p) => ({ md: p.build([]), material: p.glbMaterial as Material })),
+        railBottom: L.rail.bottomY,
+        restZ: L.rail.z0,
+        bodyBottom: L.vehicle.bodyY0,
+        foupSize: L.cfg.foup.body_size,
+      };
+    }
+    return null;
+  }
+
+  /**
    * Opaque meshes that can hide or cut a glow volume: meshes touching the cylinder from the camera to the volume
    * (radius = the volume's bounding radius, a superset of the view cone), which includes everything overlapping the
    * volume. Reassigned only when the membership changes, so the depth pass does not dirty materials every frame.
@@ -1148,7 +1172,7 @@ export class SceneHost {
       return fx?.pointPose ? fx.pointPose(pointId) : null;
     });
     w.lighting.updateHeadlamp(w.camera);
-    w.environment.update(w.camera.globalPosition, s.environment);
+    w.environment.update(w.camera.globalPosition, s.environment, w.camera.target);
     // the opaque depth map only feeds the plasma ray march: stop refreshing it while no glow volume is drawn
     let glowVisible = false;
     this.depthFocus.segments.length = 0;

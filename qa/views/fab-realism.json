@@ -1,0 +1,98 @@
+[
+ {
+  "id": "h1_aisle_walk",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   264,
+   96.4,
+   7.9,
+   [
+    -2.4,
+    1.7,
+    1.0
+   ]
+  ]
+ },
+ {
+  "id": "h2_look_up",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   240,
+   118,
+   4.6,
+   [
+    -1.0,
+    3.0,
+    2.5
+   ]
+  ]
+ },
+ {
+  "id": "h5_aisle_to_litho",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   269,
+   91.8,
+   12,
+   [
+    -3.0,
+    1.2,
+    10.0
+   ]
+  ]
+ },
+ {
+  "id": "h6_lockers",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   71,
+   93.8,
+   4.25,
+   [
+    -4.0,
+    1.1,
+    -5.0
+   ]
+  ]
+ },
+ {
+  "id": "h3_over_tools",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   75,
+   101.6,
+   8.5,
+   [
+    0,
+    2.6,
+    -2
+   ]
+  ]
+ },
+ {
+  "id": "h4_overview",
+  "overview": true,
+  "scenario": "route-dep-etch-clean-v1",
+  "time": 100,
+  "cam": [
+   205,
+   56,
+   15.5,
+   [
+    -0.2,
+    0.2,
+    -0.4
+   ]
+  ]
+ }
+]

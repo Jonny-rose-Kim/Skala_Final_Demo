@@ -25,7 +25,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader";
 import "@babylonjs/loaders/glTF/2.0";
 import type { PartGeometry } from "../geometry/chamberParts";
-import type { MeshData } from "../geometry/meshlib/types";
+import { mergeMeshData, type MeshData } from "../geometry/meshlib/types";
 import type { EquipmentTemplate, MaterialRef } from "../domain/types";
 import type { GlbSourceSpec } from "../domain/glbSource";
 
@@ -132,7 +132,8 @@ export class GlbLibrary {
           lod: node.lod === "fine" ? "fine" : undefined,
           jointId: node.jointId || undefined,
           sectorDependent: false,
-          build: () => md,
+          // a copy per call: EquipmentInstance rebases the returned data in place (joint rest origin)
+          build: () => mergeMeshData([md]),
         });
       }
       const missing = spec.manifest.nodes.filter((n) => !seen.has(n.partKey)).map((n) => n.partKey);

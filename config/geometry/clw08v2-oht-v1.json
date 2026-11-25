@@ -27,7 +27,7 @@
     "flange_thickness": 0.012,
     "hanger_pitch": 1.2,
     "hanger_radius": 0.012,
-    "ceiling_y": 3.4,
+    "ceiling_y": 4.4,
     "ceiling_pad_size": 0.26
   },
   "vehicle": {

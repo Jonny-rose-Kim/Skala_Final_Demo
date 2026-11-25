@@ -109,3 +109,35 @@ Bay 배경(바닥 타일, 천장 grid, 벽, utility)은 `config/environment/fab-
 **Load port seat:** 모두 rail 선 x = -1.974, deck 높이 0.9 m다. OHT로 계산하면 세 station 모두 측면 오차 0 mm, hoist 1.081 m다(`npm run validate:config`).
 
 **Z 배치:** PRODUCER -4.3, ETCH 0, CLEAN 3.6. Bay 환경은 `config/environment/fab-bay-v2.json`이다.
+
+## Bay 환경 v2.1: 공개 다큐멘터리 영상을 참고한 배경 (2026-11-25)
+
+- **참고 자료:** 사용자가 제공한 메모리 팹 내부 사진 18장(공개 다큐멘터리 화면 캡처). 천장, 통로, FOUP 보관대, load port, 공정 장비 내부가 찍혀 있다.
+  - 사진은 형상과 배치 참고용으로만 썼다. 저장소에 넣지 않았다(`img/`는 추적하지 않는다).
+  - 방송사 로고, 장비 상표, 사람은 재현하지 않았다.
+- **천장:** 높이 3.4 m에서 4.4 m로 올렸다.
+  - 1.2 m 정사각 모듈, 모듈 크기의 매입형 LED 패널, T-bar 교차점 node, 짧은 기둥에 단 돔 CCTV.
+  - 천장면은 밝은 회색이고, 아래로 반사되는 빛을 흉내 내려고 약한 자체 발광을 준다.
+  - CLW-08v2 rail hanger의 `ceiling_y`도 4.4 m로 맞췄다.
+- **천장 반송층(`src/scene/fabOverhead.ts`):**
+  - 장식 OHT rail 3개: 통로 위 3.15 m 1개, 장비 위 3.75 m 2개.
+  - rail 부속: 빨간 위치 strip, 위치 표지판, hanger frame, cable tray와 cable, 제어 box.
+  - 장비 위 두 rail 사이에 S자 분기 곡선 2개.
+  - FOUP 보관 선반: 통로 벽 쪽, 이 bay rail 옆(LP 사이), 장비 위.
+  - 정지한 장식 차량 6대.
+- **장식 차량과 FOUP:**
+  - 장식 차량은 CLW GLB 외장을 복사하되 호기 번호와 표시창은 뺐다(차량 ID가 둘로 보이지 않도록). 움직이지 않는다.
+  - 선반의 FOUP와 장식 차량은 배경이다. fleet, WIP, 재고 상태가 아니다.
+- **사람 눈높이 구역(`src/scene/fabZones.ts`):**
+  - 북쪽 벽 너머 노란 조명의 노광 구역. 통로 출입구와 창 band로 보이고, track형 장비 3줄, load port와 FOUP, 신호등, 모니터가 있다.
+  - 이 구역은 route의 외부 노광 단계(S20)를 장면 안에서 보여 주는 배경이다. 모델링된 장비가 아니다.
+  - 통로 벽 쪽 사물함 2열(작은 문, keypad, 라벨 card), 건물 기둥 2개, 통로 바닥 위치 번호 45-48.
+- **장비 세부:**
+  - FOUP: 짙은 연기색 shell, 뒤와 양옆의 호박색 창 plate(세로 rib과 볼트), 노란 side handle.
+  - Load port: 개구부 위 흰 indicator panel과 꺼진 상태의 LED lens 8개(녹·황·적·청). 켜진 상태는 표시하지 않는다.
+  - CELLESTA nozzle head: L bracket, manifold, 반투명 tapered tip. 세 nozzle 위치는 그대로다.
+- **보기 편의:**
+  - 천장 반송층은 카메라가 천장 위에 있으면 통째로 숨는다.
+  - 카메라와 target 사이를 막는 chunk만 따로 숨는다(2.4 m 단위).
+  - 노란 구역의 천장과 벽도 bay 천장·벽과 같은 규칙으로 숨는다.
+- **모든 치수와 배치는 가정이다.** 실제 팹의 rail 높이, 선반 간격, 구역 배치가 아니다.

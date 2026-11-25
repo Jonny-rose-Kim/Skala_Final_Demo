@@ -510,9 +510,15 @@ export function buildEfemParts(g: StationGeom, e: EfemSpec): void {
   const rails: MeshData[] = [];
   for (const sgn of [-1, 1]) rails.push(g.box(railR0, railR0 + lp.doorPlateThickness, op.y0 - lp.doorLower - 0.06, op.y1, LQ + sgn * (op.width / 2 + 0.004), LQ + sgn * (op.width / 2 + 0.024), 0.003));
   g.fixed("lp_opener_rail", I.loadPort, "dark_steel", mergeMeshData(rails), { cutaway: "keep", castShadow: false });
-  const leds: MeshData[] = [];
-  for (let k = 0; k < 4; k++) leds.push(g.box(e.r1, e.r1 + 0.004, op.y1 + 0.02, op.y1 + 0.035, LQ - 0.12 + k * 0.08, LQ - 0.09 + k * 0.08, 0.001));
-  g.fixed("lp_indicators", I.loadPort, "safety_marking", mergeMeshData(leds), { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
+  // indicator panel above the opening: a white strip with a row of unlit status lenses (green, yellow, red, blue
+  // pairs), as on the documentary load ports; lens colours carry no lit state
+  g.fixed("lp_indicator_panel", I.loadPort, "polymer_white", g.box(e.r1, e.r1 + 0.006, op.y1 + 0.012, op.y1 + 0.05, LQ - 0.17, LQ + 0.17, 0.002), { cutaway: "keep", castShadow: false });
+  const lens = (k: number) => g.box(e.r1 + 0.006, e.r1 + 0.01, op.y1 + 0.025, op.y1 + 0.037, LQ - 0.14 + k * 0.04 - 0.006, LQ - 0.14 + k * 0.04 + 0.006, 0.001);
+  const lensRefs = ["indicator_green", "indicator_green", "safety_marking", "safety_marking", "marking_red", "marking_red", "indicator_blue", "indicator_blue"] as const;
+  for (const ref of new Set(lensRefs)) {
+    const md = mergeMeshData(lensRefs.map((r, k) => (r === ref ? lens(k) : null)).filter((m): m is MeshData => !!m));
+    g.fixed(`lp_indicators_${ref}`, I.loadPort, ref, md, { cutaway: "keep", castShadow: false, lod: "fine", pickable: false });
+  }
   // dock plate + kinematic pins (lp_dock); FOUP pad (px, pz) -> station (seat - px, -pz) because the FOUP +X faces the tool
   const dock = g.box(lp.seatR - 0.18, lp.seatR + 0.18, deckY1, lp.deckTopY, LQ - 0.17, LQ + 0.17, 0.003);
   const pins: MeshData[] = [];

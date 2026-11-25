@@ -5,22 +5,22 @@
     "weld"
   ],
   "before": {
-    "nodes": 21,
-    "meshes": 20,
-    "materials": 10,
-    "textures": 4,
-    "accessors": 97,
-    "triangles": 4772,
-    "bytes": 703124
-  },
-  "after": {
-    "nodes": 21,
-    "meshes": 20,
+    "nodes": 22,
+    "meshes": 21,
     "materials": 10,
     "textures": 4,
     "accessors": 100,
     "triangles": 4772,
-    "bytes": 701792
+    "bytes": 704004
+  },
+  "after": {
+    "nodes": 22,
+    "meshes": 21,
+    "materials": 10,
+    "textures": 4,
+    "accessors": 105,
+    "triangles": 4772,
+    "bytes": 702836
   },
   "semanticNodesUnchanged": true
 }
